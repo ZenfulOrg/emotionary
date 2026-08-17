@@ -3,7 +3,6 @@ import { Image } from 'expo-image';
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Linking,
   Pressable,
@@ -16,11 +15,12 @@ import {
 import Animated, { FadeIn, ZoomIn, useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { createAccount, signIn } from '@/auth/client';
+import { createAccount, signIn, signInWithApple, signInWithGoogle } from '@/auth/client';
 import { AmbientInk } from '@/components/AmbientInk';
 import { Paywall } from '@/components/Paywall';
 import { SystemIcon } from '@/components/system-icon';
 import { formatTime, TimeControl } from '@/components/TimeControl';
+import { WidgetGuideModal, type WidgetGuideVariant } from '@/components/WidgetGuideModal';
 import { WordTypeIcon } from '@/components/word-type-icon';
 import type { WordType } from '@/content/types';
 import { lightImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
@@ -191,6 +191,23 @@ export default function OnboardingScreen() {
     }
   };
 
+  const submitSocial = async (provider: 'apple' | 'google') => {
+    lightImpactHaptic();
+    setAuthBusy(true);
+    setAuthMessage('');
+    try {
+      const result = provider === 'apple' ? await signInWithApple() : await signInWithGoogle();
+      if (!result) return; // cancelled — nothing to report
+      setAuthMessage(result.email ? `You are signed in as ${result.email}.` : 'You are signed in.');
+      setAccountComplete(true);
+      successHaptic();
+    } catch (error) {
+      setAuthMessage(error instanceof Error ? error.message : 'Sign-in failed. Try again.');
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: pageColors[page] }]}>
       <AmbientInk />
@@ -231,6 +248,8 @@ export default function OnboardingScreen() {
                 message={authMessage}
                 busy={authBusy}
                 onSubmit={() => void submitAccount()}
+                onApple={() => void submitSocial('apple')}
+                onGoogle={() => void submitSocial('google')}
               />
             )}
             {page === 'first-word' && <FirstWordPage />}
@@ -287,6 +306,11 @@ export default function OnboardingScreen() {
 }
 
 function WelcomePage({ reducedMotion }: { reducedMotion: boolean }) {
+  const openBook = () => {
+    lightImpactHaptic();
+    void Linking.openURL(BOOK_URL);
+  };
+
   return (
     <View style={styles.center}>
       <Animated.View entering={reducedMotion ? undefined : ZoomIn.springify().damping(14)}>
@@ -302,17 +326,25 @@ function WelcomePage({ reducedMotion }: { reducedMotion: boolean }) {
         gifts.
       </Text>
       <Pressable
-        onPress={() => void Linking.openURL(BOOK_URL)}
-        style={styles.bookButton}
+        onPress={openBook}
         accessibilityRole="link"
         accessibilityLabel="Get the Emotionary book"
+        style={styles.bookWrap}
       >
         <Image
           source={require('../../assets/images/book-cover.png')}
           style={styles.bookMini}
           contentFit="contain"
         />
-        <Text style={styles.bookLink}>GET THE BOOK</Text>
+      </Pressable>
+      <Pressable
+        onPress={openBook}
+        style={({ pressed }) => [styles.bookButton, pressed && styles.pressed]}
+        accessibilityRole="link"
+        accessibilityLabel="Get the Emotionary book"
+      >
+        <Text style={styles.bookButtonText}>GET THE BOOK</Text>
+        <SystemIcon name="arrow.right" fallback="→" size={14} color={color.paper} />
       </Pressable>
     </View>
   );
@@ -456,12 +488,11 @@ function ReminderPage({
 }
 
 function WidgetPage() {
-  const showInstructions = () => {
+  const [guide, setGuide] = useState<WidgetGuideVariant | null>(null);
+
+  const openGuide = (variant: WidgetGuideVariant) => {
     selectionHaptic();
-    Alert.alert(
-      'Add the Emotionary widget',
-      'Touch and hold your Home or Lock Screen, tap Edit or Customize, then Add Widget and choose Emotionary.',
-    );
+    setGuide(variant);
   };
 
   return (
@@ -469,29 +500,44 @@ function WidgetPage() {
       <Text style={styles.title} accessibilityRole="header">
         Add the daily widget
       </Text>
-      <Text style={styles.body}>Keep today&apos;s word nearby on your Home or Lock Screen.</Text>
+      <Text style={styles.body}>
+        Keep today&apos;s word nearby on your Home or Lock Screen. Tap a widget to see how.
+      </Text>
       <View style={styles.widgetPreview}>
-        <View style={styles.homeWidget}>
+        <Pressable
+          onPress={() => openGuide('home')}
+          style={styles.homeWidget}
+          accessibilityRole="button"
+          accessibilityLabel="How to add the Home Screen widget"
+        >
           <View style={styles.widgetOrb} />
           <Text style={styles.widgetWord}>Apricity</Text>
           <Text style={styles.widgetDefinition}>The warmth of the sun on a cold day.</Text>
-        </View>
-        <View style={styles.lockWidget}>
+        </Pressable>
+        <Pressable
+          onPress={() => openGuide('lock')}
+          style={styles.lockWidget}
+          accessibilityRole="button"
+          accessibilityLabel="How to add the Lock Screen widget"
+        >
           <Text style={styles.lockTime}>11:19</Text>
           <Text style={styles.lockWord}>Apricity</Text>
           <Text style={styles.lockPronunciation}>[uh-PRIS-ih-tee]</Text>
-        </View>
+        </Pressable>
       </View>
-      <View style={styles.instructionCard}>
-        <Text style={styles.instructionTitle}>Enable it in three steps</Text>
-        <Text style={styles.instructionText}>
-          1. Touch and hold your Home or Lock Screen.{`\n`}2. Tap Customize or +.{`\n`}3. Choose
-          Emotionary.
-        </Text>
-      </View>
-      <Pressable onPress={showInstructions} style={styles.widgetButton} accessibilityRole="button">
+      <Pressable
+        onPress={() => openGuide('home')}
+        style={styles.widgetButton}
+        accessibilityRole="button"
+      >
         <Text style={styles.widgetButtonText}>HOW TO ADD THE WIDGET</Text>
       </Pressable>
+
+      <WidgetGuideModal
+        variant={guide ?? 'home'}
+        visible={guide !== null}
+        onClose={() => setGuide(null)}
+      />
     </View>
   );
 }
@@ -506,6 +552,8 @@ function AccountPage({
   message,
   busy,
   onSubmit,
+  onApple,
+  onGoogle,
 }: {
   mode: AuthMode;
   onModeChange: (mode: AuthMode) => void;
@@ -516,6 +564,8 @@ function AccountPage({
   message: string;
   busy: boolean;
   onSubmit: () => void;
+  onApple: () => void;
+  onGoogle: () => void;
 }) {
   const [passwordVisible, setPasswordVisible] = useState(false);
 
@@ -525,6 +575,38 @@ function AccountPage({
         Your Emotionary account
       </Text>
       <Text style={styles.body}>Create an account to keep your saved words connected.</Text>
+
+      <View style={styles.socialButtons}>
+        {process.env.EXPO_OS === 'ios' && (
+          <Pressable
+            onPress={onApple}
+            disabled={busy}
+            style={({ pressed }) => [styles.socialButton, styles.appleButton, (pressed || busy) && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Continue with Apple"
+          >
+            <SystemIcon name="apple.logo" fallback="" size={17} color="#FFFFFF" />
+            <Text style={[styles.socialButtonText, styles.appleButtonText]}>Continue with Apple</Text>
+          </Pressable>
+        )}
+        <Pressable
+          onPress={onGoogle}
+          disabled={busy}
+          style={({ pressed }) => [styles.socialButton, styles.googleButton, (pressed || busy) && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Continue with Google"
+        >
+          <Text style={styles.googleG}>G</Text>
+          <Text style={styles.socialButtonText}>Continue with Google</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.orRow}>
+        <View style={styles.orLine} />
+        <Text style={styles.orText}>OR</Text>
+        <View style={styles.orLine} />
+      </View>
+
       <View style={styles.authModes}>
         <Pressable
           onPress={() => onModeChange('create')}
@@ -755,16 +837,26 @@ const styles = StyleSheet.create({
     maxWidth: 290,
   },
   bookMini: {
-    width: 94,
-    height: 132,
+    width: 136,
+    height: 198,
   },
-  bookButton: { alignItems: 'center', marginTop: space.l },
-  bookLink: {
+  bookWrap: { alignItems: 'center', marginTop: space.l },
+  bookButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.s,
+    minHeight: 46,
+    borderRadius: 999,
+    backgroundColor: color.ink,
+    paddingHorizontal: space.l,
+    marginTop: space.m,
+  },
+  bookButtonText: {
     fontFamily: font.serifMedium,
     fontSize: type.badge,
-    color: color.ink,
-    textDecorationLine: 'underline',
-    marginTop: space.s,
+    letterSpacing: letterSpacing.caps,
+    color: color.paper,
   },
   notificationCard: {
     width: '100%',
@@ -925,33 +1017,55 @@ const styles = StyleSheet.create({
   lockTime: { fontFamily: font.display, fontSize: 23, color: color.paper },
   lockWord: { fontFamily: font.serifSemiBold, fontSize: type.small, color: color.paper, marginTop: 4 },
   lockPronunciation: { fontFamily: font.serif, fontSize: 9, color: 'rgba(255,255,255,0.68)' },
-  instructionCard: {
-    borderRadius: 18,
+  widgetButton: { minHeight: 42, borderRadius: 999, backgroundColor: color.ink, justifyContent: 'center', paddingHorizontal: space.m, marginTop: space.l },
+  widgetButtonText: { fontFamily: font.serifMedium, fontSize: type.badge, letterSpacing: letterSpacing.caps, color: color.paper },
+  socialButtons: { width: '100%', gap: space.s, marginTop: space.l },
+  socialButton: {
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.s + 1,
+    borderRadius: 14,
     borderCurve: 'continuous',
-    backgroundColor: 'rgba(255,255,255,0.62)',
+  },
+  appleButton: { backgroundColor: '#000000' },
+  appleButtonText: { color: '#FFFFFF' },
+  googleButton: {
+    backgroundColor: '#FFFFFF',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: color.hairline,
-    padding: space.m,
+  },
+  googleG: {
+    fontFamily: font.serifSemiBold,
+    fontSize: type.body,
+    color: '#3F73B3',
+  },
+  socialButtonText: {
+    fontFamily: font.serifMedium,
+    fontSize: type.small,
+    color: color.ink,
+  },
+  orRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.m,
     marginTop: space.m,
-    maxWidth: 302,
   },
-  instructionTitle: { fontFamily: font.display, fontSize: type.body, color: color.ink, textAlign: 'center' },
-  instructionText: {
-    fontFamily: font.serif,
-    fontSize: type.caption,
-    lineHeight: 19,
-    color: color.inkMuted,
-    textAlign: 'left',
-    marginTop: space.s,
+  orLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: color.hairline },
+  orText: {
+    fontFamily: font.serifMedium,
+    fontSize: type.badge,
+    letterSpacing: letterSpacing.caps,
+    color: color.inkFaint,
   },
-  widgetButton: { minHeight: 42, borderRadius: 999, backgroundColor: color.ink, justifyContent: 'center', paddingHorizontal: space.m, marginTop: space.m },
-  widgetButtonText: { fontFamily: font.serifMedium, fontSize: type.badge, letterSpacing: letterSpacing.caps, color: color.paper },
   authModes: {
     flexDirection: 'row',
     padding: 3,
     borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.55)',
-    marginTop: space.l,
+    marginTop: space.m,
   },
   authMode: { minWidth: 112, paddingVertical: 9, paddingHorizontal: space.m, borderRadius: 999, alignItems: 'center' },
   authModeActive: { backgroundColor: color.ink },

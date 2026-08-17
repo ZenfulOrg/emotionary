@@ -167,7 +167,24 @@ function BrowseKeyModal({ visible, onClose }: { visible: boolean; onClose: () =>
           </View>
 
           <ScrollView contentContainerStyle={styles.modalScroll} showsVerticalScrollIndicator={false}>
-            <Text style={styles.modalSection}>LEVELS</Text>
+            <Text style={styles.modalSection}>ICON KEY</Text>
+            <IconKey
+              wordType="wanderword"
+              title="WANDERWORD"
+              body="A word from another language or culture that has no direct English equivalent. You'll see a world icon next to a word that has cultural origins."
+            />
+            <IconKey
+              wordType="hidden_english"
+              title="HIDDEN ENGLISH"
+              body="A real English word that exists in the dictionary but rarely makes it into everyday conversation. These have been here all along, but most people were just never introduced to them."
+            />
+            <IconKey
+              wordType="psychology"
+              title="PSYCHOLOGY"
+              body="A term with roots in psychology simplified here for everyday use. These words belong to everyone, not just those who've sat across from a therapist."
+            />
+
+            <Text style={styles.modalSection}>COLOR DEPTH LEVELS</Text>
             <KeyLevel level={1} name="FLEETING" body="Light, fleeting, surface sensations" />
             <KeyLevel
               level={2}
@@ -188,23 +205,6 @@ function BrowseKeyModal({ visible, onClose }: { visible: boolean; onClose: () =>
               level={5}
               name="THE DEPTHS"
               body="The most intense, transformative human experiences"
-            />
-
-            <Text style={styles.modalSection}>ICON KEY</Text>
-            <IconKey
-              wordType="wanderword"
-              title="WANDERWORD"
-              body="A word from another language or culture that has no direct English equivalent. You'll see a world icon next to a word that has cultural origins."
-            />
-            <IconKey
-              wordType="hidden_english"
-              title="HIDDEN ENGLISH"
-              body="A real English word that exists in the dictionary but rarely makes it into everyday conversation. These have been here all along, but most people were just never introduced to them."
-            />
-            <IconKey
-              wordType="psychology"
-              title="PSYCHOLOGY"
-              body="A term with roots in psychology simplified here for everyday use. These words belong to everyone, not just those who've sat across from a therapist."
             />
           </ScrollView>
         </View>
@@ -301,6 +301,7 @@ const styles = StyleSheet.create({
     gap: space.s,
     paddingHorizontal: space.l,
     marginTop: space.m,
+    marginBottom: space.xs,
   },
   chip: {
     flexDirection: 'row',
@@ -343,7 +344,7 @@ const styles = StyleSheet.create({
     borderColor: color.ink,
     transform: [{ scale: 1.15 }],
   },
-  list: { paddingHorizontal: space.l, paddingTop: space.s, paddingBottom: space.xl },
+  list: { paddingHorizontal: space.l, paddingTop: space.m, paddingBottom: 120 },
   emptyWrap: { alignItems: 'center', marginTop: space.xxl, gap: space.m },
   emptyText: { fontFamily: font.serif, fontSize: type.body, color: color.inkMuted },
   clearText: {

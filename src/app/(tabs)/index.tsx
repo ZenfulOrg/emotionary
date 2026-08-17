@@ -9,7 +9,7 @@ import {
   type ViewToken,
 } from 'react-native';
 import { WordFull } from '@/components/WordFull';
-import { StreakCalendar } from '@/components/StreakCalendar';
+import { StreakPopup } from '@/components/StreakPopup';
 import type { Word } from '@/content/types';
 import { useContentStore } from '@/content/store';
 import { localDateString } from '@/daily/engine';
@@ -23,14 +23,23 @@ const VIEWABILITY_CONFIG = {
   minimumViewTime: 450,
 } as const;
 
+/** The streak popup shows once per app launch, on the first open of Today. */
+let streakPopupShownThisSession = false;
+
 export default function TodayScreen() {
   const words = useContentStore((s) => s.words);
   const recordOpen = useUserStore((s) => s.recordOpen);
   const markRead = useUserStore((s) => s.markRead);
   const streak = useUserStore((s) => s.streakState.streak);
+  const streakBrokeDate = useUserStore((s) => s.streakBrokeDate);
   const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
   const [feedHeight, setFeedHeight] = useState(0);
   const [visibleLevel, setVisibleLevel] = useState<Word['level']>(1);
+  const [streakVisible, setStreakVisible] = useState(() => !streakPopupShownThisSession);
+  const dismissStreak = useCallback(() => {
+    streakPopupShownThisSession = true;
+    setStreakVisible(false);
+  }, []);
 
   const today = localDateString();
   const feed = useMemo(() => {
@@ -74,7 +83,13 @@ export default function TodayScreen() {
       style={[styles.screen, { backgroundColor: levelPalettes[visibleLevel].tint }]}
       edges={['top']}
     >
-      <StreakCalendar streak={Math.max(streak, 1)} />
+      {streakVisible && (
+        <StreakPopup
+          streak={Math.max(streak, 1)}
+          wilted={streakBrokeDate === today}
+          onDismiss={dismissStreak}
+        />
+      )}
       <View style={styles.container} onLayout={onLayout}>
         <FlatList
           data={feed}

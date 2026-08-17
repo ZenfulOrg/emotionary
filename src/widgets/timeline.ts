@@ -5,7 +5,7 @@ import { addDays, localDateString, wordOfDay } from '@/daily/engine';
 import { color, levelPalettes } from '@/theme/tokens';
 import DailyWordWidget, { type DailyWordWidgetProps } from '@/widgets/DailyWordWidget';
 
-function propsForWord(word: Word): DailyWordWidgetProps {
+function propsForWord(word: Word, favorites: readonly string[]): DailyWordWidgetProps {
   const palette = levelPalettes[word.level];
   return {
     word: word.word,
@@ -14,10 +14,14 @@ function propsForWord(word: Word): DailyWordWidgetProps {
     tint: palette.tint,
     ink: color.ink,
     slug: word.slug,
+    liked: favorites.includes(word.slug),
   };
 }
 
-export function refreshDailyWordWidget(words: readonly Word[]): void {
+export function refreshDailyWordWidget(
+  words: readonly Word[],
+  favorites: readonly string[] = [],
+): void {
   if (Platform.OS !== 'ios' || words.length === 0) return;
 
   const start = localDateString();
@@ -25,7 +29,7 @@ export function refreshDailyWordWidget(words: readonly Word[]): void {
     const dateString = addDays(start, offset);
     const word = wordOfDay(words, dateString);
     const date = new Date(`${dateString}T00:01:00`);
-    return word ? { date, props: propsForWord(word) } : null;
+    return word ? { date, props: propsForWord(word, favorites) } : null;
   }).filter((entry): entry is { date: Date; props: DailyWordWidgetProps } => entry !== null);
 
   if (entries.length > 0) DailyWordWidget.updateTimeline(entries);

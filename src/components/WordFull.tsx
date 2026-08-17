@@ -1,18 +1,23 @@
 import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SystemIcon } from '@/components/system-icon';
 import { TypeBadge } from '@/components/TypeBadge';
 import type { Word } from '@/content/types';
-import { lightImpactHaptic, selectionHaptic } from '@/feedback/haptics';
+import { lightImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
 import { useUserStore } from '@/store/userStore';
 import { color, font, letterSpacing, levelPalettes, space, type } from '@/theme/tokens';
+
+const COPY_TOAST_MS = 1500;
 
 /**
  * The full word layout shared by Today and Word Detail (DESIGN.md §5.1/§5.3):
  * type badge → display-serif word → [pronunciation] → origin → definition,
  * with the wisdom line + SAVE/SHARE anchored at the bottom.
+ * Long-pressing the word or the definition copies it to the clipboard.
  */
 export function WordFull({
   word,
@@ -27,6 +32,27 @@ export function WordFull({
   const toggleFavorite = useUserStore((s) => s.toggleFavorite);
   const palette = levelPalettes[word.level];
   const insets = useSafeAreaInsets();
+  const [copied, setCopied] = useState<'word' | 'definition' | null>(null);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+    },
+    [],
+  );
+
+  const copyToClipboard = (what: 'word' | 'definition') => {
+    // Lazy import — expo-clipboard registers a native paste-button view at
+    // module scope, which breaks web/server rendering if imported statically.
+    void import('expo-clipboard').then((Clipboard) =>
+      Clipboard.setStringAsync(what === 'word' ? word.word : word.definition),
+    );
+    successHaptic();
+    setCopied(what);
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setCopied(null), COPY_TOAST_MS);
+  };
 
   const content = (
     <>
@@ -37,6 +63,9 @@ export function WordFull({
           maxFontSizeMultiplier={1.4}
           accessibilityRole="header"
           accessibilityLabel={`${word.word}. ${word.language}. Level ${word.level}.`}
+          accessibilityHint="Long press to copy the word"
+          onLongPress={() => copyToClipboard('word')}
+          suppressHighlighting
         >
           {word.word}
         </Text>
@@ -44,7 +73,14 @@ export function WordFull({
           [{word.pronunciation}]
         </Text>
         <Text style={styles.origin}>{word.language.toUpperCase()}</Text>
-        <Text style={styles.definition}>{word.definition}</Text>
+        <Text
+          style={styles.definition}
+          accessibilityHint="Long press to copy the definition"
+          onLongPress={() => copyToClipboard('definition')}
+          suppressHighlighting
+        >
+          {word.definition}
+        </Text>
       </View>
 
       <View style={[styles.bottom, feedPage && styles.feedBottom]}>
@@ -97,6 +133,19 @@ export function WordFull({
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.tint }]}>
+      {copied && (
+        <Animated.View
+          entering={FadeIn.duration(140)}
+          exiting={FadeOut.duration(260)}
+          style={styles.copiedToast}
+          pointerEvents="none"
+          accessibilityLiveRegion="polite"
+        >
+          <Text style={styles.copiedText}>
+            {copied === 'word' ? 'Word copied' : 'Definition copied'}
+          </Text>
+        </Animated.View>
+      )}
       {feedPage ? (
         <View
           style={[
@@ -194,5 +243,22 @@ const styles = StyleSheet.create({
     fontSize: type.badge,
     letterSpacing: letterSpacing.caps,
     color: color.inkMuted,
+  },
+  copiedToast: {
+    position: 'absolute',
+    top: space.m,
+    alignSelf: 'center',
+    zIndex: 30,
+    borderRadius: 999,
+    backgroundColor: color.ink,
+    paddingHorizontal: space.m,
+    paddingVertical: 8,
+    boxShadow: '0 8px 20px rgba(33, 28, 21, 0.22)',
+  },
+  copiedText: {
+    fontFamily: font.serifMedium,
+    fontSize: type.caption,
+    letterSpacing: 0.4,
+    color: color.paper,
   },
 });

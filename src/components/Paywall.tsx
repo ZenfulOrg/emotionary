@@ -44,6 +44,7 @@ export function Paywall({
           title="Yearly"
           price="$4.99"
           cadence="per year"
+          note="Less than your cup of coffee"
         />
         <PlanOption
           selected={plan === 'lifetime'}
@@ -84,6 +85,7 @@ function PlanOption({
   price,
   cadence,
   badge,
+  note,
 }: {
   selected: boolean;
   onPress: () => void;
@@ -91,6 +93,7 @@ function PlanOption({
   price: string;
   cadence: string;
   badge?: string;
+  note?: string;
 }) {
   return (
     <Pressable
@@ -109,6 +112,7 @@ function PlanOption({
         </View>
         <Text style={styles.price}>{price}</Text>
         <Text style={styles.cadence}>{cadence}</Text>
+        {note && <Text style={styles.note}>{note}</Text>}
       </View>
       {selected && (
         <SystemIcon name="checkmark" fallback="✓" size={18} color={color.ink} />
@@ -167,8 +171,8 @@ const styles = StyleSheet.create({
     fontFamily: font.serifMedium,
     fontSize: 8,
     letterSpacing: 0.7,
-    color: '#7D3439',
-    backgroundColor: '#F8DDE0',
+    color: '#2F6B45',
+    backgroundColor: '#DCEEDE',
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 999,
@@ -176,6 +180,12 @@ const styles = StyleSheet.create({
   },
   price: { fontFamily: font.display, fontSize: 25, color: color.ink, marginTop: 4 },
   cadence: { fontFamily: font.serif, fontSize: type.caption, color: color.inkMuted },
+  note: {
+    fontFamily: font.serifItalic,
+    fontSize: type.caption,
+    color: '#2F6B45',
+    marginTop: 3,
+  },
   continueButton: {
     width: '100%',
     minHeight: 52,

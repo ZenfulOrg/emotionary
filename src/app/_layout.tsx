@@ -48,6 +48,7 @@ export default function RootLayout() {
   const onboarded = useUserStore((s) => s.onboarded);
   const notifTime = useUserStore((s) => s.notifTime);
   const notifEnabled = useUserStore((s) => s.notifEnabled);
+  const favorites = useUserStore((s) => s.favorites);
 
   useEffect(() => useUserStore.persist.onFinishHydration(() => setUserHydrated(true)), []);
 
@@ -69,15 +70,24 @@ export default function RootLayout() {
   useEffect(() => {
     if (!userHydrated || !contentHydrated || !onboarded) return;
     void rebuildQueue({ words, time: notifTime, enabled: notifEnabled });
-    refreshDailyWordWidget(words);
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         void rebuildQueue({ words, time: notifTime, enabled: notifEnabled });
-        refreshDailyWordWidget(words);
       }
     });
     return () => sub.remove();
   }, [userHydrated, contentHydrated, onboarded, words, notifTime, notifEnabled]);
+
+  // Keep the widget timeline current — including the like state on today's
+  // word, so the widget heart fills as soon as a word is favorited.
+  useEffect(() => {
+    if (!userHydrated || !contentHydrated || !onboarded) return;
+    refreshDailyWordWidget(words, favorites);
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refreshDailyWordWidget(words, favorites);
+    });
+    return () => sub.remove();
+  }, [userHydrated, contentHydrated, onboarded, words, favorites]);
 
   // Notification tap → Today (also covers cold starts via the last response).
   useEffect(() => {
@@ -108,6 +118,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
         <Stack.Screen name="word/[slug]" />
+        <Stack.Screen name="favorites" />
         <Stack.Screen
           name="share/[slug]"
           options={{ presentation: 'transparentModal', animation: 'fade' }}

@@ -1,4 +1,4 @@
-import { Link, Text, VStack } from '@expo/ui/swift-ui';
+import { HStack, Image, Link, Text, VStack } from '@expo/ui/swift-ui';
 import {
   background,
   containerRelativeFrame,
@@ -17,6 +17,7 @@ export type DailyWordWidgetProps = {
   tint: string;
   ink: string;
   slug: string;
+  liked: boolean;
 };
 
 const DailyWordWidgetView = (
@@ -49,11 +50,11 @@ const DailyWordWidgetView = (
     <Link destination={`emotionary://word/${props.slug}`}>
       <VStack
         alignment="center"
-        spacing={isLockScreen ? 3 : 7}
+        spacing={isLockScreen ? 3 : 6}
         modifiers={[
           containerRelativeFrame({ axes: 'both' }),
           background(isLockScreen ? '#F7F3EB' : props.tint),
-          padding({ all: isLockScreen ? 7 : 14 }),
+          padding({ all: isLockScreen ? 7 : 13 }),
         ]}
       >
         <Text
@@ -80,11 +81,25 @@ const DailyWordWidgetView = (
               font({ design: 'serif', size: 11 }),
               foregroundStyle(props.ink),
               multilineTextAlignment('center'),
-              lineLimit(4),
+              lineLimit(3),
             ]}
           >
             {props.definition}
           </Text>
+        )}
+        {!isLockScreen && (
+          <HStack spacing={30} modifiers={[padding({ top: 2 })]}>
+            <Link destination={`emotionary://widget/like/${props.slug}`}>
+              <Image
+                systemName={props.liked ? 'heart.fill' : 'heart'}
+                size={13}
+                color={props.ink}
+              />
+            </Link>
+            <Link destination={`emotionary://widget/share/${props.slug}`}>
+              <Image systemName="square.and.arrow.up" size={13} color={props.ink} />
+            </Link>
+          </HStack>
         )}
       </VStack>
     </Link>

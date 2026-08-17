@@ -1,9 +1,8 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, type Href } from 'expo-router';
 import { Image } from 'expo-image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   DeviceEventEmitter,
-  Alert,
   Linking,
   Pressable,
   ScrollView,
@@ -15,18 +14,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AmbientInk } from '@/components/AmbientInk';
 import { StatsBurst } from '@/components/stats-burst';
-import { WordCard } from '@/components/WordCard';
+import { StopMotionFlame } from '@/components/stop-motion-flame';
+import { SystemIcon } from '@/components/system-icon';
+import { WidgetGuideModal, type WidgetGuideVariant } from '@/components/WidgetGuideModal';
 import { BOOK_COPY, BOOK_URL } from '@/config';
-import { findWord, useContentStore } from '@/content/store';
 import { lightImpactHaptic, mediumImpactHaptic, selectionHaptic } from '@/feedback/haptics';
 import { STATS_OPEN_EVENT } from '@/stats/events';
 import { useUserStore } from '@/store/userStore';
 import { color, font, letterSpacing, levelPalettes, space, type } from '@/theme/tokens';
 
-function StatTile({ value, label }: { value: number; label: string }) {
+function StatTile({ value, label, flame = false }: { value: number; label: string; flame?: boolean }) {
   return (
     <View style={styles.tile} accessibilityLabel={`${value} ${label.toLowerCase()}`}>
-      <Text style={styles.tileValue}>{value}</Text>
+      <View style={styles.tileValueWrap}>
+        {flame && value > 0 && (
+          <StopMotionFlame size={46} opacity={0.32} style={styles.tileFlame} />
+        )}
+        <Text style={styles.tileValue}>{value}</Text>
+      </View>
       <Text style={styles.tileLabel}>{label}</Text>
     </View>
   );
@@ -48,12 +53,12 @@ function SettingsMark() {
   );
 }
 
-function WidgetShowcase({ onOpen }: { onOpen: () => void }) {
+function WidgetShowcase({ onOpen }: { onOpen: (variant: WidgetGuideVariant) => void }) {
   return (
     <View style={styles.widgetWrap}>
       <Text style={styles.section}>WIDGETS</Text>
       <View style={styles.widgetCards}>
-        <Pressable style={styles.widgetCard} onPress={onOpen} accessibilityRole="button">
+        <Pressable style={styles.widgetCard} onPress={() => onOpen('home')} accessibilityRole="button">
           <View style={styles.homeWidgetPreview}>
             <Text style={styles.widgetWord}>Apricity</Text>
             <Text style={styles.widgetDefinition} numberOfLines={4}>
@@ -63,7 +68,7 @@ function WidgetShowcase({ onOpen }: { onOpen: () => void }) {
           <Text style={styles.widgetTitle}>Home Screen</Text>
           <Text style={styles.widgetLink}>CONFIGURE</Text>
         </Pressable>
-        <Pressable style={styles.widgetCard} onPress={onOpen} accessibilityRole="button">
+        <Pressable style={styles.widgetCard} onPress={() => onOpen('lock')} accessibilityRole="button">
           <View style={styles.lockWidgetPreview}>
             <Text style={styles.lockTime}>11:19</Text>
             <Text style={styles.lockWidgetWord}>Apricity</Text>
@@ -94,7 +99,6 @@ function SettingsRow({ label, value }: { label: string; value: string }) {
 }
 
 export default function StatsScreen() {
-  const words = useContentStore((s) => s.words);
   const streak = useUserStore((s) => s.streakState.streak);
   const readCount = useUserStore((s) => s.readSlugs.length);
   const favorites = useUserStore((s) => s.favorites);
@@ -102,10 +106,7 @@ export default function StatsScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const lastOpenAt = useRef(0);
   const [burstKey, setBurstKey] = useState(0);
-
-  const favoriteWords = favorites
-    .map((slug) => findWord(words, slug))
-    .filter((w): w is NonNullable<typeof w> => Boolean(w));
+  const [widgetGuide, setWidgetGuide] = useState<WidgetGuideVariant | null>(null);
 
   const allZero = streak === 0 && readCount === 0 && favorites.length === 0 && sharedCount === 0;
   const openStats = useCallback(() => {
@@ -161,26 +162,35 @@ export default function StatsScreen() {
         )}
 
         <View style={styles.grid}>
-          <StatTile value={streak} label="DAY STREAK" />
+          <StatTile value={streak} label="DAY STREAK" flame />
           <StatTile value={readCount} label="WORDS READ" />
           <StatTile value={favorites.length} label="FAVORITED" />
           <StatTile value={sharedCount} label="SHARED" />
         </View>
 
-        <Text style={styles.section}>FAVORITED WORDS</Text>
-        {favoriteWords.length === 0 ? (
-          <Text style={styles.emptyFavorites}>Tap ♡ SAVE on any word to keep it here.</Text>
-        ) : (
-          favoriteWords.map((w) => <WordCard key={w.slug} word={w} />)
-        )}
+        <Pressable
+          style={styles.favoritesPill}
+          onPress={() => {
+            selectionHaptic();
+            router.push('/favorites' as Href);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`Favorited words, ${favorites.length} saved. Opens the list.`}
+        >
+          <View style={styles.favoritesPillLeft}>
+            <SystemIcon name="heart.fill" fallback="♥" size={15} color={levelPalettes[3].deep} />
+            <Text style={styles.favoritesPillLabel}>FAVORITED WORDS</Text>
+          </View>
+          <View style={styles.favoritesPillRight}>
+            <Text style={styles.favoritesPillCount}>{favorites.length}</Text>
+            <SystemIcon name="chevron.right" fallback="›" size={13} color={color.inkMuted} />
+          </View>
+        </Pressable>
 
         <WidgetShowcase
-          onOpen={() => {
+          onOpen={(variant) => {
             selectionHaptic();
-            Alert.alert(
-              'Add the daily widget',
-              'Touch and hold the Home or Lock Screen, tap Edit or Customize, then Add Widget and choose Emotionary.',
-            );
+            setWidgetGuide(variant);
           }}
         />
 
@@ -191,7 +201,7 @@ export default function StatsScreen() {
               void Linking.openURL(BOOK_URL);
             }}
             accessibilityRole="link"
-            accessibilityLabel="Get the book"
+            accessibilityLabel="Get the Emotionary book"
           >
             <Image
               source={require('../../../assets/images/book-cover.png')}
@@ -200,12 +210,18 @@ export default function StatsScreen() {
               accessibilityIgnoresInvertColors
             />
             <View style={styles.bookInfo}>
-              <Text style={styles.bookTitle}>The book</Text>
+              <Text style={styles.bookTitle}>The Emotionary Book</Text>
               {BOOK_COPY.length > 0 && <Text style={styles.bookBlurb}>{BOOK_COPY}</Text>}
               <Text style={styles.bookCta}>GET THE BOOK →</Text>
             </View>
         </Pressable>
       </ScrollView>
+
+      <WidgetGuideModal
+        variant={widgetGuide ?? 'home'}
+        visible={widgetGuide !== null}
+        onClose={() => setWidgetGuide(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -267,6 +283,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: space.l,
   },
+  tileValueWrap: { alignItems: 'center', justifyContent: 'center' },
+  tileFlame: { position: 'absolute', top: -10 },
   tileValue: { fontFamily: font.display, fontSize: 34, color: color.ink },
   tileLabel: {
     fontFamily: font.serifMedium,
@@ -283,11 +301,27 @@ const styles = StyleSheet.create({
     marginTop: space.xl,
     marginBottom: space.m,
   },
-  emptyFavorites: {
-    fontFamily: font.serif,
-    fontSize: type.small,
-    color: color.inkFaint,
+  favoritesPill: {
+    minHeight: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.hairline,
+    backgroundColor: color.card,
+    paddingHorizontal: space.m + 4,
+    marginTop: space.l,
   },
+  favoritesPillLeft: { flexDirection: 'row', alignItems: 'center', gap: space.s + 2 },
+  favoritesPillLabel: {
+    fontFamily: font.serifMedium,
+    fontSize: type.badge,
+    letterSpacing: letterSpacing.caps,
+    color: color.ink,
+  },
+  favoritesPillRight: { flexDirection: 'row', alignItems: 'center', gap: space.s },
+  favoritesPillCount: { fontFamily: font.display, fontSize: type.body + 1, color: color.ink },
   widgetWrap: { marginTop: space.xl },
   widgetCards: {
     flexDirection: 'row',

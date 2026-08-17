@@ -7,6 +7,7 @@ import Animated, {
   useReducedMotion,
   useSharedValue,
   withDelay,
+  withRepeat,
   withSequence,
   withSpring,
   withTiming,
@@ -33,6 +34,11 @@ const specks = [
   { x: 0.92, y: 0.9, size: 9, color: levelPalettes[2].deep },
 ] as const;
 
+/** Roughly how long the opening burst takes before the calm drift begins. */
+const BURST_SETTLE_MS = 1400;
+/** Base time for one full screen-height of upward drift; varied per speck. */
+const FLOAT_BASE_MS = 34000;
+
 export function StatsBurst({ burstKey }: { burstKey: number }) {
   const { width, height } = useWindowDimensions();
   const origin = { x: width / 2, y: height * 0.28 };
@@ -43,11 +49,13 @@ export function StatsBurst({ burstKey }: { burstKey: number }) {
         <BurstSpeck
           key={`${speck.x}-${speck.y}`}
           burstKey={burstKey}
+          index={index}
           delay={index * 24}
           finalX={width * speck.x}
           finalY={height * speck.y}
           originX={origin.x}
           originY={origin.y}
+          screenHeight={height}
           size={speck.size}
           color={speck.color}
         />
@@ -58,27 +66,35 @@ export function StatsBurst({ burstKey }: { burstKey: number }) {
 
 function BurstSpeck({
   burstKey,
+  index,
   delay,
   finalX,
   finalY,
   originX,
   originY,
+  screenHeight,
   size,
   color,
 }: {
   burstKey: number;
+  index: number;
   delay: number;
   finalX: number;
   finalY: number;
   originX: number;
   originY: number;
+  screenHeight: number;
   size: number;
   color: string;
 }) {
   const progress = useSharedValue(1);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0.48);
+  const float = useSharedValue(0);
   const reducedMotion = useReducedMotion();
+
+  // Wrap cycle: a speck fully exits the top before re-entering from below.
+  const floatCycle = screenHeight + size * 2;
 
   useEffect(() => {
     cancelAnimation(progress);
@@ -119,14 +135,33 @@ function BurstSpeck({
     );
   }, [burstKey, delay, opacity, progress, reducedMotion, scale]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [
-      { translateX: (originX - finalX) * (1 - progress.value) },
-      { translateY: (originY - finalY) * (1 - progress.value) },
-      { scale: scale.value },
-    ],
-  }));
+  // After the burst settles, the specks never stop: a slow, constant upward
+  // drift, wrapping from the top of the screen back in from the bottom.
+  useEffect(() => {
+    cancelAnimation(float);
+    float.value = 0;
+    if (reducedMotion) return;
+    const duration = FLOAT_BASE_MS + (index % 5) * 5200;
+    float.value = withDelay(
+      BURST_SETTLE_MS + delay,
+      withRepeat(withTiming(floatCycle, { duration, easing: Easing.linear }), -1),
+    );
+    return () => cancelAnimation(float);
+  }, [burstKey, delay, float, floatCycle, index, reducedMotion]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const offset = float.value % floatCycle;
+    let driftedY = finalY - offset;
+    if (driftedY < -size) driftedY += floatCycle;
+    return {
+      opacity: opacity.value,
+      transform: [
+        { translateX: (originX - finalX) * (1 - progress.value) },
+        { translateY: (originY - finalY) * (1 - progress.value) + (driftedY - finalY) },
+        { scale: scale.value },
+      ],
+    };
+  });
 
   return (
     <Animated.View

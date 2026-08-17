@@ -14,5 +14,6 @@ export const syncEnabled = SUPABASE_URL.length > 0 && SUPABASE_PUBLISHABLE_KEY.l
 /** Book / marketing CTA destination. */
 export const BOOK_URL = 'https://emotionarybook.com';
 export const BOOK_URL_LABEL = 'emotionarybook.com';
-export const BOOK_COPY = 'This app is a companion to the original collection.';
+export const BOOK_COPY =
+  'The official companion to The Emotionary, bringing thousands of emotions to your fingertips.';
 export const BOOK_THUMBNAIL_URL = '';
