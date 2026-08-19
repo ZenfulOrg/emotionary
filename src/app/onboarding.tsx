@@ -204,6 +204,7 @@ export default function OnboardingScreen() {
       setAuthMessage(result.email ? `You are signed in as ${result.email}.` : 'You are signed in.');
       setAccountComplete(true);
       successHaptic();
+      setStep((current) => Math.min(current + 1, PAGES.length - 1));
     } catch (error) {
       setAuthMessage(error instanceof Error ? error.message : 'Sign-in failed. Try again.');
     } finally {
@@ -213,7 +214,7 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: pageColors[page] }]}>
-      <AmbientInk />
+      <AmbientInk specks={page === 'first-word'} />
 
       <KeyboardAvoidingView
         style={styles.keyboard}
@@ -316,8 +317,6 @@ function WelcomePage({ reducedMotion }: { reducedMotion: boolean }) {
       <Text style={styles.wordmark} accessibilityRole="header">
         Emotionary
       </Text>
-      <Text style={styles.eyebrow}>A DICTIONARY FOR THE FEELINGS BETWEEN WORDS</Text>
-      <Text style={styles.byline}>By Keila Shaheen</Text>
       <Text style={styles.intro}>
         One word a day. Expand your emotional palette, and recognize life&apos;s most fleeting
         gifts.
@@ -802,15 +801,6 @@ const styles = StyleSheet.create({
     color: color.ink,
     textAlign: 'center',
   },
-  eyebrow: {
-    fontFamily: font.serifMedium,
-    fontSize: 9,
-    letterSpacing: 1.35,
-    color: color.inkMuted,
-    marginTop: space.s,
-    textAlign: 'center',
-  },
-  byline: { fontFamily: font.serifItalic, fontSize: type.caption, color: color.inkMuted, marginTop: 4 },
   intro: {
     fontFamily: font.serif,
     fontSize: type.small,

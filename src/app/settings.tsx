@@ -124,7 +124,7 @@ export default function SettingsScreen() {
             />
           </View>
 
-          <Text style={styles.version}>Version {Constants.expoConfig?.version ?? '1.5.0'}</Text>
+          <Text style={styles.version}>Version {Constants.expoConfig?.version ?? '1.5.1'}</Text>
         </ScrollView>
       </View>
     </SafeAreaView>

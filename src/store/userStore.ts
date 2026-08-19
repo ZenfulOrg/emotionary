@@ -23,6 +23,7 @@ interface UserState {
   notifEnabled: boolean;
   accessLevel: 'free' | 'full';
   hapticsEnabled: boolean;
+  todayActionCoachmarkSeen: boolean;
 
   completeOnboarding: () => void;
   toggleFavorite: (slug: string) => void;
@@ -36,6 +37,7 @@ interface UserState {
   setNotifEnabled: (enabled: boolean) => void;
   unlockFullAccess: () => void;
   setHapticsEnabled: (enabled: boolean) => void;
+  markTodayActionCoachmarkSeen: () => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -52,6 +54,7 @@ export const useUserStore = create<UserState>()(
       notifEnabled: false,
       accessLevel: 'free',
       hapticsEnabled: true,
+      todayActionCoachmarkSeen: false,
 
       completeOnboarding: () => set({ onboarded: true }),
 
@@ -94,6 +97,7 @@ export const useUserStore = create<UserState>()(
       setNotifEnabled: (notifEnabled) => set({ notifEnabled }),
       unlockFullAccess: () => set({ accessLevel: 'full' }),
       setHapticsEnabled: (hapticsEnabled) => set({ hapticsEnabled }),
+      markTodayActionCoachmarkSeen: () => set({ todayActionCoachmarkSeen: true }),
     }),
     {
       name: 'emotionary.user.v1',

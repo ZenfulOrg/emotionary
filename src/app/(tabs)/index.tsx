@@ -1,19 +1,25 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
+  Linking,
   StyleSheet,
   Text,
   View,
   type LayoutChangeEvent,
   type ViewToken,
 } from 'react-native';
+import { NotificationPermissionPrompt } from '@/components/NotificationPermissionPrompt';
+import { TodayCoachmark } from '@/components/TodayCoachmark';
 import { WordFull } from '@/components/WordFull';
 import { StreakPopup } from '@/components/StreakPopup';
 import type { Word } from '@/content/types';
 import { useContentStore } from '@/content/store';
 import { localDateString } from '@/daily/engine';
 import { dailyFeed } from '@/daily/feed';
+import { shouldShowTodayActionCoachmark } from '@/daily/tutorial';
+import { mediumImpactHaptic, successHaptic } from '@/feedback/haptics';
+import { getPermissionGranted, requestPermission } from '@/notifications/scheduler';
 import { useUserStore } from '@/store/userStore';
 import { color, font, levelPalettes, type } from '@/theme/tokens';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,6 +31,7 @@ const VIEWABILITY_CONFIG = {
 
 /** The streak popup shows once per app launch, on the first open of Today. */
 let streakPopupShownThisSession = false;
+let notificationPromptHandledThisSession = false;
 
 export default function TodayScreen() {
   const words = useContentStore((s) => s.words);
@@ -32,20 +39,90 @@ export default function TodayScreen() {
   const markRead = useUserStore((s) => s.markRead);
   const streak = useUserStore((s) => s.streakState.streak);
   const streakBrokeDate = useUserStore((s) => s.streakBrokeDate);
-  const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
+  const todayActionCoachmarkSeen = useUserStore((s) => s.todayActionCoachmarkSeen);
+  const markTodayActionCoachmarkSeen = useUserStore((s) => s.markTodayActionCoachmarkSeen);
+  const setNotifEnabled = useUserStore((s) => s.setNotifEnabled);
   const [feedHeight, setFeedHeight] = useState(0);
   const [visibleLevel, setVisibleLevel] = useState<Word['level']>(1);
   const [streakVisible, setStreakVisible] = useState(() => !streakPopupShownThisSession);
+  const [coachmarkVisible, setCoachmarkVisible] = useState(false);
+  const [notificationPromptVisible, setNotificationPromptVisible] = useState(false);
+  const [notificationBusy, setNotificationBusy] = useState(false);
+  const coachmarkSeenRef = useRef(todayActionCoachmarkSeen);
+  const coachmarkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dismissStreak = useCallback(() => {
     streakPopupShownThisSession = true;
     setStreakVisible(false);
   }, []);
 
   const today = localDateString();
-  const feed = useMemo(() => {
-    const all = dailyFeed(words, today);
-    return hasFullAccess ? all : all.slice(0, 1);
-  }, [words, today, hasFullAccess]);
+  const feed = useMemo(() => dailyFeed(words, today), [words, today]);
+
+  useEffect(() => {
+    coachmarkSeenRef.current = todayActionCoachmarkSeen;
+  }, [todayActionCoachmarkSeen]);
+
+  useEffect(
+    () => () => {
+      if (coachmarkTimer.current) clearTimeout(coachmarkTimer.current);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (streakVisible || notificationPromptHandledThisSession) return;
+    notificationPromptHandledThisSession = true;
+    let cancelled = false;
+
+    void getPermissionGranted()
+      .then((granted) => {
+        if (cancelled) return;
+        setNotifEnabled(granted);
+        setNotificationPromptVisible(!granted);
+      })
+      .catch(() => {
+        if (!cancelled) setNotificationPromptVisible(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setNotifEnabled, streakVisible]);
+
+  const dismissCoachmark = useCallback(() => {
+    if (coachmarkTimer.current) clearTimeout(coachmarkTimer.current);
+    coachmarkTimer.current = null;
+    setCoachmarkVisible(false);
+  }, []);
+
+  const showCoachmark = useCallback(() => {
+    if (coachmarkSeenRef.current) return;
+    coachmarkSeenRef.current = true;
+    markTodayActionCoachmarkSeen();
+    mediumImpactHaptic();
+    setCoachmarkVisible(true);
+    coachmarkTimer.current = setTimeout(dismissCoachmark, 7000);
+  }, [dismissCoachmark, markTodayActionCoachmarkSeen]);
+
+  const dismissNotificationPrompt = useCallback(() => {
+    setNotificationPromptVisible(false);
+  }, []);
+
+  const enableNotifications = useCallback(async () => {
+    setNotificationBusy(true);
+    try {
+      const granted = await requestPermission();
+      setNotifEnabled(granted);
+      if (granted) {
+        successHaptic();
+      } else {
+        await Linking.openSettings().catch(() => {});
+      }
+      setNotificationPromptVisible(false);
+    } finally {
+      setNotificationBusy(false);
+    }
+  }, [setNotifEnabled]);
 
   const onLayout = useCallback((event: LayoutChangeEvent) => {
     const nextHeight = Math.round(event.nativeEvent.layout.height);
@@ -54,13 +131,16 @@ export default function TodayScreen() {
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken<Word>[] }) => {
-      const visibleWord = viewableItems.find((token) => token.isViewable)?.item;
-      if (visibleWord) {
-        markRead(visibleWord.slug);
-        setVisibleLevel(visibleWord.level);
+      const visibleToken = viewableItems.find((token) => token.isViewable);
+      if (visibleToken?.item) {
+        markRead(visibleToken.item.slug);
+        setVisibleLevel(visibleToken.item.level);
+        if (shouldShowTodayActionCoachmark(visibleToken.index, coachmarkSeenRef.current)) {
+          showCoachmark();
+        }
       }
     },
-    [markRead],
+    [markRead, showCoachmark],
   );
 
   useFocusEffect(
@@ -90,6 +170,14 @@ export default function TodayScreen() {
           onDismiss={dismissStreak}
         />
       )}
+      {notificationPromptVisible && (
+        <NotificationPermissionPrompt
+          busy={notificationBusy}
+          onEnable={() => void enableNotifications()}
+          onDismiss={dismissNotificationPrompt}
+        />
+      )}
+      {coachmarkVisible && <TodayCoachmark onDismiss={dismissCoachmark} />}
       <View style={styles.container} onLayout={onLayout}>
         <FlatList
           data={feed}
