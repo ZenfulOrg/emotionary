@@ -1,10 +1,9 @@
 import { router } from 'expo-router';
-import { Image } from 'expo-image';
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,7 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import Animated, { FadeIn, ZoomIn, useReducedMotion } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, ZoomIn, useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createAccount, signIn, signInWithApple, signInWithGoogle } from '@/auth/client';
@@ -28,15 +27,14 @@ import { requestPermission } from '@/notifications/scheduler';
 import type { NotifTime } from '@/store/userStore';
 import { useUserStore } from '@/store/userStore';
 import { color, font, letterSpacing, levelPalettes, space, type } from '@/theme/tokens';
-import { BOOK_URL } from '@/config';
 
 const PAGES = [
   'welcome',
   'daily',
-  'key',
-  'drawn',
   'reminder',
   'widget',
+  'key',
+  'drawn',
   'account',
   'first-word',
   'paywall',
@@ -159,6 +157,7 @@ export default function OnboardingScreen() {
   };
 
   const submitAccount = async () => {
+    Keyboard.dismiss();
     if (!email.trim().includes('@')) {
       setAuthMessage('Enter a valid email address.');
       return;
@@ -192,12 +191,16 @@ export default function OnboardingScreen() {
   };
 
   const submitSocial = async (provider: 'apple' | 'google') => {
+    Keyboard.dismiss();
     lightImpactHaptic();
     setAuthBusy(true);
     setAuthMessage('');
     try {
       const result = provider === 'apple' ? await signInWithApple() : await signInWithGoogle();
-      if (!result) return; // cancelled — nothing to report
+      if (!result) {
+        setAuthMessage(`${provider === 'apple' ? 'Apple' : 'Google'} sign-in was cancelled.`);
+        return;
+      }
       setAuthMessage(result.email ? `You are signed in as ${result.email}.` : 'You are signed in.');
       setAccountComplete(true);
       successHaptic();
@@ -252,7 +255,7 @@ export default function OnboardingScreen() {
                 onGoogle={() => void submitSocial('google')}
               />
             )}
-            {page === 'first-word' && <FirstWordPage />}
+            {page === 'first-word' && <FirstWordPage reducedMotion={reducedMotion} />}
             {page === 'paywall' && (
               <Paywall onContinue={finish} onContinueFree={finish} />
             )}
@@ -285,7 +288,6 @@ export default function OnboardingScreen() {
                       onPress={accountComplete ? goNext : () => void submitAccount()}
                       busy={authBusy}
                     />
-                    {!accountComplete && <SecondaryButton label="NOT NOW" onPress={goNext} />}
                   </>
                 ) : (
                   <PrimaryButton label={step === 0 ? 'CONTINUE' : 'NEXT'} onPress={goNext} />
@@ -306,11 +308,6 @@ export default function OnboardingScreen() {
 }
 
 function WelcomePage({ reducedMotion }: { reducedMotion: boolean }) {
-  const openBook = () => {
-    lightImpactHaptic();
-    void Linking.openURL(BOOK_URL);
-  };
-
   return (
     <View style={styles.center}>
       <Animated.View entering={reducedMotion ? undefined : ZoomIn.springify().damping(14)}>
@@ -319,33 +316,12 @@ function WelcomePage({ reducedMotion }: { reducedMotion: boolean }) {
       <Text style={styles.wordmark} accessibilityRole="header">
         Emotionary
       </Text>
-      <Text style={styles.eyebrow}>A COMPANION APP TO THE EMOTIONARY BOOK</Text>
+      <Text style={styles.eyebrow}>A DICTIONARY FOR THE FEELINGS BETWEEN WORDS</Text>
       <Text style={styles.byline}>By Keila Shaheen</Text>
       <Text style={styles.intro}>
         One word a day. Expand your emotional palette, and recognize life&apos;s most fleeting
         gifts.
       </Text>
-      <Pressable
-        onPress={openBook}
-        accessibilityRole="link"
-        accessibilityLabel="Get the Emotionary book"
-        style={styles.bookWrap}
-      >
-        <Image
-          source={require('../../assets/images/book-cover.png')}
-          style={styles.bookMini}
-          contentFit="contain"
-        />
-      </Pressable>
-      <Pressable
-        onPress={openBook}
-        style={({ pressed }) => [styles.bookButton, pressed && styles.pressed]}
-        accessibilityRole="link"
-        accessibilityLabel="Get the Emotionary book"
-      >
-        <Text style={styles.bookButtonText}>GET THE BOOK</Text>
-        <SystemIcon name="arrow.right" fallback="→" size={14} color={color.paper} />
-      </Pressable>
     </View>
   );
 }
@@ -684,14 +660,22 @@ function AccountPage({
   );
 }
 
-function FirstWordPage() {
+function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
   const isSaved = useUserStore((state) => state.favorites.includes('anhedonia'));
   const toggleFavorite = useUserStore((state) => state.toggleFavorite);
 
   return (
     <View style={styles.center}>
-      <Text style={styles.kicker}>YOUR FIRST WORD</Text>
-      <View style={styles.firstWord}>
+      <Animated.Text
+        entering={reducedMotion ? undefined : FadeInDown.duration(240)}
+        style={styles.kicker}
+      >
+        YOUR FIRST WORD
+      </Animated.Text>
+      <Animated.View
+        entering={reducedMotion ? undefined : ZoomIn.delay(80).duration(260)}
+        style={styles.firstWord}
+      >
         <View style={styles.firstType}>
           <WordTypeIcon wordType="psychology" size={15} color={color.inkMuted} />
           <Text style={styles.firstTypeText}>PSYCHOLOGY</Text>
@@ -733,7 +717,7 @@ function FirstWordPage() {
             <Text style={styles.previewActionLabel}>SHARE</Text>
           </Pressable>
         </View>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -835,28 +819,6 @@ const styles = StyleSheet.create({
     marginTop: space.l,
     textAlign: 'center',
     maxWidth: 290,
-  },
-  bookMini: {
-    width: 136,
-    height: 198,
-  },
-  bookWrap: { alignItems: 'center', marginTop: space.l },
-  bookButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: space.s,
-    minHeight: 46,
-    borderRadius: 999,
-    backgroundColor: color.ink,
-    paddingHorizontal: space.l,
-    marginTop: space.m,
-  },
-  bookButtonText: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.caps,
-    color: color.paper,
   },
   notificationCard: {
     width: '100%',

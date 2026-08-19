@@ -1,6 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { BOOK_URL_LABEL } from '@/config';
 import type { Word } from '@/content/types';
 import { font, letterSpacing, levelPalettes } from '@/theme/tokens';
 
@@ -101,7 +100,7 @@ export function ShareCard({ word, width }: { word: Word; width: number }) {
             marginTop: 18 * s,
           }}
         >
-          Get the app + book{`\n`}→ {BOOK_URL_LABEL}
+          One word. Every day.
         </Text>
       </View>
     </View>

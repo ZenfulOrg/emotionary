@@ -61,6 +61,9 @@ export function WordFull({
         <Text
           style={styles.word}
           maxFontSizeMultiplier={1.4}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.48}
           accessibilityRole="header"
           accessibilityLabel={`${word.word}. ${word.language}. Level ${word.level}.`}
           accessibilityHint="Long press to copy the word"
@@ -86,9 +89,6 @@ export function WordFull({
       <View style={[styles.bottom, feedPage && styles.feedBottom]}>
         <View style={styles.rule} />
         <Text style={styles.wisdom}>{word.wisdom}</Text>
-        <Text style={styles.fromBook}>
-          from <Text style={styles.fromBookItalic}>Emotionary</Text>, the book
-        </Text>
         <View style={styles.actions}>
           <Pressable
             onPress={() => {
@@ -225,13 +225,6 @@ const styles = StyleSheet.create({
     marginTop: space.l,
     paddingHorizontal: space.m,
   },
-  fromBook: {
-    fontFamily: font.serif,
-    fontSize: type.caption,
-    color: color.inkFaint,
-    marginTop: space.s,
-  },
-  fromBookItalic: { fontFamily: font.serifItalic },
   actions: {
     flexDirection: 'row',
     gap: space.xxl,

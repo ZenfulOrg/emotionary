@@ -99,13 +99,14 @@ export async function signIn(email: string, password: string) {
 /**
  * Native Sign in with Apple → Supabase id_token grant.
  * Resolves null when the person cancels the Apple sheet.
- * expo-apple-authentication is imported lazily — a static import registers a
+ * expo-apple-authentication is loaded lazily — a static import registers a
  * native view at module scope and breaks web/server rendering.
  */
 export async function signInWithApple(): Promise<{ email: string | null } | null> {
   assertSyncEnabled();
 
-  const AppleAuthentication = await import('expo-apple-authentication');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const AppleAuthentication = require('expo-apple-authentication') as typeof import('expo-apple-authentication');
   let credential: Awaited<ReturnType<typeof AppleAuthentication.signInAsync>>;
   try {
     credential = await AppleAuthentication.signInAsync({

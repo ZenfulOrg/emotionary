@@ -44,7 +44,7 @@ export function Paywall({
           title="Yearly"
           price="$4.99"
           cadence="per year"
-          note="Less than your cup of coffee"
+          note="Less than your cup of coffee ☕️"
         />
         <PlanOption
           selected={plan === 'lifetime'}
@@ -109,10 +109,10 @@ function PlanOption({
         <View style={styles.optionTitleRow}>
           <Text style={styles.optionTitle}>{title}</Text>
           {badge && <Text style={styles.badge}>{badge}</Text>}
+          {note && <Text style={styles.note}>{note}</Text>}
         </View>
         <Text style={styles.price}>{price}</Text>
         <Text style={styles.cadence}>{cadence}</Text>
-        {note && <Text style={styles.note}>{note}</Text>}
       </View>
       {selected && (
         <SystemIcon name="checkmark" fallback="✓" size={18} color={color.ink} />
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   radioSelected: { borderColor: color.ink },
   radioInner: { width: 11, height: 11, borderRadius: 6, backgroundColor: color.ink },
   optionCopy: { flex: 1 },
-  optionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: space.s },
+  optionTitleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space.s },
   optionTitle: { fontFamily: font.serifSemiBold, fontSize: type.body, color: color.ink },
   badge: {
     fontFamily: font.serifMedium,
@@ -182,9 +182,8 @@ const styles = StyleSheet.create({
   cadence: { fontFamily: font.serif, fontSize: type.caption, color: color.inkMuted },
   note: {
     fontFamily: font.serifItalic,
-    fontSize: type.caption,
+    fontSize: 9,
     color: '#2F6B45',
-    marginTop: 3,
   },
   continueButton: {
     width: '100%',

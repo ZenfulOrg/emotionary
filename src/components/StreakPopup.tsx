@@ -72,7 +72,7 @@ export function StreakPopup({
             <StopMotionFlame size={14} />
           )}
           <Text style={styles.streakText}>
-            {wilted ? 'Your streak wilted — a new one starts today.' : `${streak}-day streak`}
+            {wilted ? 'Your streak wilted. A new one starts today.' : `${streak} day streak`}
           </Text>
         </View>
       </Pressable>
@@ -83,7 +83,7 @@ export function StreakPopup({
 const styles = StyleSheet.create({
   layer: {
     position: 'absolute',
-    top: space.s,
+    top: space.l,
     left: 0,
     right: 0,
     zIndex: 20,

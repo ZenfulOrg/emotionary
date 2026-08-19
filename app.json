@@ -2,16 +2,20 @@
   "expo": {
     "name": "Emotionary",
     "slug": "emotionary",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "emotionary",
     "userInterfaceStyle": "light",
     "ios": {
-      "bundleIdentifier": "com.emotionary.app",
-      "buildNumber": "2026081701",
+      "appleTeamId": "GRM466YG9B",
+      "bundleIdentifier": "com.nowdrops.emotionary",
+      "buildNumber": "2026081901",
       "supportsTablet": false,
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.emotionary.app",
@@ -62,8 +66,8 @@
       [
         "expo-widgets",
         {
-          "bundleIdentifier": "com.emotionary.app.widgets",
-          "groupIdentifier": "group.com.emotionary.app",
+          "bundleIdentifier": "com.nowdrops.emotionary.widgets",
+          "groupIdentifier": "group.com.nowdrops.emotionary",
           "widgets": [
             {
               "name": "DailyWord",

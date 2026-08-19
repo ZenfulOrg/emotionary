@@ -1,9 +1,7 @@
 import { router, useFocusEffect, type Href } from 'expo-router';
-import { Image } from 'expo-image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   DeviceEventEmitter,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,8 +15,7 @@ import { StatsBurst } from '@/components/stats-burst';
 import { StopMotionFlame } from '@/components/stop-motion-flame';
 import { SystemIcon } from '@/components/system-icon';
 import { WidgetGuideModal, type WidgetGuideVariant } from '@/components/WidgetGuideModal';
-import { BOOK_COPY, BOOK_URL } from '@/config';
-import { lightImpactHaptic, mediumImpactHaptic, selectionHaptic } from '@/feedback/haptics';
+import { mediumImpactHaptic, selectionHaptic } from '@/feedback/haptics';
 import { STATS_OPEN_EVENT } from '@/stats/events';
 import { useUserStore } from '@/store/userStore';
 import { color, font, letterSpacing, levelPalettes, space, type } from '@/theme/tokens';
@@ -194,27 +191,6 @@ export default function StatsScreen() {
           }}
         />
 
-        <Pressable
-            style={styles.bookCard}
-            onPress={() => {
-              lightImpactHaptic();
-              void Linking.openURL(BOOK_URL);
-            }}
-            accessibilityRole="link"
-            accessibilityLabel="Get the Emotionary book"
-          >
-            <Image
-              source={require('../../../assets/images/book-cover.png')}
-              style={styles.bookCover}
-              contentFit="contain"
-              accessibilityIgnoresInvertColors
-            />
-            <View style={styles.bookInfo}>
-              <Text style={styles.bookTitle}>The Emotionary Book</Text>
-              {BOOK_COPY.length > 0 && <Text style={styles.bookBlurb}>{BOOK_COPY}</Text>}
-              <Text style={styles.bookCta}>GET THE BOOK →</Text>
-            </View>
-        </Pressable>
       </ScrollView>
 
       <WidgetGuideModal
@@ -418,37 +394,4 @@ const styles = StyleSheet.create({
   },
   widgetSettingsLabel: { fontFamily: font.serif, fontSize: type.small, color: color.ink },
   widgetSettingsValue: { fontFamily: font.serif, fontSize: type.small, color: color.inkMuted },
-  bookCard: {
-    flexDirection: 'row',
-    gap: space.m,
-    backgroundColor: color.card,
-    borderColor: color.hairline,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 12,
-    padding: space.m,
-    marginTop: space.xl,
-    alignItems: 'center',
-  },
-  bookCover: {
-    width: 64,
-    height: 88,
-    borderRadius: 4,
-    backgroundColor: color.hairline,
-  },
-  bookInfo: { flex: 1 },
-  bookTitle: { fontFamily: font.serifSemiBold, fontSize: type.body, color: color.ink },
-  bookBlurb: {
-    fontFamily: font.serif,
-    fontSize: type.small - 1,
-    color: color.inkMuted,
-    marginTop: 2,
-  },
-  bookCta: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.caps,
-    color: color.ink,
-    marginTop: space.s,
-    textDecorationLine: 'underline',
-  },
 });
