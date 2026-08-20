@@ -29,7 +29,9 @@ create trigger words_updated_at before update on public.words
 -- Set published_at the first time a row is published. NOTE: the initial seed
 -- import explicitly BACKDATES published_at (DESIGN.md §6.1) — the monthly
 -- rotation only draws from words published before the current month.
-create or replace function public.set_published_at() returns trigger as $$
+create or replace function public.set_published_at() returns trigger
+set search_path = ''
+as $$
 begin
   if new.published and new.published_at is null then
     new.published_at := now();

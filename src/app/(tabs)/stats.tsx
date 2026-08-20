@@ -1,9 +1,7 @@
-import { router, useFocusEffect } from 'expo-router';
-import { Image } from 'expo-image';
+import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   DeviceEventEmitter,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,18 +12,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AmbientInk } from '@/components/AmbientInk';
 import { StatsBurst } from '@/components/stats-burst';
-import { WordCard } from '@/components/WordCard';
-import { BOOK_COPY, BOOK_THUMBNAIL_URL, BOOK_URL } from '@/config';
-import { findWord, useContentStore } from '@/content/store';
-import { lightImpactHaptic, selectionHaptic } from '@/feedback/haptics';
+import { StopMotionFlame } from '@/components/stop-motion-flame';
+import { SystemIcon } from '@/components/system-icon';
+import { WidgetGuideModal, type WidgetGuideVariant } from '@/components/WidgetGuideModal';
+import { mediumImpactHaptic, selectionHaptic } from '@/feedback/haptics';
 import { STATS_OPEN_EVENT } from '@/stats/events';
 import { useUserStore } from '@/store/userStore';
 import { color, font, letterSpacing, levelPalettes, space, type } from '@/theme/tokens';
 
-function StatTile({ value, label }: { value: number; label: string }) {
+function StatTile({ value, label, flame = false }: { value: number; label: string; flame?: boolean }) {
   return (
     <View style={styles.tile} accessibilityLabel={`${value} ${label.toLowerCase()}`}>
-      <Text style={styles.tileValue}>{value}</Text>
+      <View style={styles.tileValueWrap}>
+        {flame && value > 0 && (
+          <StopMotionFlame size={46} opacity={0.32} style={styles.tileFlame} />
+        )}
+        <Text style={styles.tileValue}>{value}</Text>
+      </View>
       <Text style={styles.tileLabel}>{label}</Text>
     </View>
   );
@@ -47,12 +50,12 @@ function SettingsMark() {
   );
 }
 
-function WidgetShowcase() {
+function WidgetShowcase({ onOpen }: { onOpen: (variant: WidgetGuideVariant) => void }) {
   return (
     <View style={styles.widgetWrap}>
       <Text style={styles.section}>WIDGETS</Text>
       <View style={styles.widgetCards}>
-        <View style={styles.widgetCard}>
+        <Pressable style={styles.widgetCard} onPress={() => onOpen('home')} accessibilityRole="button">
           <View style={styles.homeWidgetPreview}>
             <Text style={styles.widgetWord}>Apricity</Text>
             <Text style={styles.widgetDefinition} numberOfLines={4}>
@@ -61,8 +64,8 @@ function WidgetShowcase() {
           </View>
           <Text style={styles.widgetTitle}>Home Screen</Text>
           <Text style={styles.widgetLink}>CONFIGURE</Text>
-        </View>
-        <View style={styles.widgetCard}>
+        </Pressable>
+        <Pressable style={styles.widgetCard} onPress={() => onOpen('lock')} accessibilityRole="button">
           <View style={styles.lockWidgetPreview}>
             <Text style={styles.lockTime}>11:19</Text>
             <Text style={styles.lockWidgetWord}>Apricity</Text>
@@ -70,7 +73,7 @@ function WidgetShowcase() {
           </View>
           <Text style={styles.widgetTitle}>Lock Screen</Text>
           <Text style={styles.widgetLink}>LEARN HOW</Text>
-        </View>
+        </Pressable>
       </View>
       <View style={styles.widgetSettings}>
         <Text style={styles.widgetSettingsTitle}>Widget Settings</Text>
@@ -92,17 +95,7 @@ function SettingsRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function BookCoverPlaceholder() {
-  return (
-    <View style={styles.bookCoverPlaceholder}>
-      <Text style={styles.bookCoverTitle}>Emotionary</Text>
-      <Text style={styles.bookCoverAuthor}>THE BOOK</Text>
-    </View>
-  );
-}
-
 export default function StatsScreen() {
-  const words = useContentStore((s) => s.words);
   const streak = useUserStore((s) => s.streakState.streak);
   const readCount = useUserStore((s) => s.readSlugs.length);
   const favorites = useUserStore((s) => s.favorites);
@@ -110,10 +103,7 @@ export default function StatsScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const lastOpenAt = useRef(0);
   const [burstKey, setBurstKey] = useState(0);
-
-  const favoriteWords = favorites
-    .map((slug) => findWord(words, slug))
-    .filter((w): w is NonNullable<typeof w> => Boolean(w));
+  const [widgetGuide, setWidgetGuide] = useState<WidgetGuideVariant | null>(null);
 
   const allZero = streak === 0 && readCount === 0 && favorites.length === 0 && sharedCount === 0;
   const openStats = useCallback(() => {
@@ -121,6 +111,7 @@ export default function StatsScreen() {
     if (now - lastOpenAt.current < 120) return;
     lastOpenAt.current = now;
     scrollRef.current?.scrollTo({ y: 0, animated: false });
+    mediumImpactHaptic();
     setBurstKey((current) => current + 1);
   }, []);
 
@@ -168,47 +159,45 @@ export default function StatsScreen() {
         )}
 
         <View style={styles.grid}>
-          <StatTile value={streak} label="DAY STREAK" />
+          <StatTile value={streak} label="DAY STREAK" flame />
           <StatTile value={readCount} label="WORDS READ" />
           <StatTile value={favorites.length} label="FAVORITED" />
           <StatTile value={sharedCount} label="SHARED" />
         </View>
 
-        <Text style={styles.section}>FAVORITED WORDS</Text>
-        {favoriteWords.length === 0 ? (
-          <Text style={styles.emptyFavorites}>Tap ♡ SAVE on any word to keep it here.</Text>
-        ) : (
-          favoriteWords.map((w) => <WordCard key={w.slug} word={w} />)
-        )}
-
-        <WidgetShowcase />
-
         <Pressable
-            style={styles.bookCard}
-            onPress={() => {
-              lightImpactHaptic();
-              void Linking.openURL(BOOK_URL);
-            }}
-            accessibilityRole="link"
-            accessibilityLabel="Get the book"
-          >
-            {BOOK_THUMBNAIL_URL.length > 0 ? (
-              <Image
-                source={{ uri: BOOK_THUMBNAIL_URL }}
-                style={styles.bookCover}
-                contentFit="cover"
-                accessibilityIgnoresInvertColors
-              />
-            ) : (
-              <BookCoverPlaceholder />
-            )}
-            <View style={styles.bookInfo}>
-              <Text style={styles.bookTitle}>The book</Text>
-              {BOOK_COPY.length > 0 && <Text style={styles.bookBlurb}>{BOOK_COPY}</Text>}
-              <Text style={styles.bookCta}>GET THE BOOK →</Text>
-            </View>
+          style={styles.favoritesPill}
+          onPress={() => {
+            selectionHaptic();
+            router.push('/favorites' as Href);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`Favorited words, ${favorites.length} saved. Opens the list.`}
+        >
+          <View style={styles.favoritesPillLeft}>
+            <SystemIcon name="heart.fill" fallback="♥" size={15} color={levelPalettes[3].deep} />
+            <Text style={styles.favoritesPillLabel}>FAVORITED WORDS</Text>
+          </View>
+          <View style={styles.favoritesPillRight}>
+            <Text style={styles.favoritesPillCount}>{favorites.length}</Text>
+            <SystemIcon name="chevron.right" fallback="›" size={13} color={color.inkMuted} />
+          </View>
         </Pressable>
+
+        <WidgetShowcase
+          onOpen={(variant) => {
+            selectionHaptic();
+            setWidgetGuide(variant);
+          }}
+        />
+
       </ScrollView>
+
+      <WidgetGuideModal
+        variant={widgetGuide ?? 'home'}
+        visible={widgetGuide !== null}
+        onClose={() => setWidgetGuide(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -270,6 +259,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: space.l,
   },
+  tileValueWrap: { alignItems: 'center', justifyContent: 'center' },
+  tileFlame: { position: 'absolute', top: -10 },
   tileValue: { fontFamily: font.display, fontSize: 34, color: color.ink },
   tileLabel: {
     fontFamily: font.serifMedium,
@@ -286,11 +277,27 @@ const styles = StyleSheet.create({
     marginTop: space.xl,
     marginBottom: space.m,
   },
-  emptyFavorites: {
-    fontFamily: font.serif,
-    fontSize: type.small,
-    color: color.inkFaint,
+  favoritesPill: {
+    minHeight: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.hairline,
+    backgroundColor: color.card,
+    paddingHorizontal: space.m + 4,
+    marginTop: space.l,
   },
+  favoritesPillLeft: { flexDirection: 'row', alignItems: 'center', gap: space.s + 2 },
+  favoritesPillLabel: {
+    fontFamily: font.serifMedium,
+    fontSize: type.badge,
+    letterSpacing: letterSpacing.caps,
+    color: color.ink,
+  },
+  favoritesPillRight: { flexDirection: 'row', alignItems: 'center', gap: space.s },
+  favoritesPillCount: { fontFamily: font.display, fontSize: type.body + 1, color: color.ink },
   widgetWrap: { marginTop: space.xl },
   widgetCards: {
     flexDirection: 'row',
@@ -387,61 +394,4 @@ const styles = StyleSheet.create({
   },
   widgetSettingsLabel: { fontFamily: font.serif, fontSize: type.small, color: color.ink },
   widgetSettingsValue: { fontFamily: font.serif, fontSize: type.small, color: color.inkMuted },
-  bookCard: {
-    flexDirection: 'row',
-    gap: space.m,
-    backgroundColor: color.card,
-    borderColor: color.hairline,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 12,
-    padding: space.m,
-    marginTop: space.xl,
-    alignItems: 'center',
-  },
-  bookCover: {
-    width: 64,
-    height: 88,
-    borderRadius: 4,
-    backgroundColor: color.hairline,
-  },
-  bookCoverPlaceholder: {
-    width: 64,
-    height: 88,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: color.ink,
-    backgroundColor: color.card,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: space.s,
-  },
-  bookCoverTitle: {
-    fontFamily: font.display,
-    fontSize: type.caption,
-    color: color.ink,
-    marginTop: space.s,
-  },
-  bookCoverAuthor: {
-    fontFamily: font.serifMedium,
-    fontSize: 7,
-    letterSpacing: 0.6,
-    color: color.inkMuted,
-    marginBottom: space.s,
-  },
-  bookInfo: { flex: 1 },
-  bookTitle: { fontFamily: font.serifSemiBold, fontSize: type.body, color: color.ink },
-  bookBlurb: {
-    fontFamily: font.serif,
-    fontSize: type.small - 1,
-    color: color.inkMuted,
-    marginTop: 2,
-  },
-  bookCta: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.caps,
-    color: color.ink,
-    marginTop: space.s,
-    textDecorationLine: 'underline',
-  },
 });

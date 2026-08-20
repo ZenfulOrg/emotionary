@@ -1,86 +1,170 @@
 import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { SystemIcon } from '@/components/system-icon';
 import { TypeBadge } from '@/components/TypeBadge';
 import type { Word } from '@/content/types';
-import { lightImpactHaptic, selectionHaptic } from '@/feedback/haptics';
+import { lightImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
 import { useUserStore } from '@/store/userStore';
 import { color, font, letterSpacing, levelPalettes, space, type } from '@/theme/tokens';
+
+const COPY_TOAST_MS = 1500;
 
 /**
  * The full word layout shared by Today and Word Detail (DESIGN.md §5.1/§5.3):
  * type badge → display-serif word → [pronunciation] → origin → definition,
  * with the wisdom line + SAVE/SHARE anchored at the bottom.
+ * Long-pressing the word or the definition copies it to the clipboard.
  */
-export function WordFull({ word, feedPage = false }: { word: Word; feedPage?: boolean }) {
+export function WordFull({
+  word,
+  feedPage = false,
+  insideSafeArea = false,
+}: {
+  word: Word;
+  feedPage?: boolean;
+  insideSafeArea?: boolean;
+}) {
   const isFavorite = useUserStore((s) => s.favorites.includes(word.slug));
   const toggleFavorite = useUserStore((s) => s.toggleFavorite);
   const palette = levelPalettes[word.level];
+  const insets = useSafeAreaInsets();
+  const [copied, setCopied] = useState<'word' | 'definition' | null>(null);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+    },
+    [],
+  );
+
+  const copyToClipboard = (what: 'word' | 'definition') => {
+    // Lazy import — expo-clipboard registers a native paste-button view at
+    // module scope, which breaks web/server rendering if imported statically.
+    void import('expo-clipboard').then((Clipboard) =>
+      Clipboard.setStringAsync(what === 'word' ? word.word : word.definition),
+    );
+    successHaptic();
+    setCopied(what);
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setCopied(null), COPY_TOAST_MS);
+  };
+
+  const content = (
+    <>
+      <View style={styles.top}>
+        <TypeBadge wordType={word.type} />
+        <Text
+          style={styles.word}
+          maxFontSizeMultiplier={1.4}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.48}
+          accessibilityRole="header"
+          accessibilityLabel={`${word.word}. ${word.language}. Level ${word.level}.`}
+          accessibilityHint="Long press to copy the word"
+          onLongPress={() => copyToClipboard('word')}
+          suppressHighlighting
+        >
+          {word.word}
+        </Text>
+        <Text style={styles.pronunciation} maxFontSizeMultiplier={1.6}>
+          [{word.pronunciation}]
+        </Text>
+        <Text style={styles.origin}>{word.language.toUpperCase()}</Text>
+        <Text
+          style={styles.definition}
+          accessibilityHint="Long press to copy the definition"
+          onLongPress={() => copyToClipboard('definition')}
+          suppressHighlighting
+        >
+          {word.definition}
+        </Text>
+      </View>
+
+      <View style={[styles.bottom, feedPage && styles.feedBottom]}>
+        <View style={styles.rule} />
+        <Text style={styles.wisdom}>{word.wisdom}</Text>
+        <View style={styles.actions}>
+          <Pressable
+            onPress={() => {
+              lightImpactHaptic();
+              toggleFavorite(word.slug);
+            }}
+            style={styles.action}
+            accessibilityRole="button"
+            accessibilityLabel={isFavorite ? 'Remove from saved words' : 'Save this word'}
+            hitSlop={8}
+          >
+            <SystemIcon
+              name={isFavorite ? 'heart.fill' : 'heart'}
+              fallback={isFavorite ? '♥' : '♡'}
+              size={21}
+              color={isFavorite ? palette.deep : color.ink}
+            />
+            <Text style={styles.actionLabel}>{isFavorite ? 'SAVED' : 'SAVE'}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              selectionHaptic();
+              router.push(`/share/${word.slug}`);
+            }}
+            style={styles.action}
+            accessibilityRole="button"
+            accessibilityLabel="Share this word as an image card"
+            hitSlop={8}
+          >
+            <SystemIcon
+              name="square.and.arrow.up"
+              fallback="↑"
+              size={21}
+              color={color.ink}
+            />
+            <Text style={styles.actionLabel}>SHARE</Text>
+          </Pressable>
+        </View>
+      </View>
+    </>
+  );
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.tint }]}>
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[styles.scroll, feedPage && styles.feedScroll]}
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={!feedPage}
-        bounces={!feedPage}
-      >
-        <View style={styles.top}>
-          <TypeBadge wordType={word.type} />
-          <Text
-            style={styles.word}
-            maxFontSizeMultiplier={1.4}
-            accessibilityRole="header"
-            accessibilityLabel={`${word.word}. ${word.language}. Level ${word.level}.`}
-          >
-            {word.word}
+      {copied && (
+        <Animated.View
+          entering={FadeIn.duration(140)}
+          exiting={FadeOut.duration(260)}
+          style={styles.copiedToast}
+          pointerEvents="none"
+          accessibilityLiveRegion="polite"
+        >
+          <Text style={styles.copiedText}>
+            {copied === 'word' ? 'Word copied' : 'Definition copied'}
           </Text>
-          <Text style={styles.pronunciation} maxFontSizeMultiplier={1.6}>
-            [{word.pronunciation}]
-          </Text>
-          <Text style={styles.origin}>{word.language.toUpperCase()}</Text>
-          <Text style={styles.definition}>{word.definition}</Text>
+        </Animated.View>
+      )}
+      {feedPage ? (
+        <View
+          style={[
+            styles.scroll,
+            styles.feedScroll,
+            { paddingTop: insideSafeArea ? space.s : insets.top + space.l, paddingBottom: space.l },
+          ]}
+        >
+          {content}
         </View>
-
-        <View style={[styles.bottom, feedPage && styles.feedBottom]}>
-          <View style={styles.rule} />
-          <Text style={styles.wisdom}>{word.wisdom}</Text>
-          <Text style={styles.fromBook}>
-            from <Text style={styles.fromBookItalic}>Emotionary</Text>, the book
-          </Text>
-          <View style={styles.actions}>
-            <Pressable
-              onPress={() => {
-                lightImpactHaptic();
-                toggleFavorite(word.slug);
-              }}
-              style={styles.action}
-              accessibilityRole="button"
-              accessibilityLabel={isFavorite ? 'Remove from saved words' : 'Save this word'}
-              hitSlop={8}
-            >
-              <Text style={[styles.actionGlyph, isFavorite && { color: palette.deep }]}>
-                {isFavorite ? '♥' : '♡'}
-              </Text>
-              <Text style={styles.actionLabel}>{isFavorite ? 'SAVED' : 'SAVE'}</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                selectionHaptic();
-                router.push(`/share/${word.slug}`);
-              }}
-              style={styles.action}
-              accessibilityRole="button"
-              accessibilityLabel="Share this word as an image card"
-              hitSlop={8}
-            >
-              <Text style={styles.actionGlyph}>⤴</Text>
-              <Text style={styles.actionLabel}>SHARE</Text>
-            </Pressable>
-          </View>
-        </View>
-      </ScrollView>
+      ) : (
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
+          {content}
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -93,11 +177,8 @@ const styles = StyleSheet.create({
     paddingTop: space.xl,
     paddingBottom: 112,
   },
-  feedScroll: {
-    paddingTop: space.l,
-    paddingBottom: space.l,
-  },
-  top: { flexGrow: 1, alignItems: 'center', justifyContent: 'flex-start' },
+  feedScroll: { flex: 1 },
+  top: { flexGrow: 1, alignItems: 'center', justifyContent: 'center' },
   word: {
     fontFamily: font.display,
     fontSize: 56,
@@ -123,13 +204,14 @@ const styles = StyleSheet.create({
   },
   definition: {
     fontFamily: font.serif,
-    fontSize: 19,
-    lineHeight: 29,
+    fontSize: 21,
+    lineHeight: 32,
     color: color.ink,
     marginTop: space.l,
     width: '100%',
     maxWidth: 330,
     alignSelf: 'center',
+    textAlign: 'center',
   },
   bottom: { alignItems: 'center', marginTop: space.xxl },
   feedBottom: { marginTop: space.xl },
@@ -143,24 +225,33 @@ const styles = StyleSheet.create({
     marginTop: space.l,
     paddingHorizontal: space.m,
   },
-  fromBook: {
-    fontFamily: font.serif,
-    fontSize: type.caption,
-    color: color.inkFaint,
-    marginTop: space.s,
-  },
-  fromBookItalic: { fontFamily: font.serifItalic },
   actions: {
     flexDirection: 'row',
     gap: space.xxl,
     marginTop: space.l,
   },
   action: { alignItems: 'center', gap: 4, minWidth: 44, minHeight: 44, justifyContent: 'center' },
-  actionGlyph: { fontSize: 22, color: color.ink },
   actionLabel: {
     fontFamily: font.serifMedium,
     fontSize: type.badge,
     letterSpacing: letterSpacing.caps,
     color: color.inkMuted,
+  },
+  copiedToast: {
+    position: 'absolute',
+    top: space.m,
+    alignSelf: 'center',
+    zIndex: 30,
+    borderRadius: 999,
+    backgroundColor: color.ink,
+    paddingHorizontal: space.m,
+    paddingVertical: 8,
+    boxShadow: '0 8px 20px rgba(33, 28, 21, 0.22)',
+  },
+  copiedText: {
+    fontFamily: font.serifMedium,
+    fontSize: type.caption,
+    letterSpacing: 0.4,
+    color: color.paper,
   },
 });

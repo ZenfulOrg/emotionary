@@ -38,8 +38,7 @@ yarn-error.*
 
 example
 
-# generated native folders
-/ios
+# Android remains generated; iOS is the native Xcode release source.
 /android
 
 # local

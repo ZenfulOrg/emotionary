@@ -6,7 +6,10 @@ import { WordCard } from '@/components/WordCard';
 import { WordTypeIcon } from '@/components/word-type-icon';
 import { useContentStore } from '@/content/store';
 import type { Level, WordType } from '@/content/types';
+import { localDateString, wordOfDay } from '@/daily/engine';
+import { canViewWord } from '@/entitlements';
 import { selectionHaptic } from '@/feedback/haptics';
+import { useUserStore } from '@/store/userStore';
 import { color, font, letterSpacing, levelPalettes, space, type, typeMeta } from '@/theme/tokens';
 
 const TYPE_FILTERS: { key: WordType | 'all'; label: string }[] = [
@@ -15,8 +18,6 @@ const TYPE_FILTERS: { key: WordType | 'all'; label: string }[] = [
   { key: 'hidden_english', label: typeMeta.hidden_english.label },
   { key: 'psychology', label: typeMeta.psychology.label },
 ];
-
-const LEVELS: Level[] = [1, 2, 3, 4, 5];
 
 function normalize(s: string): string {
   return s
@@ -29,21 +30,21 @@ export default function BrowseScreen() {
   const words = useContentStore((s) => s.words);
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<WordType | 'all'>('all');
-  const [levelFilter, setLevelFilter] = useState<Level | 0>(0);
   const [keyOpen, setKeyOpen] = useState(false);
+  const hasFullAccess = useUserStore((state) => state.accessLevel === 'full');
+  const todaysSlug = wordOfDay(words, localDateString())?.slug ?? null;
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
     return words
       .filter((w) => (typeFilter === 'all' ? true : w.type === typeFilter))
-      .filter((w) => (levelFilter === 0 ? true : w.level === levelFilter))
       .filter((w) =>
         q.length === 0 ? true : normalize(w.word).includes(q) || normalize(w.definition).includes(q),
       )
       .sort((a, b) => a.word.localeCompare(b.word));
-  }, [words, query, typeFilter, levelFilter]);
+  }, [words, query, typeFilter]);
 
-  const hasActiveFilters = query.length > 0 || typeFilter !== 'all' || levelFilter !== 0;
+  const hasActiveFilters = query.length > 0 || typeFilter !== 'all';
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -107,50 +108,15 @@ export default function BrowseScreen() {
         })}
       </View>
 
-      <View style={styles.levelRow}>
-        <Pressable
-          onPress={() => {
-            Keyboard.dismiss();
-            selectionHaptic();
-            setLevelFilter(0);
-          }}
-          style={styles.levelAll}
-          accessibilityRole="button"
-          accessibilityState={{ selected: levelFilter === 0 }}
-          accessibilityLabel="All levels"
-        >
-          <Text style={[styles.levelAllText, levelFilter === 0 && styles.levelAllActive]}>
-            ALL LEVELS
-          </Text>
-        </Pressable>
-        {LEVELS.map((lvl) => {
-          const active = levelFilter === lvl;
-          return (
-            <Pressable
-              key={lvl}
-              onPress={() => {
-                Keyboard.dismiss();
-                selectionHaptic();
-                setLevelFilter(active ? 0 : lvl);
-              }}
-              style={[
-                styles.levelDot,
-                { backgroundColor: levelPalettes[lvl].deep },
-                active && styles.levelDotActive,
-              ]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={`Level ${lvl}`}
-              hitSlop={6}
-            />
-          );
-        })}
-      </View>
-
       <FlatList
         data={filtered}
         keyExtractor={(w) => w.slug}
-        renderItem={({ item }) => <WordCard word={item} />}
+        renderItem={({ item }) => (
+          <WordCard
+            word={item}
+            locked={!canViewWord(item, todaysSlug, hasFullAccess)}
+          />
+        )}
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -165,7 +131,6 @@ export default function BrowseScreen() {
                   selectionHaptic();
                   setQuery('');
                   setTypeFilter('all');
-                  setLevelFilter(0);
                 }}
                 accessibilityRole="button"
               >
@@ -202,7 +167,24 @@ function BrowseKeyModal({ visible, onClose }: { visible: boolean; onClose: () =>
           </View>
 
           <ScrollView contentContainerStyle={styles.modalScroll} showsVerticalScrollIndicator={false}>
-            <Text style={styles.modalSection}>LEVELS</Text>
+            <Text style={styles.modalSection}>ICON KEY</Text>
+            <IconKey
+              wordType="wanderword"
+              title="WANDERWORD"
+              body="A word from another language or culture that has no direct English equivalent. You'll see a world icon next to a word that has cultural origins."
+            />
+            <IconKey
+              wordType="hidden_english"
+              title="HIDDEN ENGLISH"
+              body="A real English word that exists in the dictionary but rarely makes it into everyday conversation. These have been here all along, but most people were just never introduced to them."
+            />
+            <IconKey
+              wordType="psychology"
+              title="PSYCHOLOGY"
+              body="A term with roots in psychology simplified here for everyday use. These words belong to everyone, not just those who've sat across from a therapist."
+            />
+
+            <Text style={styles.modalSection}>COLOR DEPTH LEVELS</Text>
             <KeyLevel level={1} name="FLEETING" body="Light, fleeting, surface sensations" />
             <KeyLevel
               level={2}
@@ -223,23 +205,6 @@ function BrowseKeyModal({ visible, onClose }: { visible: boolean; onClose: () =>
               level={5}
               name="THE DEPTHS"
               body="The most intense, transformative human experiences"
-            />
-
-            <Text style={styles.modalSection}>ICON KEY</Text>
-            <IconKey
-              wordType="wanderword"
-              title="WANDERWORD"
-              body="A word from another language or culture that has no direct English equivalent. You'll see a world icon next to a word that has cultural origins."
-            />
-            <IconKey
-              wordType="hidden_english"
-              title="HIDDEN ENGLISH"
-              body="A real English word that exists in the dictionary but rarely makes it into everyday conversation. These have been here all along, but most people were just never introduced to them."
-            />
-            <IconKey
-              wordType="psychology"
-              title="PSYCHOLOGY"
-              body="A term with roots in psychology simplified here for everyday use. These words belong to everyone, not just those who've sat across from a therapist."
             />
           </ScrollView>
         </View>
@@ -336,6 +301,7 @@ const styles = StyleSheet.create({
     gap: space.s,
     paddingHorizontal: space.l,
     marginTop: space.m,
+    marginBottom: space.xs,
   },
   chip: {
     flexDirection: 'row',
@@ -378,7 +344,7 @@ const styles = StyleSheet.create({
     borderColor: color.ink,
     transform: [{ scale: 1.15 }],
   },
-  list: { paddingHorizontal: space.l, paddingTop: space.s, paddingBottom: space.xl },
+  list: { paddingHorizontal: space.l, paddingTop: space.m, paddingBottom: 120 },
   emptyWrap: { alignItems: 'center', marginTop: space.xxl, gap: space.m },
   emptyText: { fontFamily: font.serif, fontSize: type.body, color: color.inkMuted },
   clearText: {

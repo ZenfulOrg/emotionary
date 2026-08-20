@@ -1,181 +1,180 @@
 import Constants from 'expo-constants';
-import { router } from 'expo-router';
-import {
-  Alert,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { router, type Href } from 'expo-router';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { formatTime, TimeControl } from '@/components/TimeControl';
-import { BOOK_URL, BOOK_URL_LABEL } from '@/config';
-import { lightImpactHaptic, selectionHaptic, warningHaptic } from '@/feedback/haptics';
+import { SystemIcon } from '@/components/system-icon';
+import { selectionHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
 import { requestPermission } from '@/notifications/scheduler';
 import { useUserStore } from '@/store/userStore';
-import { color, font, letterSpacing, space, type } from '@/theme/tokens';
+import { color, font, space, type } from '@/theme/tokens';
 
 export default function SettingsScreen() {
-  const notifTime = useUserStore((s) => s.notifTime);
-  const notifEnabled = useUserStore((s) => s.notifEnabled);
-  const setNotifTime = useUserStore((s) => s.setNotifTime);
-  const setNotifEnabled = useUserStore((s) => s.setNotifEnabled);
+  const notifEnabled = useUserStore((state) => state.notifEnabled);
+  const setNotifEnabled = useUserStore((state) => state.setNotifEnabled);
+  const hapticsEnabled = useUserStore((state) => state.hapticsEnabled);
+  const setHapticsEnabled = useUserStore((state) => state.setHapticsEnabled);
+  const hasFullAccess = useUserStore((state) => state.accessLevel === 'full');
+  const unlockFullAccess = useUserStore((state) => state.unlockFullAccess);
 
-  const onToggle = async (next: boolean) => {
+  const toggleNotifications = async (next: boolean) => {
     selectionHaptic();
-    if (!next) {
-      setNotifEnabled(false);
-      return;
-    }
+    if (!next) return setNotifEnabled(false);
     const granted = await requestPermission();
-    if (granted) {
-      setNotifEnabled(true);
-    } else if (Platform.OS !== 'web') {
+    setNotifEnabled(granted);
+    if (!granted && process.env.EXPO_OS !== 'web') {
       warningHaptic();
-      Alert.alert(
-        'Notifications are off',
-        'Enable notifications for Emotionary in system settings to get your daily word.',
-        [
-          { text: 'Not now', style: 'cancel' },
-          { text: 'Open settings', onPress: () => void Linking.openSettings() },
-        ],
-      );
+      Alert.alert('Notifications are off', 'Enable Emotionary notifications in system settings.', [
+        { text: 'Not now', style: 'cancel' },
+        { text: 'Open settings', onPress: () => void Linking.openSettings() },
+      ]);
     }
   };
 
-  // The queue rebuild reacts to these store changes automatically (root layout).
-  return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title} accessibilityRole="header">
-          Settings
-        </Text>
-        <Pressable
-          onPress={() => {
-            selectionHaptic();
-            router.back();
-          }}
-          style={styles.close}
-          accessibilityRole="button"
-          accessibilityLabel="Close settings"
-          hitSlop={10}
-        >
-          <Text style={styles.closeGlyph}>✕</Text>
-        </Pressable>
-      </View>
+  const restore = () => {
+    selectionHaptic();
+    unlockFullAccess();
+    successHaptic();
+    Alert.alert('Full access restored', 'This beta now has Emotionary Pro access.');
+  };
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.section}>DAILY WORD</Text>
-        <View style={styles.cardBlock}>
-          <View style={styles.toggleRow}>
-            <Text style={styles.rowLabel}>One word, every day</Text>
-            <Switch
-              value={notifEnabled}
-              onValueChange={(v) => void onToggle(v)}
-              trackColor={{ true: color.ink }}
-              accessibilityLabel="Daily word notification"
+  return (
+    <SafeAreaView style={styles.backdrop} edges={['top']}>
+      <View style={styles.sheet}>
+        <View style={styles.header}>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
+            <SystemIcon name="arrow.left" fallback="←" size={20} color={color.ink} />
+          </Pressable>
+          <Text style={styles.title}>Settings</Text>
+          <View style={styles.backButton} />
+        </View>
+
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.accountBlock}>
+            <Text style={styles.accountTitle}>{hasFullAccess ? 'Emotionary Pro' : 'Guest'}</Text>
+            <Text style={styles.accountSubtitle}>
+              {hasFullAccess ? 'Full access is active' : 'Using Emotionary free'}
+            </Text>
+          </View>
+
+          <Text style={styles.section}>ACCOUNT</Text>
+          <View style={styles.group}>
+            <SettingsRow
+              label="Emotionary Pro"
+              value={hasFullAccess ? 'Active' : 'Upgrade'}
+              onPress={hasFullAccess ? undefined : () => router.push('/paywall' as Href)}
+              chevron={!hasFullAccess}
+            />
+            <SettingsRow label="Restore Purchases" onPress={restore} chevron />
+          </View>
+
+          <Text style={styles.section}>PREFERENCES</Text>
+          <View style={styles.group}>
+            <SettingsRow
+              label="Daily Reminder"
+              control={
+                <Switch
+                  value={notifEnabled}
+                  onValueChange={(value) => void toggleNotifications(value)}
+                  trackColor={{ false: color.hairline, true: color.ink }}
+                  thumbColor={color.card}
+                />
+              }
+            />
+            <SettingsRow
+              label="Haptics"
+              control={
+                <Switch
+                  value={hapticsEnabled}
+                  onValueChange={setHapticsEnabled}
+                  trackColor={{ false: color.hairline, true: color.ink }}
+                  thumbColor={color.card}
+                />
+              }
+            />
+            <SettingsRow
+              label="Notifications"
+              value={notifEnabled ? 'On' : 'Off'}
+              onPress={() => void Linking.openSettings()}
+              chevron
             />
           </View>
-          {notifEnabled && (
-            <>
-              <TimeControl value={notifTime} onChange={setNotifTime} />
-              <Text style={styles.note}>
-                Delivered around {formatTime(notifTime)} each day.
-              </Text>
-            </>
-          )}
-        </View>
 
-        {/*
-          Reserved slot: "Restore Purchases" row appears here the day
-          RevenueCat ships (required by Apple once IAP exists) — DESIGN.md §9.
-        */}
+          <Text style={styles.section}>MORE</Text>
+          <View style={styles.group}>
+            <SettingsRow
+              label="Rate Emotionary"
+              onPress={() => Alert.alert('Thank you', 'Rating will be available when Emotionary is public on the App Store.')}
+              chevron
+            />
+            <SettingsRow
+              label="Send Feedback"
+              onPress={() => void Linking.openURL('mailto:hello@emotionarybook.com?subject=Emotionary%20feedback')}
+              chevron
+            />
+            <SettingsRow
+              label="Privacy Policy"
+              onPress={() => void Linking.openURL('https://emotionarybook.com/privacy')}
+              chevron
+            />
+          </View>
 
-        <Text style={styles.section}>THE BOOK</Text>
-        <View style={styles.cardBlock}>
-          <Text style={styles.about}>
-            Emotionary is a companion to the original collection: words for feelings you&apos;ve felt
-            but never named.
-          </Text>
-          <Pressable
-            onPress={() => {
-              lightImpactHaptic();
-              void Linking.openURL(BOOK_URL);
-            }}
-            accessibilityRole="link"
-          >
-            <Text style={styles.link}>GET THE BOOK → {BOOK_URL_LABEL.toUpperCase()}</Text>
-          </Pressable>
-        </View>
-
-        <Text style={styles.version}>Version {Constants.expoConfig?.version ?? '1.0.0'}</Text>
-      </ScrollView>
+          <Text style={styles.version}>Version {Constants.expoConfig?.version ?? '1.5.1'}</Text>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
+function SettingsRow({
+  label,
+  value,
+  onPress,
+  chevron = false,
+  control,
+}: {
+  label: string;
+  value?: string;
+  onPress?: () => void;
+  chevron?: boolean;
+  control?: React.ReactNode;
+}) {
+  const content = (
+    <View style={styles.row}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <View style={styles.rowEnd}>
+        {value && <Text style={styles.rowValue}>{value}</Text>}
+        {control}
+        {chevron && <Text style={styles.chevron}>›</Text>}
+      </View>
+    </View>
+  );
+  return onPress ? (
+    <Pressable onPress={onPress} accessibilityRole="button">{content}</Pressable>
+  ) : content;
+}
+
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.paper },
-  headerRow: { marginTop: space.m },
-  title: { fontFamily: font.display, fontSize: type.title, color: color.ink, textAlign: 'center' },
-  close: {
-    position: 'absolute',
-    right: space.l,
-    top: 6,
-    minWidth: 44,
-    minHeight: 32,
-    alignItems: 'flex-end',
-  },
-  closeGlyph: { fontSize: 18, color: color.inkMuted },
+  backdrop: { flex: 1, backgroundColor: '#DFDCD5', padding: 10 },
+  sheet: { flex: 1, backgroundColor: color.card, borderRadius: 26, borderCurve: 'continuous', overflow: 'hidden' },
+  header: { minHeight: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.m },
+  backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  title: { fontFamily: font.display, fontSize: 26, color: color.ink },
   scroll: { paddingHorizontal: space.l, paddingBottom: space.xl },
-  section: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.caps,
-    color: color.inkMuted,
-    marginTop: space.xl,
-    marginBottom: space.s,
-  },
-  cardBlock: {
-    backgroundColor: color.card,
-    borderColor: color.hairline,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 12,
-    padding: space.m,
-    gap: space.s,
-  },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  rowLabel: { fontFamily: font.serif, fontSize: type.body, color: color.ink },
-  note: {
-    fontFamily: font.serifItalic,
-    fontSize: type.caption,
-    color: color.inkMuted,
-    textAlign: 'center',
-  },
-  about: {
-    fontFamily: font.serif,
-    fontSize: type.small,
-    lineHeight: type.small * 1.5,
-    color: color.ink,
-  },
-  link: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.caps,
-    color: color.ink,
-    textDecorationLine: 'underline',
-    marginTop: space.s,
-  },
-  version: {
-    fontFamily: font.serif,
-    fontSize: type.caption,
-    color: color.inkFaint,
-    textAlign: 'center',
-    marginTop: space.xxl,
-  },
+  accountBlock: { alignItems: 'center', paddingVertical: space.m },
+  accountTitle: { fontFamily: font.serifSemiBold, fontSize: type.body, color: color.ink },
+  accountSubtitle: { fontFamily: font.serif, fontSize: type.caption, color: color.inkMuted, marginTop: 3 },
+  section: { fontFamily: font.serifMedium, fontSize: 10, letterSpacing: 1.8, color: color.inkFaint, marginTop: space.l, marginBottom: space.s, paddingLeft: space.s },
+  group: { borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: color.hairline, backgroundColor: '#FFFEFB', overflow: 'hidden' },
+  row: { minHeight: 55, paddingHorizontal: space.m, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.hairline },
+  rowLabel: { fontFamily: font.serif, fontSize: type.small, color: color.ink },
+  rowEnd: { flexDirection: 'row', alignItems: 'center', gap: space.s },
+  rowValue: { fontFamily: font.serif, fontSize: type.small, color: color.inkMuted },
+  chevron: { fontFamily: font.serif, fontSize: 25, color: color.inkFaint, lineHeight: 28 },
+  version: { fontFamily: font.serif, fontSize: type.caption, color: color.inkFaint, textAlign: 'center', marginTop: space.xl },
 });

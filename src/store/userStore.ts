@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { daysSinceEpoch } from '@/daily/engine';
 import { nextStreak, type StreakState } from '@/store/streak';
 
 export interface NotifTime {
@@ -16,17 +17,27 @@ interface UserState {
   sharedCount: number;
   lastSharedBySlug: Record<string, string>; // slug -> last local date shared
   streakState: StreakState;
+  /** Local date on which a running streak was last broken (for the wilt visual). */
+  streakBrokeDate: string | null;
   notifTime: NotifTime;
   notifEnabled: boolean;
+  accessLevel: 'free' | 'full';
+  hapticsEnabled: boolean;
+  todayActionCoachmarkSeen: boolean;
 
   completeOnboarding: () => void;
   toggleFavorite: (slug: string) => void;
+  /** Idempotent favorite — used by the widget's like action. */
+  addFavorite: (slug: string) => void;
   markRead: (slug: string) => void;
   recordOpen: (localDate: string) => void;
   /** Returns true if the share was counted (at most once per word per local date). */
   recordShare: (slug: string, localDate: string) => boolean;
   setNotifTime: (time: NotifTime) => void;
   setNotifEnabled: (enabled: boolean) => void;
+  unlockFullAccess: () => void;
+  setHapticsEnabled: (enabled: boolean) => void;
+  markTodayActionCoachmarkSeen: () => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -38,8 +49,12 @@ export const useUserStore = create<UserState>()(
       sharedCount: 0,
       lastSharedBySlug: {},
       streakState: { lastOpenDate: null, streak: 0 },
-      notifTime: { hour: 9, minute: 0 },
+      streakBrokeDate: null,
+      notifTime: { hour: 11, minute: 11 },
       notifEnabled: false,
+      accessLevel: 'free',
+      hapticsEnabled: true,
+      todayActionCoachmarkSeen: false,
 
       completeOnboarding: () => set({ onboarded: true }),
 
@@ -50,10 +65,24 @@ export const useUserStore = create<UserState>()(
             : [...s.favorites, slug],
         })),
 
+      addFavorite: (slug) =>
+        set((s) => (s.favorites.includes(slug) ? s : { favorites: [...s.favorites, slug] })),
+
       markRead: (slug) =>
         set((s) => (s.readSlugs.includes(slug) ? s : { readSlugs: [...s.readSlugs, slug] })),
 
-      recordOpen: (localDate) => set((s) => ({ streakState: nextStreak(s.streakState, localDate) })),
+      recordOpen: (localDate) =>
+        set((s) => {
+          const prev = s.streakState;
+          const broke =
+            prev.lastOpenDate !== null &&
+            prev.streak >= 1 &&
+            daysSinceEpoch(localDate) - daysSinceEpoch(prev.lastOpenDate) > 1;
+          return {
+            streakState: nextStreak(prev, localDate),
+            ...(broke ? { streakBrokeDate: localDate } : {}),
+          };
+        }),
 
       recordShare: (slug, localDate) => {
         if (get().lastSharedBySlug[slug] === localDate) return false;
@@ -66,6 +95,9 @@ export const useUserStore = create<UserState>()(
 
       setNotifTime: (notifTime) => set({ notifTime }),
       setNotifEnabled: (notifEnabled) => set({ notifEnabled }),
+      unlockFullAccess: () => set({ accessLevel: 'full' }),
+      setHapticsEnabled: (hapticsEnabled) => set({ hapticsEnabled }),
+      markTodayActionCoachmarkSeen: () => set({ todayActionCoachmarkSeen: true }),
     }),
     {
       name: 'emotionary.user.v1',
