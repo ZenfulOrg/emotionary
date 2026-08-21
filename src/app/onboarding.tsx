@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { createAccount, signIn, signInWithApple, signInWithGoogle } from '@/auth/client';
 import { AmbientInk } from '@/components/AmbientInk';
 import { Paywall } from '@/components/Paywall';
+import { StatsBurst } from '@/components/stats-burst';
 import { SystemIcon } from '@/components/system-icon';
 import { formatTime, TimeControl } from '@/components/TimeControl';
 import { WidgetGuideModal, type WidgetGuideVariant } from '@/components/WidgetGuideModal';
@@ -214,7 +215,8 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: pageColors[page] }]}>
-      <AmbientInk specks={page === 'first-word'} />
+      <AmbientInk />
+      {page === 'first-word' && <StatsBurst burstKey={step + 1} />}
 
       <KeyboardAvoidingView
         style={styles.keyboard}
@@ -660,7 +662,7 @@ function AccountPage({
 }
 
 function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
-  const isSaved = useUserStore((state) => state.favorites.includes('anhedonia'));
+  const isSaved = useUserStore((state) => state.favorites.includes('meraki'));
   const toggleFavorite = useUserStore((state) => state.toggleFavorite);
 
   return (
@@ -676,27 +678,25 @@ function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
         style={styles.firstWord}
       >
         <View style={styles.firstType}>
-          <WordTypeIcon wordType="psychology" size={15} color={color.inkMuted} />
-          <Text style={styles.firstTypeText}>PSYCHOLOGY</Text>
+          <WordTypeIcon wordType="wanderword" size={15} color={color.inkMuted} />
+          <Text style={styles.firstTypeText}>WANDERWORD</Text>
         </View>
         <Text style={styles.firstWordTitle} accessibilityRole="header">
-          Anhedonia
+          Meraki
         </Text>
-        <Text style={styles.firstPronunciation}>[an-hee-DOH-nee-ah] 🔊</Text>
+        <Text style={styles.firstPronunciation}>[meh-RAH-kee] 🔊</Text>
         <Text style={styles.firstOrigin}>GREEK</Text>
         <Text style={styles.firstDefinition}>
-          The reduced ability to feel pleasure; when activities that once brought joy feel flat,
-          distant, or simply beside the point.
+          To do something with soul; leaving a piece of yourself in your work, whether it&apos;s a
+          meal, a letter, or a life.
         </Text>
         <View style={styles.previewRule} />
-        <Text style={styles.firstWisdom}>
-          Numbness is not the absence of feeling. It&apos;s a feeling asking for help.
-        </Text>
+        <Text style={styles.firstWisdom}>What you love leaves fingerprints.</Text>
         <View style={styles.previewActions}>
           <Pressable
             onPress={() => {
               lightImpactHaptic();
-              toggleFavorite('anhedonia');
+              toggleFavorite('meraki');
             }}
             style={styles.previewAction}
             accessibilityRole="button"
@@ -707,7 +707,7 @@ function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
           <Pressable
             onPress={() => {
               selectionHaptic();
-              router.push('/share/anhedonia');
+              router.push('/share/meraki');
             }}
             style={styles.previewAction}
             accessibilityRole="button"

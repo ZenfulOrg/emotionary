@@ -36,20 +36,23 @@ export function StopMotionFlame({
 
   useEffect(() => {
     cancelAnimation(clock);
-    clock.value = 0;
+    clock.set(0);
     if (reducedMotion) return;
-    clock.value = withRepeat(
-      withTiming(FRAMES.length, {
-        duration: FRAME_MS * FRAMES.length,
-        easing: Easing.linear,
-      }),
-      -1,
+    clock.set(
+      withRepeat(
+        withTiming(FRAMES.length, {
+          duration: FRAME_MS * FRAMES.length,
+          easing: Easing.linear,
+        }),
+        -1,
+      ),
     );
     return () => cancelAnimation(clock);
   }, [clock, reducedMotion]);
 
   const animatedStyle = useAnimatedStyle(() => {
-    const frame = FRAMES[Math.min(Math.floor(clock.value), FRAMES.length - 1)];
+    const frameIndex = Math.max(0, Math.min(Math.floor(clock.get()), FRAMES.length - 1));
+    const frame = FRAMES[frameIndex] ?? FRAMES[0];
     return {
       transform: [
         { translateY: frame.y },

@@ -25,6 +25,16 @@ describe('free access policy', () => {
     expect(canViewWord({ ...baseWord, slug: 'anhedonia' }, null, false)).toBe(true);
     expect(canViewWord({ ...baseWord, slug: 'apricity' }, null, false)).toBe(true);
     expect(canViewWord({ ...baseWord, slug: 'komorebi' }, null, false)).toBe(true);
+    expect(canViewWord({ ...baseWord, slug: 'meraki' }, null, false)).toBe(true);
+  });
+
+  test('exposes at most five words: four previews plus the current daily word', () => {
+    const slugs = ['anhedonia', 'apricity', 'komorebi', 'meraki', 'daily-word'];
+    const readable = slugs.filter((slug) =>
+      canViewWord({ ...baseWord, slug }, 'daily-word', false),
+    );
+    expect(readable).toHaveLength(5);
+    expect(canViewWord({ ...baseWord, slug: 'sixth-word' }, 'daily-word', false)).toBe(false);
   });
 
   test('locks other words until full access is active', () => {

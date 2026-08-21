@@ -2,7 +2,7 @@
   "expo": {
     "name": "Emotionary",
     "slug": "emotionary",
-    "version": "1.5.1",
+    "version": "1.5.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "emotionary",
@@ -10,7 +10,7 @@
     "ios": {
       "appleTeamId": "GRM466YG9B",
       "bundleIdentifier": "com.nowdrops.emotionary",
-      "buildNumber": "2026081902",
+      "buildNumber": "2026082101",
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "infoPlist": {

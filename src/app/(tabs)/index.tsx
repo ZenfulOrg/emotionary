@@ -1,4 +1,4 @@
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
@@ -18,6 +18,7 @@ import { useContentStore } from '@/content/store';
 import { localDateString } from '@/daily/engine';
 import { dailyFeed } from '@/daily/feed';
 import { shouldShowTodayActionCoachmark } from '@/daily/tutorial';
+import { canViewWord } from '@/entitlements';
 import { mediumImpactHaptic, successHaptic } from '@/feedback/haptics';
 import { getPermissionGranted, requestPermission } from '@/notifications/scheduler';
 import { useUserStore } from '@/store/userStore';
@@ -42,6 +43,7 @@ export default function TodayScreen() {
   const todayActionCoachmarkSeen = useUserStore((s) => s.todayActionCoachmarkSeen);
   const markTodayActionCoachmarkSeen = useUserStore((s) => s.markTodayActionCoachmarkSeen);
   const setNotifEnabled = useUserStore((s) => s.setNotifEnabled);
+  const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
   const [feedHeight, setFeedHeight] = useState(0);
   const [visibleLevel, setVisibleLevel] = useState<Word['level']>(1);
   const [streakVisible, setStreakVisible] = useState(() => !streakPopupShownThisSession);
@@ -49,6 +51,7 @@ export default function TodayScreen() {
   const [notificationPromptVisible, setNotificationPromptVisible] = useState(false);
   const [notificationBusy, setNotificationBusy] = useState(false);
   const coachmarkSeenRef = useRef(todayActionCoachmarkSeen);
+  const visibleSlugRef = useRef<string | null>(null);
   const coachmarkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dismissStreak = useCallback(() => {
     streakPopupShownThisSession = true;
@@ -56,7 +59,17 @@ export default function TodayScreen() {
   }, []);
 
   const today = localDateString();
-  const feed = useMemo(() => dailyFeed(words, today), [words, today]);
+  const feed = useMemo(() => {
+    const all = dailyFeed(words, today);
+    const todaysSlug = all[0]?.slug ?? null;
+    return hasFullAccess
+      ? all
+      : all.filter((word) => canViewWord(word, todaysSlug, false));
+  }, [words, today, hasFullAccess]);
+
+  useEffect(() => {
+    visibleSlugRef.current = feed[0]?.slug ?? null;
+  }, [feed]);
 
   useEffect(() => {
     coachmarkSeenRef.current = todayActionCoachmarkSeen;
@@ -94,6 +107,12 @@ export default function TodayScreen() {
     coachmarkTimer.current = null;
     setCoachmarkVisible(false);
   }, []);
+
+  const openCoachmarkShare = useCallback(() => {
+    const slug = visibleSlugRef.current ?? feed[0]?.slug;
+    if (slug) router.push(`/share/${slug}` as Href);
+    dismissCoachmark();
+  }, [dismissCoachmark, feed]);
 
   const showCoachmark = useCallback(() => {
     if (coachmarkSeenRef.current) return;
@@ -133,6 +152,7 @@ export default function TodayScreen() {
     ({ viewableItems }: { viewableItems: ViewToken<Word>[] }) => {
       const visibleToken = viewableItems.find((token) => token.isViewable);
       if (visibleToken?.item) {
+        visibleSlugRef.current = visibleToken.item.slug;
         markRead(visibleToken.item.slug);
         setVisibleLevel(visibleToken.item.level);
         if (shouldShowTodayActionCoachmark(visibleToken.index, coachmarkSeenRef.current)) {
@@ -146,7 +166,10 @@ export default function TodayScreen() {
   useFocusEffect(
     useCallback(() => {
       recordOpen(today);
-      if (feed[0]) markRead(feed[0].slug);
+      if (feed[0]) {
+        visibleSlugRef.current = feed[0].slug;
+        markRead(feed[0].slug);
+      }
     }, [recordOpen, markRead, today, feed]),
   );
 
@@ -177,7 +200,7 @@ export default function TodayScreen() {
           onDismiss={dismissNotificationPrompt}
         />
       )}
-      {coachmarkVisible && <TodayCoachmark onDismiss={dismissCoachmark} />}
+      {coachmarkVisible && <TodayCoachmark onOpenShare={openCoachmarkShare} />}
       <View style={styles.container} onLayout={onLayout}>
         <FlatList
           data={feed}

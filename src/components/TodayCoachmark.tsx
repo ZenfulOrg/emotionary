@@ -4,7 +4,7 @@ import Animated, { FadeInDown, FadeOutDown, useReducedMotion } from 'react-nativ
 import { SystemIcon } from '@/components/system-icon';
 import { color, font, letterSpacing, space, type } from '@/theme/tokens';
 
-export function TodayCoachmark({ onDismiss }: { onDismiss: () => void }) {
+export function TodayCoachmark({ onOpenShare }: { onOpenShare: () => void }) {
   const reducedMotion = useReducedMotion();
 
   return (
@@ -15,13 +15,13 @@ export function TodayCoachmark({ onDismiss }: { onDismiss: () => void }) {
       pointerEvents="box-none"
     >
       <Pressable
-        onPress={onDismiss}
+        onPress={onOpenShare}
         style={styles.bubble}
         accessibilityRole="button"
-        accessibilityLabel="Tip: tap the heart to save a word, or the share icon to send it. Dismiss."
+        accessibilityLabel="Tip: save or share this word. Open the share card."
       >
         <Text style={styles.eyebrow}>A LITTLE TIP</Text>
-        <Text style={styles.copy}>Keep a word close, or pass it along.</Text>
+        <Text style={styles.copy}>Keep a word close, or tap here to pass it along.</Text>
         <View style={styles.actions} accessibilityElementsHidden>
           <View style={styles.action}>
             <SystemIcon name="heart" fallback="♡" size={18} color={color.ink} />

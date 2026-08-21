@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { SystemIcon } from '@/components/system-icon';
 import { WordCard } from '@/components/WordCard';
 import { findWord, useContentStore } from '@/content/store';
+import { localDateString, wordOfDay } from '@/daily/engine';
+import { canViewWord } from '@/entitlements';
 import { selectionHaptic } from '@/feedback/haptics';
 import { useUserStore } from '@/store/userStore';
 import { color, font, space, type } from '@/theme/tokens';
@@ -13,6 +15,8 @@ import { color, font, space, type } from '@/theme/tokens';
 export default function FavoritesScreen() {
   const words = useContentStore((s) => s.words);
   const favorites = useUserStore((s) => s.favorites);
+  const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
+  const todaysSlug = wordOfDay(words, localDateString())?.slug ?? null;
 
   const favoriteWords = favorites
     .map((slug) => findWord(words, slug))
@@ -46,7 +50,9 @@ export default function FavoritesScreen() {
       <FlatList
         data={favoriteWords}
         keyExtractor={(w) => w.slug}
-        renderItem={({ item }) => <WordCard word={item} />}
+        renderItem={({ item }) => (
+          <WordCard word={item} locked={!canViewWord(item, todaysSlug, hasFullAccess)} />
+        )}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={

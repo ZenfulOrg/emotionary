@@ -2,6 +2,7 @@ import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   DeviceEventEmitter,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,6 +20,8 @@ import { mediumImpactHaptic, selectionHaptic } from '@/feedback/haptics';
 import { STATS_OPEN_EVENT } from '@/stats/events';
 import { useUserStore } from '@/store/userStore';
 import { color, font, letterSpacing, levelPalettes, space, type } from '@/theme/tokens';
+
+const INSTAGRAM_URL = 'https://www.instagram.com/emotionarybook?igsi=ZTZ5MWFyMG1tbmZo';
 
 function StatTile({ value, label, flame = false }: { value: number; label: string; flame?: boolean }) {
   return (
@@ -92,6 +95,29 @@ function SettingsRow({ label, value }: { label: string; value: string }) {
       <Text style={styles.widgetSettingsLabel}>{label}</Text>
       <Text style={styles.widgetSettingsValue}>{value}</Text>
     </View>
+  );
+}
+
+function InstagramBanner() {
+  return (
+    <Pressable
+      onPress={() => {
+        selectionHaptic();
+        void Linking.openURL(INSTAGRAM_URL);
+      }}
+      style={({ pressed }) => [styles.instagramBanner, pressed && styles.instagramPressed]}
+      accessibilityRole="link"
+      accessibilityLabel="Follow Emotionary on Instagram"
+    >
+      <View style={styles.instagramMark}>
+        <SystemIcon name="camera" fallback="◎" size={20} color={color.paper} />
+      </View>
+      <View style={styles.instagramCopy}>
+        <Text style={styles.instagramEyebrow}>FOLLOW US ON INSTAGRAM</Text>
+        <Text style={styles.instagramHandle}>@emotionarybook</Text>
+      </View>
+      <SystemIcon name="arrow.up.right" fallback="↗" size={17} color={color.inkMuted} />
+    </Pressable>
   );
 }
 
@@ -183,6 +209,8 @@ export default function StatsScreen() {
             <SystemIcon name="chevron.right" fallback="›" size={13} color={color.inkMuted} />
           </View>
         </Pressable>
+
+        <InstagramBanner />
 
         <WidgetShowcase
           onOpen={(variant) => {
@@ -298,6 +326,36 @@ const styles = StyleSheet.create({
   },
   favoritesPillRight: { flexDirection: 'row', alignItems: 'center', gap: space.s },
   favoritesPillCount: { fontFamily: font.display, fontSize: type.body + 1, color: color.ink },
+  instagramBanner: {
+    minHeight: 76,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.m,
+    borderRadius: 18,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#D8B8CA',
+    backgroundColor: '#F6E8EF',
+    paddingHorizontal: space.m,
+    marginTop: space.m,
+  },
+  instagramPressed: { opacity: 0.76 },
+  instagramMark: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: levelPalettes[3].deep,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  instagramCopy: { flex: 1, gap: 3 },
+  instagramEyebrow: {
+    fontFamily: font.serifMedium,
+    fontSize: type.badge,
+    letterSpacing: letterSpacing.caps,
+    color: color.inkMuted,
+  },
+  instagramHandle: { fontFamily: font.display, fontSize: type.body + 1, color: color.ink },
   widgetWrap: { marginTop: space.xl },
   widgetCards: {
     flexDirection: 'row',

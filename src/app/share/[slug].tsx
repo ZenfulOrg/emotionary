@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   PixelRatio,
@@ -14,7 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { findWord, useContentStore } from '@/content/store';
 import { SystemIcon } from '@/components/system-icon';
-import { localDateString } from '@/daily/engine';
+import { localDateString, wordOfDay } from '@/daily/engine';
+import { canViewWord } from '@/entitlements';
 import { lightImpactHaptic, selectionHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
 import { CARD_BASE_HEIGHT, CARD_BASE_WIDTH, ShareCard } from '@/share/ShareCard';
 import { useUserStore } from '@/store/userStore';
@@ -31,6 +32,7 @@ export default function ShareModal() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const words = useContentStore((s) => s.words);
   const recordShare = useUserStore((s) => s.recordShare);
+  const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
   const { width: winW, height: winH } = useWindowDimensions();
 
   const shotRef = useRef<View>(null);
@@ -39,10 +41,18 @@ export default function ShareModal() {
   const [saved, setSaved] = useState(false);
 
   const word = slug ? findWord(words, slug) : undefined;
+  const todaysSlug = wordOfDay(words, localDateString())?.slug ?? null;
+  const locked = word ? !canViewWord(word, todaysSlug, hasFullAccess) : false;
+
+  useEffect(() => {
+    if (locked) router.replace('/paywall');
+  }, [locked]);
+
   if (!word) {
     router.back();
     return null;
   }
+  if (locked) return null;
 
   // Fit the 9:16 preview inside the window with room for the buttons.
   const cardWidth = Math.min(winW * 0.72, (winH * 0.54 * CARD_BASE_WIDTH) / CARD_BASE_HEIGHT);
