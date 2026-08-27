@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutUp, useReducedMotion } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { StopMotionFlame } from '@/components/stop-motion-flame';
 import { color, font, letterSpacing, space, type } from '@/theme/tokens';
@@ -25,6 +26,7 @@ export function StreakPopup({
   onDismiss: () => void;
 }) {
   const reducedMotion = useReducedMotion();
+  const insets = useSafeAreaInsets();
   const today = new Date().getDay();
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export function StreakPopup({
     <Animated.View
       entering={reducedMotion ? undefined : FadeInDown.duration(420)}
       exiting={reducedMotion ? undefined : FadeOutUp.duration(340)}
-      style={styles.layer}
+      style={[styles.layer, { top: insets.top + space.s }]}
       pointerEvents="box-none"
     >
       <Pressable
@@ -83,7 +85,6 @@ export function StreakPopup({
 const styles = StyleSheet.create({
   layer: {
     position: 'absolute',
-    top: space.l,
     left: 0,
     right: 0,
     zIndex: 20,

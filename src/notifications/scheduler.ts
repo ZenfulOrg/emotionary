@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import type { Word } from '@/content/types';
 import { addDays, localDateString, monthKey, wordOfDay } from '@/daily/engine';
 import type { NotifTime } from '@/store/userStore';
+import type { StreakState } from '@/store/streak';
 
 /**
  * Notification queue — DESIGN.md §8.
@@ -16,6 +17,7 @@ import type { NotifTime } from '@/store/userStore';
 
 export const CHANNEL_ID = 'daily-word';
 const MAX_SLOTS = 38;
+const STREAK_RESCUE_TIME: NotifTime = { hour: 20, minute: 0 };
 
 export function configureNotificationHandler(): void {
   if (Platform.OS === 'web') return;
@@ -71,9 +73,15 @@ interface RebuildArgs {
   words: readonly Word[];
   time: NotifTime;
   enabled: boolean;
+  streakState: StreakState;
 }
 
-async function doRebuild({ words, time, enabled }: RebuildArgs): Promise<void> {
+export function streakRescueDate(streakState: StreakState): Date | null {
+  if (!streakState.lastOpenDate || streakState.streak < 1) return null;
+  return fireDate(addDays(streakState.lastOpenDate, 1), STREAK_RESCUE_TIME);
+}
+
+async function doRebuild({ words, time, enabled, streakState }: RebuildArgs): Promise<void> {
   if (Platform.OS === 'web') return;
   const granted = await getPermissionGranted();
   await Notifications.cancelAllScheduledNotificationsAsync();
@@ -82,6 +90,22 @@ async function doRebuild({ words, time, enabled }: RebuildArgs): Promise<void> {
   await ensureChannel();
 
   const now = new Date();
+  const rescueDate = streakRescueDate(streakState);
+  if (rescueDate && rescueDate.getTime() > now.getTime()) {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Last chance!',
+        body: 'If you skip today, your learning streak will be gone. Open the app to keep your streak!',
+        data: { url: '/', reason: 'streak-rescue' },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: rescueDate,
+        channelId: CHANNEL_ID,
+      },
+    });
+  }
+
   const today = localDateString(now);
   // Start-day rule (DESIGN.md §8): if today's delivery time has already
   // passed, start tomorrow — never create a past-dated trigger that fires

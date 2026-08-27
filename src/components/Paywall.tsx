@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SystemIcon } from '@/components/system-icon';
 import { lightImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
 import { useUserStore } from '@/store/userStore';
-import { color, font, letterSpacing, space, type } from '@/theme/tokens';
+import { color, font, space, type } from '@/theme/tokens';
 
 type Plan = 'yearly' | 'lifetime';
 
@@ -33,9 +33,8 @@ export function Paywall({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.kicker}>UNLOCK EVERYTHING</Text>
       <Text style={styles.title} accessibilityRole="header">Get full access</Text>
-      <Text style={styles.subtitle}>All 127 words, every theme, and every future update.</Text>
+      <Text style={styles.subtitle}>Thousands of unique words, and updates every month.</Text>
 
       <View style={styles.options}>
         <PlanOption
@@ -123,13 +122,7 @@ function PlanOption({
 
 const styles = StyleSheet.create({
   wrap: { width: '100%', maxWidth: 390, alignItems: 'center', paddingHorizontal: space.m },
-  kicker: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.badge,
-    color: color.inkMuted,
-  },
-  title: { fontFamily: font.display, fontSize: 36, color: color.ink, marginTop: space.s },
+  title: { fontFamily: font.display, fontSize: 36, color: color.ink },
   subtitle: {
     fontFamily: font.serif,
     fontSize: type.small,
@@ -182,7 +175,7 @@ const styles = StyleSheet.create({
   cadence: { fontFamily: font.serif, fontSize: type.caption, color: color.inkMuted },
   note: {
     fontFamily: font.serifItalic,
-    fontSize: 9,
+    fontSize: 10,
     color: '#2F6B45',
   },
   continueButton: {

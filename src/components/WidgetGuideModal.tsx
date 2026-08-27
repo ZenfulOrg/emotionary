@@ -24,6 +24,7 @@ const GUIDES: Record<WidgetGuideVariant, { title: string; blurb: string; steps: 
       'Tap Edit in the top corner, then Add Widget.',
       'Search for Emotionary.',
       'Pick a size and tap Add Widget.',
+      'To change its look, touch and hold the widget, tap Edit Widget, then choose a theme.',
     ],
   },
   lock: {

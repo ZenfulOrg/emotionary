@@ -1,9 +1,11 @@
+import { Checkbox, Host } from '@expo/ui';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { createAccount, signIn, signInWithApple, signInWithGoogle } from '@/auth/client';
 import { AmbientInk } from '@/components/AmbientInk';
 import { Paywall } from '@/components/Paywall';
+import { PronunciationButton } from '@/components/pronunciation-button';
 import { StatsBurst } from '@/components/stats-burst';
 import { SystemIcon } from '@/components/system-icon';
 import { formatTime, TimeControl } from '@/components/TimeControl';
@@ -72,6 +75,9 @@ const QUICK_TIMES: NotifTime[] = [
   { hour: 21, minute: 0 },
 ];
 
+const TERMS_URL = 'https://emotionarybook.com/terms';
+const PRIVACY_URL = 'https://emotionarybook.com/privacy';
+
 const SOURCE_CARDS: {
   type: WordType;
   title: string;
@@ -111,6 +117,8 @@ export default function OnboardingScreen() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState('');
   const [accountComplete, setAccountComplete] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(true);
+  const [widgetGuide, setWidgetGuide] = useState<WidgetGuideVariant | null>(null);
   const notifTime = useUserStore((state) => state.notifTime);
   const setNotifTime = useUserStore((state) => state.setNotifTime);
   const setNotifEnabled = useUserStore((state) => state.setNotifEnabled);
@@ -159,6 +167,10 @@ export default function OnboardingScreen() {
 
   const submitAccount = async () => {
     Keyboard.dismiss();
+    if (authMode === 'create' && !termsAccepted) {
+      setAuthMessage('Agree to the Terms of Use and Privacy Policy to create an account.');
+      return;
+    }
     if (!email.trim().includes('@')) {
       setAuthMessage('Enter a valid email address.');
       return;
@@ -242,7 +254,9 @@ export default function OnboardingScreen() {
             {page === 'reminder' && (
               <ReminderPage notifTime={notifTime} setNotifTime={setNotifTime} />
             )}
-            {page === 'widget' && <WidgetPage />}
+            {page === 'widget' && (
+              <WidgetPage onNext={goNext} onOpenGuide={setWidgetGuide} />
+            )}
             {page === 'account' && (
               <AccountPage
                 mode={authMode}
@@ -251,6 +265,8 @@ export default function OnboardingScreen() {
                 password={password}
                 onEmailChange={setEmail}
                 onPasswordChange={setPassword}
+                termsAccepted={termsAccepted}
+                onTermsAcceptedChange={setTermsAccepted}
                 message={authMessage}
                 busy={authBusy}
                 onSubmit={() => void submitAccount()}
@@ -292,6 +308,11 @@ export default function OnboardingScreen() {
                       busy={authBusy}
                     />
                   </>
+                ) : page === 'widget' ? (
+                  <PrimaryButton
+                    label="HOW TO ADD THE WIDGET"
+                    onPress={() => setWidgetGuide('home')}
+                  />
                 ) : (
                   <PrimaryButton label={step === 0 ? 'CONTINUE' : 'NEXT'} onPress={goNext} />
                 )}
@@ -306,6 +327,12 @@ export default function OnboardingScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      <WidgetGuideModal
+        variant={widgetGuide ?? 'home'}
+        visible={widgetGuide !== null}
+        onClose={() => setWidgetGuide(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -464,12 +491,16 @@ function ReminderPage({
   );
 }
 
-function WidgetPage() {
-  const [guide, setGuide] = useState<WidgetGuideVariant | null>(null);
-
+function WidgetPage({
+  onNext,
+  onOpenGuide,
+}: {
+  onNext: () => void;
+  onOpenGuide: (variant: WidgetGuideVariant) => void;
+}) {
   const openGuide = (variant: WidgetGuideVariant) => {
     selectionHaptic();
-    setGuide(variant);
+    onOpenGuide(variant);
   };
 
   return (
@@ -503,18 +534,15 @@ function WidgetPage() {
         </Pressable>
       </View>
       <Pressable
-        onPress={() => openGuide('home')}
+        onPress={() => {
+          selectionHaptic();
+          onNext();
+        }}
         style={styles.widgetButton}
         accessibilityRole="button"
       >
-        <Text style={styles.widgetButtonText}>HOW TO ADD THE WIDGET</Text>
+        <Text style={styles.widgetButtonText}>NEXT</Text>
       </Pressable>
-
-      <WidgetGuideModal
-        variant={guide ?? 'home'}
-        visible={guide !== null}
-        onClose={() => setGuide(null)}
-      />
     </View>
   );
 }
@@ -526,6 +554,8 @@ function AccountPage({
   password,
   onEmailChange,
   onPasswordChange,
+  termsAccepted,
+  onTermsAcceptedChange,
   message,
   busy,
   onSubmit,
@@ -538,6 +568,8 @@ function AccountPage({
   password: string;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
+  termsAccepted: boolean;
+  onTermsAcceptedChange: (value: boolean) => void;
   message: string;
   busy: boolean;
   onSubmit: () => void;
@@ -652,6 +684,36 @@ function AccountPage({
           </Pressable>
         </View>
       </View>
+      {mode === 'create' && (
+        <View style={styles.termsRow}>
+          <Host matchContents style={styles.checkboxHost} seedColor={color.ink}>
+            <Checkbox
+              value={termsAccepted}
+              onValueChange={onTermsAcceptedChange}
+              testID="terms-checkbox"
+            />
+          </Host>
+          <Text style={styles.termsText}>
+            By continuing you agree to Emotionary&apos;s{' '}
+            <Text
+              style={styles.termsLink}
+              onPress={() => void Linking.openURL(TERMS_URL)}
+              accessibilityRole="link"
+            >
+              Terms of Use
+            </Text>{' '}
+            and{' '}
+            <Text
+              style={styles.termsLink}
+              onPress={() => void Linking.openURL(PRIVACY_URL)}
+              accessibilityRole="link"
+            >
+              Privacy Policy
+            </Text>
+            .
+          </Text>
+        </View>
+      )}
       {message.length > 0 && (
         <Text style={styles.authMessage} accessibilityLiveRegion="polite" selectable>
           {message}
@@ -684,7 +746,10 @@ function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
         <Text style={styles.firstWordTitle} accessibilityRole="header">
           Meraki
         </Text>
-        <Text style={styles.firstPronunciation}>[meh-RAH-kee] 🔊</Text>
+        <View style={styles.firstPronunciationRow}>
+          <Text style={styles.firstPronunciation}>[meh-RAH-kee]</Text>
+          <PronunciationButton word="Meraki" />
+        </View>
         <Text style={styles.firstOrigin}>GREEK</Text>
         <Text style={styles.firstDefinition}>
           To do something with soul; leaving a piece of yourself in your work, whether it&apos;s a
@@ -707,7 +772,7 @@ function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
           <Pressable
             onPress={() => {
               selectionHaptic();
-              router.push('/share/meraki');
+              router.push('/share/meraki?demo=1');
             }}
             style={styles.previewAction}
             accessibilityRole="button"
@@ -716,6 +781,23 @@ function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
             <Text style={styles.previewActionLabel}>SHARE</Text>
           </Pressable>
         </View>
+        <Animated.View
+          entering={reducedMotion ? undefined : FadeInDown.delay(620).springify().damping(17)}
+          style={styles.shareCoachmark}
+        >
+          <Pressable
+            onPress={() => {
+              selectionHaptic();
+              router.push('/share/meraki?demo=1');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Open the share card demo"
+          >
+            <Text style={styles.shareCoachmarkText}>
+              Save your favorite words, and tap here to save or share them.
+            </Text>
+          </Pressable>
+        </Animated.View>
       </Animated.View>
     </View>
   );
@@ -803,8 +885,8 @@ const styles = StyleSheet.create({
   },
   intro: {
     fontFamily: font.serif,
-    fontSize: type.small,
-    lineHeight: 22,
+    fontSize: type.small + 2,
+    lineHeight: 24,
     color: color.ink,
     marginTop: space.l,
     textAlign: 'center',
@@ -829,7 +911,7 @@ const styles = StyleSheet.create({
   notificationBody: { fontFamily: font.serif, fontSize: type.caption, lineHeight: 18, color: color.inkMuted, marginTop: 2 },
   kicker: {
     fontFamily: font.serifMedium,
-    fontSize: type.badge,
+    fontSize: type.badge + 2,
     letterSpacing: letterSpacing.badge,
     color: color.inkMuted,
     textAlign: 'center',
@@ -837,15 +919,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: font.display,
-    fontSize: 31,
-    lineHeight: 37,
+    fontSize: 33,
+    lineHeight: 39,
     color: color.ink,
     textAlign: 'center',
   },
   body: {
     fontFamily: font.serif,
-    fontSize: type.small,
-    lineHeight: 22,
+    fontSize: type.small + 2,
+    lineHeight: 24,
     color: color.inkMuted,
     textAlign: 'center',
     marginTop: space.m,
@@ -875,10 +957,10 @@ const styles = StyleSheet.create({
   sourceCopy: { flex: 1 },
   sourceTitle: {
     fontFamily: font.serifSemiBold,
-    fontSize: type.badge,
+    fontSize: type.badge + 2,
     letterSpacing: letterSpacing.caps,
   },
-  sourceBody: { fontFamily: font.serif, fontSize: type.caption, lineHeight: 17, color: color.ink, marginTop: 3 },
+  sourceBody: { fontFamily: font.serif, fontSize: type.caption + 2, lineHeight: 19, color: color.ink, marginTop: 3 },
   levelList: { width: '100%', gap: 9, marginTop: space.l },
   levelRow: {
     flexDirection: 'row',
@@ -915,8 +997,8 @@ const styles = StyleSheet.create({
   },
   optionActive: { backgroundColor: color.ink, borderColor: color.ink },
   optionCopy: { flex: 1 },
-  optionTitle: { fontFamily: font.serifSemiBold, fontSize: type.small, color: color.ink },
-  optionBody: { fontFamily: font.serif, fontSize: type.caption, color: color.inkMuted, marginTop: 2 },
+  optionTitle: { fontFamily: font.serifSemiBold, fontSize: type.small + 2, color: color.ink },
+  optionBody: { fontFamily: font.serif, fontSize: type.caption + 2, lineHeight: 19, color: color.inkMuted, marginTop: 2 },
   optionTextActive: { color: color.paper },
   timeDisplay: { fontFamily: font.display, fontSize: 40, color: color.ink, marginTop: space.l },
   timePills: {
@@ -938,7 +1020,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timePillActive: { backgroundColor: color.ink, borderColor: color.ink },
-  timePillText: { fontFamily: font.serifMedium, fontSize: type.caption, color: color.ink },
+  timePillText: { fontFamily: font.serifMedium, fontSize: type.caption + 2, color: color.ink },
   timePillTextActive: { color: color.paper },
   pickerWrap: { alignSelf: 'stretch', marginTop: space.m },
   widgetPreview: { flexDirection: 'row', gap: space.m, marginTop: space.l },
@@ -955,8 +1037,8 @@ const styles = StyleSheet.create({
     padding: space.m,
   },
   widgetOrb: { width: 28, height: 28, borderRadius: 14, backgroundColor: levelPalettes[3].deep, marginBottom: 5 },
-  widgetWord: { fontFamily: font.display, fontSize: type.body, color: color.ink },
-  widgetDefinition: { fontFamily: font.serif, fontSize: 8, lineHeight: 11, color: color.inkMuted, textAlign: 'center' },
+  widgetWord: { fontFamily: font.display, fontSize: type.body + 2, color: color.ink },
+  widgetDefinition: { fontFamily: font.serif, fontSize: 10, lineHeight: 13, color: color.inkMuted, textAlign: 'center' },
   lockWidget: {
     width: 132,
     height: 132,
@@ -967,10 +1049,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   lockTime: { fontFamily: font.display, fontSize: 23, color: color.paper },
-  lockWord: { fontFamily: font.serifSemiBold, fontSize: type.small, color: color.paper, marginTop: 4 },
-  lockPronunciation: { fontFamily: font.serif, fontSize: 9, color: 'rgba(255,255,255,0.68)' },
+  lockWord: { fontFamily: font.serifSemiBold, fontSize: type.small + 2, color: color.paper, marginTop: 4 },
+  lockPronunciation: { fontFamily: font.serif, fontSize: 11, color: 'rgba(255,255,255,0.68)' },
   widgetButton: { minHeight: 42, borderRadius: 999, backgroundColor: color.ink, justifyContent: 'center', paddingHorizontal: space.m, marginTop: space.l },
-  widgetButtonText: { fontFamily: font.serifMedium, fontSize: type.badge, letterSpacing: letterSpacing.caps, color: color.paper },
+  widgetButtonText: { fontFamily: font.serifMedium, fontSize: type.badge + 2, letterSpacing: letterSpacing.caps, color: color.paper },
   socialButtons: { width: '100%', gap: space.s, marginTop: space.l },
   socialButton: {
     minHeight: 50,
@@ -995,7 +1077,7 @@ const styles = StyleSheet.create({
   },
   socialButtonText: {
     fontFamily: font.serifMedium,
-    fontSize: type.small,
+    fontSize: type.small + 2,
     color: color.ink,
   },
   orRow: {
@@ -1029,6 +1111,22 @@ const styles = StyleSheet.create({
   },
   authModeTextActive: { color: color.paper },
   authForm: { width: '100%', gap: space.s, marginTop: space.m },
+  termsRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: space.s,
+    marginTop: space.s,
+  },
+  checkboxHost: { width: 28, height: 28, marginTop: -2 },
+  termsText: {
+    flex: 1,
+    fontFamily: font.serif,
+    fontSize: type.caption,
+    lineHeight: 18,
+    color: color.inkMuted,
+  },
+  termsLink: { color: color.ink, textDecorationLine: 'underline' },
   passwordWrap: { width: '100%', position: 'relative' },
   input: {
     minHeight: 52,
@@ -1039,15 +1137,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.72)',
     paddingHorizontal: space.m,
     fontFamily: font.serif,
-    fontSize: type.small,
+    fontSize: type.small + 2,
     color: color.ink,
   },
   passwordInput: { paddingRight: 54 },
   eyeButton: { position: 'absolute', right: 4, top: 4, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   authMessage: {
     fontFamily: font.serif,
-    fontSize: type.caption,
-    lineHeight: 18,
+    fontSize: type.caption + 2,
+    lineHeight: 20,
     color: color.inkMuted,
     textAlign: 'center',
     marginTop: space.s,
@@ -1062,7 +1160,8 @@ const styles = StyleSheet.create({
     color: color.inkMuted,
   },
   firstWordTitle: { fontFamily: font.display, fontSize: 44, color: color.ink, marginTop: space.m },
-  firstPronunciation: { fontFamily: font.serifItalic, fontSize: type.small, color: color.inkMuted },
+  firstPronunciation: { fontFamily: font.serifItalic, fontSize: type.small + 2, color: color.inkMuted },
+  firstPronunciationRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   firstOrigin: {
     fontFamily: font.serifMedium,
     fontSize: type.badge,
@@ -1072,8 +1171,8 @@ const styles = StyleSheet.create({
   },
   firstDefinition: {
     fontFamily: font.serif,
-    fontSize: type.body,
-    lineHeight: 27,
+    fontSize: type.body + 2,
+    lineHeight: 29,
     color: color.ink,
     textAlign: 'center',
     marginTop: space.l,
@@ -1091,9 +1190,28 @@ const styles = StyleSheet.create({
   previewAction: { alignItems: 'center', gap: 5, minWidth: 44 },
   previewActionLabel: {
     fontFamily: font.serifMedium,
-    fontSize: type.badge,
+    fontSize: type.badge + 2,
     letterSpacing: letterSpacing.caps,
     color: color.inkMuted,
+  },
+  shareCoachmark: {
+    maxWidth: 286,
+    borderRadius: 16,
+    borderCurve: 'continuous',
+    backgroundColor: color.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.hairline,
+    paddingHorizontal: space.m,
+    paddingVertical: 11,
+    marginTop: space.m,
+    boxShadow: '0 8px 18px rgba(67, 52, 35, 0.10)',
+  },
+  shareCoachmarkText: {
+    fontFamily: font.serifMedium,
+    fontSize: type.caption + 1,
+    lineHeight: 19,
+    color: color.ink,
+    textAlign: 'center',
   },
   footer: {
     minHeight: 108,
@@ -1107,10 +1225,10 @@ const styles = StyleSheet.create({
   },
   footerDotsOnly: { minHeight: 30 },
   footerActions: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  footerCtas: { alignItems: 'center', minWidth: 190 },
+  footerCtas: { alignItems: 'center', minWidth: 210 },
   backFooterButton: { width: 44, minHeight: 46, alignItems: 'center', justifyContent: 'center' },
   primary: {
-    minWidth: 176,
+    minWidth: 210,
     minHeight: 46,
     backgroundColor: color.ink,
     borderRadius: 999,
@@ -1121,14 +1239,14 @@ const styles = StyleSheet.create({
   },
   primaryText: {
     fontFamily: font.serifMedium,
-    fontSize: type.badge,
+    fontSize: type.badge + 2,
     letterSpacing: letterSpacing.caps,
     color: color.paper,
   },
   secondary: { minHeight: 34, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.m },
   secondaryText: {
     fontFamily: font.serifMedium,
-    fontSize: type.badge,
+    fontSize: type.badge + 2,
     letterSpacing: letterSpacing.caps,
     color: color.inkMuted,
     textDecorationLine: 'underline',

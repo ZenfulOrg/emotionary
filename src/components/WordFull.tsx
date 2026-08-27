@@ -5,6 +5,8 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SystemIcon } from '@/components/system-icon';
+import { PronunciationButton } from '@/components/pronunciation-button';
+import { wordTitleSize } from '@/components/word-title-size';
 import { TypeBadge } from '@/components/TypeBadge';
 import type { Word } from '@/content/types';
 import { lightImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
@@ -59,11 +61,9 @@ export function WordFull({
       <View style={styles.top}>
         <TypeBadge wordType={word.type} />
         <Text
-          style={styles.word}
+          style={[styles.word, { fontSize: wordTitleSize(word.word) }]}
           maxFontSizeMultiplier={1.4}
           numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.48}
           accessibilityRole="header"
           accessibilityLabel={`${word.word}. ${word.language}. Level ${word.level}.`}
           accessibilityHint="Long press to copy the word"
@@ -72,9 +72,12 @@ export function WordFull({
         >
           {word.word}
         </Text>
-        <Text style={styles.pronunciation} maxFontSizeMultiplier={1.6}>
-          [{word.pronunciation}]
-        </Text>
+        <View style={styles.pronunciationRow}>
+          <Text style={styles.pronunciation} maxFontSizeMultiplier={1.6}>
+            [{word.pronunciation}]
+          </Text>
+          <PronunciationButton word={word.word} />
+        </View>
         <Text style={styles.origin}>{word.language.toUpperCase()}</Text>
         <Text
           style={styles.definition}
@@ -191,8 +194,13 @@ const styles = StyleSheet.create({
     fontFamily: font.serifItalic,
     fontSize: type.small,
     color: color.inkMuted,
-    marginTop: space.s,
     textAlign: 'center',
+  },
+  pronunciationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginTop: space.xs,
   },
   origin: {
     fontFamily: font.serifMedium,

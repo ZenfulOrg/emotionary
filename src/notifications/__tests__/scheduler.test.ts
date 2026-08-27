@@ -1,4 +1,4 @@
-import { notificationBody } from '@/notifications/scheduler';
+import { notificationBody, streakRescueDate } from '@/notifications/scheduler';
 
 describe('notificationBody (first clause, ≤ ~100 chars)', () => {
   test('cuts at a legacy em-dash clause boundary', () => {
@@ -32,5 +32,20 @@ describe('notificationBody (first clause, ≤ ~100 chars)', () => {
 
   test('always ends with terminal punctuation', () => {
     expect(notificationBody('An unpunctuated clause')).toBe('An unpunctuated clause.');
+  });
+});
+
+describe('streak rescue scheduling', () => {
+  test('warns at 8 PM on the day after the last qualifying open', () => {
+    const rescue = streakRescueDate({ lastOpenDate: '2026-08-24', streak: 7 });
+    expect(rescue?.getFullYear()).toBe(2026);
+    expect(rescue?.getMonth()).toBe(7);
+    expect(rescue?.getDate()).toBe(25);
+    expect(rescue?.getHours()).toBe(20);
+    expect(rescue?.getMinutes()).toBe(0);
+  });
+
+  test('does not schedule a warning without a running streak', () => {
+    expect(streakRescueDate({ lastOpenDate: null, streak: 0 })).toBeNull();
   });
 });

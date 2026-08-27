@@ -2,7 +2,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
-  PixelRatio,
   Platform,
   Pressable,
   StyleSheet,
@@ -29,7 +28,7 @@ const SHARE_TARGETS = [
 ] as const;
 
 export default function ShareModal() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug, demo } = useLocalSearchParams<{ slug: string; demo?: string }>();
   const words = useContentStore((s) => s.words);
   const recordShare = useUserStore((s) => s.recordShare);
   const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
@@ -42,7 +41,7 @@ export default function ShareModal() {
 
   const word = slug ? findWord(words, slug) : undefined;
   const todaysSlug = wordOfDay(words, localDateString())?.slug ?? null;
-  const locked = word ? !canViewWord(word, todaysSlug, hasFullAccess) : false;
+  const locked = word ? demo !== '1' && !canViewWord(word, todaysSlug, hasFullAccess) : false;
 
   useEffect(() => {
     if (locked) router.replace('/paywall');
@@ -61,15 +60,16 @@ export default function ShareModal() {
   // import of expo-media-library breaks web/server rendering (its classes
   // extend a native module that is undefined off-device).
   //
-  // Capture options are logical points: divide the pixel target by the device
-  // scale so every device emits exactly 1080×1920 (DESIGN.md §10).
+  // react-native-view-shot expects output pixels here. Supplying the full
+  // Story dimensions prevents high-density iPhones from producing a soft
+  // 360×640 image after an unnecessary PixelRatio division.
   const capture = async () => {
     const { captureRef } = await import('react-native-view-shot');
     return captureRef(shotRef, {
       format: 'png',
       quality: 1,
-      width: CARD_BASE_WIDTH / PixelRatio.get(),
-      height: CARD_BASE_HEIGHT / PixelRatio.get(),
+      width: CARD_BASE_WIDTH,
+      height: CARD_BASE_HEIGHT,
     });
   };
 

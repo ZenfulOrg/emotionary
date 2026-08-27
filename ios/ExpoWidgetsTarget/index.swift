@@ -5,7 +5,9 @@ internal import ExpoWidgets
 @main
 struct ExportWidgets0: WidgetBundle {
   var body: some Widget {
-    DailyWord()
+    if #available(iOS 17.0, *) {
+      DailyWord()
+    }
     WidgetLiveActivity()
   }
 }

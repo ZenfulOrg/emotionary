@@ -1,12 +1,15 @@
-import { HStack, Image, Link, Text, VStack } from '@expo/ui/swift-ui';
+import { HStack, Image, Link, Text, VStack, ZStack } from '@expo/ui/swift-ui';
 import {
+  aspectRatio,
   background,
+  clipped,
   containerRelativeFrame,
   font,
   foregroundStyle,
   lineLimit,
   multilineTextAlignment,
   padding,
+  resizable,
 } from '@expo/ui/swift-ui/modifiers';
 import { createWidget, type WidgetEnvironment } from 'expo-widgets';
 
@@ -20,9 +23,13 @@ export type DailyWordWidgetProps = {
   liked: boolean;
 };
 
+type DailyWordWidgetConfiguration = {
+  theme: 'automatic' | 'moodyNature' | 'duskyRose';
+};
+
 const DailyWordWidgetView = (
   props: DailyWordWidgetProps,
-  environment: WidgetEnvironment,
+  environment: WidgetEnvironment<DailyWordWidgetConfiguration>,
 ) => {
   'widget';
 
@@ -30,6 +37,17 @@ const DailyWordWidgetView = (
   const isCircular = environment.widgetFamily === 'accessoryCircular';
   const isLockScreen =
     isInline || isCircular || environment.widgetFamily === 'accessoryRectangular';
+  const theme = environment.configuration?.theme ?? 'automatic';
+  const moodyNature = !isLockScreen && theme === 'moodyNature';
+  const duskyRose = !isLockScreen && theme === 'duskyRose';
+  const widgetInk = moodyNature ? '#FFF8EC' : props.ink;
+  const widgetBackground = isLockScreen
+    ? '#F7F3EB'
+    : moodyNature
+      ? 'rgba(11, 19, 19, 0.42)'
+      : duskyRose
+        ? '#E8C9D4'
+        : props.tint;
 
   if (isInline) {
     return <Text>{props.word} · {props.definition}</Text>;
@@ -47,63 +65,81 @@ const DailyWordWidgetView = (
   }
 
   return (
-    <Link destination={`emotionary://word/${props.slug}`}>
+    <ZStack modifiers={[containerRelativeFrame({ axes: 'both' }), clipped()]}>
+      {moodyNature && (
+        <Image
+          assetName="MoodyNature"
+          modifiers={[
+            resizable(),
+            aspectRatio({ contentMode: 'fill' }),
+            containerRelativeFrame({ axes: 'both' }),
+            clipped(),
+          ]}
+        />
+      )}
       <VStack
         alignment="center"
-        spacing={isLockScreen ? 3 : 6}
+        spacing={isLockScreen ? 3 : 8}
         modifiers={[
           containerRelativeFrame({ axes: 'both' }),
-          background(isLockScreen ? '#F7F3EB' : props.tint),
-          padding({ all: isLockScreen ? 7 : 13 }),
+          background(widgetBackground),
+          padding({ all: isLockScreen ? 9 : environment.widgetFamily === 'systemMedium' ? 24 : 20 }),
         ]}
       >
-        <Text
-          modifiers={[
-            font({ design: 'serif', size: isLockScreen ? 17 : 25, weight: 'semibold' }),
-            foregroundStyle(props.ink),
-            lineLimit(1),
-          ]}
-        >
-          {props.word}
-        </Text>
-        <Text
-          modifiers={[
-            font({ design: 'serif', size: isLockScreen ? 8 : 10 }),
-            foregroundStyle(props.ink),
-            lineLimit(1),
-          ]}
-        >
-          [{props.pronunciation}]
-        </Text>
+        <Link destination={`emotionary://word/${props.slug}`}>
+          <VStack alignment="center" spacing={isLockScreen ? 3 : 8}>
+            <Text
+              modifiers={[
+                font({ design: 'serif', size: isLockScreen ? 17 : 24, weight: 'semibold' }),
+                foregroundStyle(widgetInk),
+                lineLimit(1),
+              ]}
+            >
+              {props.word}
+            </Text>
+            <Text
+              modifiers={[
+                font({ design: 'serif', size: isLockScreen ? 8 : 10 }),
+                foregroundStyle(widgetInk),
+                lineLimit(1),
+              ]}
+            >
+              [{props.pronunciation}]
+            </Text>
+            {!isLockScreen && (
+              <Text
+                modifiers={[
+                  font({ design: 'serif', size: 10 }),
+                  foregroundStyle(widgetInk),
+                  multilineTextAlignment('center'),
+                  lineLimit(environment.widgetFamily === 'systemMedium' ? 2 : 3),
+                ]}
+              >
+                {props.definition}
+              </Text>
+            )}
+          </VStack>
+        </Link>
         {!isLockScreen && (
-          <Text
-            modifiers={[
-              font({ design: 'serif', size: 11 }),
-              foregroundStyle(props.ink),
-              multilineTextAlignment('center'),
-              lineLimit(3),
-            ]}
-          >
-            {props.definition}
-          </Text>
-        )}
-        {!isLockScreen && (
-          <HStack spacing={30} modifiers={[padding({ top: 2 })]}>
+          <HStack spacing={36} modifiers={[padding({ top: 3 })]}>
             <Link destination={`emotionary://widget/like/${props.slug}`}>
               <Image
                 systemName={props.liked ? 'heart.fill' : 'heart'}
-                size={13}
-                color={props.ink}
+                size={15}
+                color={widgetInk}
               />
             </Link>
             <Link destination={`emotionary://widget/share/${props.slug}`}>
-              <Image systemName="square.and.arrow.up" size={13} color={props.ink} />
+              <Image systemName="square.and.arrow.up" size={15} color={widgetInk} />
             </Link>
           </HStack>
         )}
       </VStack>
-    </Link>
+    </ZStack>
   );
 };
 
-export default createWidget<DailyWordWidgetProps>('DailyWord', DailyWordWidgetView);
+export default createWidget<DailyWordWidgetProps, DailyWordWidgetConfiguration>(
+  'DailyWord',
+  DailyWordWidgetView,
+);

@@ -48,6 +48,7 @@ export default function RootLayout() {
   const onboarded = useUserStore((s) => s.onboarded);
   const notifTime = useUserStore((s) => s.notifTime);
   const notifEnabled = useUserStore((s) => s.notifEnabled);
+  const streakState = useUserStore((s) => s.streakState);
   const favorites = useUserStore((s) => s.favorites);
 
   useEffect(() => useUserStore.persist.onFinishHydration(() => setUserHydrated(true)), []);
@@ -69,14 +70,14 @@ export default function RootLayout() {
   // time changed, toggle flipped, or a fresh foreground (DESIGN.md §8).
   useEffect(() => {
     if (!userHydrated || !contentHydrated || !onboarded) return;
-    void rebuildQueue({ words, time: notifTime, enabled: notifEnabled });
+    void rebuildQueue({ words, time: notifTime, enabled: notifEnabled, streakState });
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
-        void rebuildQueue({ words, time: notifTime, enabled: notifEnabled });
+        void rebuildQueue({ words, time: notifTime, enabled: notifEnabled, streakState });
       }
     });
     return () => sub.remove();
-  }, [userHydrated, contentHydrated, onboarded, words, notifTime, notifEnabled]);
+  }, [userHydrated, contentHydrated, onboarded, words, notifTime, notifEnabled, streakState]);
 
   // Keep the widget timeline current — including the like state on today's
   // word, so the widget heart fills as soon as a word is favorited.

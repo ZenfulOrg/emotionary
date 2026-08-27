@@ -1,5 +1,6 @@
+import { BlurView } from 'expo-blur';
 import { router, type Href } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { WordTypeIcon } from '@/components/word-type-icon';
 import type { Word } from '@/content/types';
@@ -25,20 +26,23 @@ export function WordCard({ word, locked = false }: { word: Word; locked?: boolea
       <Text style={styles.word} maxFontSizeMultiplier={1.6}>
         {word.word}
       </Text>
-      {locked ? (
-        <View style={styles.lockedRow}>
-          <Text style={styles.preview}>Unlock full access to read this word</Text>
-          <Text style={styles.lock}>LOCKED</Text>
-        </View>
-      ) : (
-        <Text style={styles.preview} numberOfLines={1}>{word.definition}</Text>
-      )}
+      <Text style={styles.preview} numberOfLines={1}>{word.definition}</Text>
       <WordTypeIcon
         wordType={word.type}
         size={15}
         color={color.inkFaint}
         style={styles.glyph}
       />
+      {locked && (
+        <BlurView
+          tint="systemMaterialLight"
+          intensity={72}
+          style={styles.lockedBlur}
+          pointerEvents="none"
+        >
+          <Text style={styles.lock}>FULL ACCESS</Text>
+        </BlurView>
+      )}
     </Pressable>
   );
 }
@@ -49,6 +53,7 @@ const styles = StyleSheet.create({
     paddingVertical: space.m,
     paddingHorizontal: space.m,
     marginBottom: space.s + 2,
+    overflow: 'hidden',
   },
   pressed: { opacity: 0.75 },
   word: {
@@ -68,7 +73,15 @@ const styles = StyleSheet.create({
     right: space.m,
     top: space.m + 2,
   },
-  lockedRow: { flexDirection: 'row', alignItems: 'center', gap: space.s, paddingRight: space.l },
+  lockedBlur: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   lock: {
     fontFamily: font.serifMedium,
     fontSize: 8,

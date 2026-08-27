@@ -21,7 +21,7 @@ export function TodayCoachmark({ onOpenShare }: { onOpenShare: () => void }) {
         accessibilityLabel="Tip: save or share this word. Open the share card."
       >
         <Text style={styles.eyebrow}>A LITTLE TIP</Text>
-        <Text style={styles.copy}>Keep a word close, or tap here to pass it along.</Text>
+        <Text style={styles.copy}>Save your favorite words, and tap here to save or share them.</Text>
         <View style={styles.actions} accessibilityElementsHidden>
           <View style={styles.action}>
             <SystemIcon name="heart" fallback="♡" size={18} color={color.ink} />

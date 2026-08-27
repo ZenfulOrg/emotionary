@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -81,7 +82,7 @@ function WidgetShowcase({ onOpen }: { onOpen: (variant: WidgetGuideVariant) => v
       <View style={styles.widgetSettings}>
         <Text style={styles.widgetSettingsTitle}>Widget Settings</Text>
         <SettingsRow label="Topics" value="Mix" />
-        <SettingsRow label="Theme" value="Auto" />
+        <SettingsRow label="Theme" value="Word Color · Nature · Rose" />
         <SettingsRow label="Widget Border" value="On" />
         <SettingsRow label="Refresh" value="Hourly" />
       </View>
@@ -110,7 +111,12 @@ function InstagramBanner() {
       accessibilityLabel="Follow Emotionary on Instagram"
     >
       <View style={styles.instagramMark}>
-        <SystemIcon name="camera" fallback="◎" size={20} color={color.paper} />
+        <Image
+          source={require('../../../assets/images/icon.png')}
+          style={styles.instagramLogo}
+          contentFit="cover"
+          accessibilityLabel="Emotionary logo"
+        />
       </View>
       <View style={styles.instagramCopy}>
         <Text style={styles.instagramEyebrow}>FOLLOW US ON INSTAGRAM</Text>
@@ -344,10 +350,12 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: levelPalettes[3].deep,
+    backgroundColor: color.paper,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
+  instagramLogo: { width: 44, height: 44 },
   instagramCopy: { flex: 1, gap: 3 },
   instagramEyebrow: {
     fontFamily: font.serifMedium,

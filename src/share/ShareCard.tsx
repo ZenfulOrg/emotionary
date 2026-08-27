@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { partOfSpeechFor } from '@/content/part-of-speech';
 import type { Word } from '@/content/types';
-import { font, letterSpacing, levelPalettes } from '@/theme/tokens';
+import { font, letterSpacing, levelPalettes, typeMeta } from '@/theme/tokens';
 
 /**
  * The share card — DESIGN.md §10. Designed on a 1080×1920 canvas (Instagram /
@@ -32,6 +33,19 @@ export function ShareCard({ word, width }: { word: Word; width: number }) {
       <View style={styles.center}>
         <Text
           style={{
+            fontFamily: font.serifSemiBold,
+            fontSize: 30 * s,
+            letterSpacing: letterSpacing.badge * 2.2 * s,
+            color: palette.onDeep,
+            opacity: 0.82,
+            textAlign: 'center',
+            marginBottom: 28 * s,
+          }}
+        >
+          {typeMeta[word.type].label}
+        </Text>
+        <Text
+          style={{
             fontFamily: font.display,
             fontSize: 128 * s,
             color: palette.onDeep,
@@ -52,7 +66,7 @@ export function ShareCard({ word, width }: { word: Word; width: number }) {
             marginTop: 22 * s,
           }}
         >
-          [{word.pronunciation}]
+          {partOfSpeechFor(word)} · [{word.pronunciation}]
         </Text>
         <View
           style={{
@@ -100,7 +114,7 @@ export function ShareCard({ word, width }: { word: Word; width: number }) {
             marginTop: 18 * s,
           }}
         >
-          One word. Every day.
+          Download the Emotionary App
         </Text>
       </View>
     </View>

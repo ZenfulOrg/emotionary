@@ -8,9 +8,22 @@ import type { Word } from '@/content/types';
  * Locked product rule: today's word is ALWAYS free (freemium must never
  * break the daily loop).
  */
-// Four evergreen previews plus the daily word keep the free experience at
-// no more than five readable words while preserving the one-word-a-day loop.
-const FREE_PREVIEW_SLUGS = new Set(['anhedonia', 'apricity', 'komorebi', 'meraki']);
+export const FREE_WORD_LIMIT = 10;
+
+// The first ten Browse entries in alphabetical order. Today's word remains an
+// additional exception so the daily loop can never be blocked.
+const FREE_PREVIEW_SLUGS = new Set([
+  'acedia',
+  'alexithymia',
+  'ambivalence',
+  'anhedonia',
+  'apricity',
+  'catharsis',
+  'chrysalism',
+  'depaysement',
+  'duende',
+  'dysphoria',
+]);
 
 export function canViewWord(
   word: Word,
