@@ -1033,7 +1033,7 @@ const styles = StyleSheet.create({
   },
   widgetOrb: { width: 28, height: 28, borderRadius: 14, backgroundColor: levelPalettes[3].deep, marginBottom: 5 },
   widgetWord: { fontFamily: font.display, fontSize: type.body + 2, color: color.ink },
-  widgetDefinition: { fontFamily: font.serif, fontSize: 10, lineHeight: 13, color: color.inkMuted, textAlign: 'center' },
+  widgetDefinition: { fontFamily: font.serif, fontSize: 12, lineHeight: 15, color: color.inkMuted, textAlign: 'center' },
   lockWidget: {
     width: 132,
     height: 132,
@@ -1045,7 +1045,7 @@ const styles = StyleSheet.create({
   },
   lockTime: { fontFamily: font.display, fontSize: 25, color: color.paper },
   lockWord: { fontFamily: font.serifSemiBold, fontSize: type.small + 2, color: color.paper, marginTop: 4 },
-  lockPronunciation: { fontFamily: font.serif, fontSize: 11, color: 'rgba(255,255,255,0.68)' },
+  lockPronunciation: { fontFamily: font.serif, fontSize: 13, color: 'rgba(255,255,255,0.68)' },
   widgetButton: { minHeight: 42, borderRadius: 999, backgroundColor: color.ink, justifyContent: 'center', paddingHorizontal: space.m, marginTop: space.l },
   widgetButtonText: { fontFamily: font.serifMedium, fontSize: type.badge + 2, letterSpacing: letterSpacing.caps, color: color.paper },
   socialButtons: { width: '100%', gap: space.s, marginTop: space.l },
