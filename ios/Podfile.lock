@@ -1,9 +1,9 @@
 PODS:
   - EXApplication (57.0.2):
     - ExpoModulesCore
-  - EXConstants (57.0.15):
+  - EXConstants (57.0.16):
     - ExpoModulesCore
-  - Expo (57.0.17):
+  - Expo (57.0.18):
     - ExpoModulesCore
     - ExpoModulesJSI
     - hermes-engine
@@ -43,7 +43,7 @@ PODS:
     - ExpoModulesCore
   - ExpoFileSystem (57.0.6):
     - ExpoModulesCore
-  - ExpoFont (57.0.1):
+  - ExpoFont (57.0.2):
     - ExpoModulesCore
   - ExpoGlassEffect (57.0.1):
     - ExpoModulesCore
@@ -118,7 +118,7 @@ PODS:
     - React-RCTFabric
   - ExpoWebBrowser (57.0.2):
     - ExpoModulesCore
-  - ExpoWidgets (57.0.13):
+  - ExpoWidgets (57.0.15):
     - ExpoModulesCore
     - ExpoUI
   - FBLazyVector (0.86.3)
@@ -2702,8 +2702,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   EXApplication: bbd517d50878ca1d121fb3843392beb210181e28
-  EXConstants: e05664c2e0470c274210b8d0857ac2c4cc5e963c
-  Expo: cc603b7ad800059976aacd1550f531b68ae65dd0
+  EXConstants: 736b7f1ed7235956785cb81e0ce37ab6a4f33fb4
+  Expo: b3509245f68fe53664ff17b31bb1eda11c24e684
   ExpoAppleAuthentication: 97d113f0f2680067e6e76d3c9249e7e1fc026b42
   ExpoAsset: ff225ee16cea2409800b20fe4945a7c720a24cee
   ExpoBlur: 69e67b4fbfed6f7325377af2aefa8aa4f00cd2af
@@ -2711,7 +2711,7 @@ SPEC CHECKSUMS:
   ExpoDevice: 93a72d7c2bd656a4f0c0d580523e390e9ee7fba5
   ExpoDomWebView: beaec034e51bd028428b98bb1f2633ab79c6d095
   ExpoFileSystem: cc500f33804065aacc7b3366007267b84deca8c8
-  ExpoFont: 59e1faf66ba9bcd232ae1e2ce58d202a48b6f65e
+  ExpoFont: 02ab7433c23831e76b98aa1e2de67b404eeebc4a
   ExpoGlassEffect: 4b62afb489e6b84357701737ce002137c9d5fdbc
   ExpoHaptics: bc5461002fc97e53c213a1af6c88c8f95965b734
   ExpoImage: b37accc4b12647e5cf939b2335eea2bdb874ad7f
@@ -2733,7 +2733,7 @@ SPEC CHECKSUMS:
   ExpoSystemUI: e5f9a81b45481222f6b8b45b86fa37b18d0a86c9
   ExpoUI: 6867422a567a251dcc25444c706b53f479e457ae
   ExpoWebBrowser: 9b98d939d5f1c5dd8f523f0a0683056fb1204434
-  ExpoWidgets: 61e82918a35dec8bd9334c1553c76f61d7fdd47a
+  ExpoWidgets: 76b283be6d618820a7140b8005c8e7aa34ee9684
   FBLazyVector: 2138c6c2ab66c31bf5754dc18097fbc498a49c7f
   hermes-engine: 63c5db7d529c36335fada6582fd293ae2a105d77
   RCTDeprecation: 96f68ebf33f8762466b01d57d6e873c4f30efb07

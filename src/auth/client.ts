@@ -15,6 +15,10 @@ interface AuthSession {
   email: string;
 }
 
+export interface AuthAccount {
+  email: string;
+}
+
 interface SupabaseAuthResponse {
   access_token?: string;
   refresh_token?: string;
@@ -84,8 +88,55 @@ async function saveSession(payload: SupabaseAuthResponse, fallbackEmail: string)
   );
 }
 
+async function readSession(): Promise<AuthSession | null> {
+  if (process.env.EXPO_OS === 'web') return null;
+  const stored = await SecureStore.getItemAsync(SESSION_KEY);
+  if (!stored) return null;
+  try {
+    const session = JSON.parse(stored) as Partial<AuthSession>;
+    if (!session.accessToken || !session.refreshToken) return null;
+    return {
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+      email: session.email ?? emailFromJwt(session.accessToken) ?? '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function clearSession() {
+  if (process.env.EXPO_OS !== 'web') await SecureStore.deleteItemAsync(SESSION_KEY);
+}
+
+async function freshSession(): Promise<AuthSession> {
+  const current = await readSession();
+  if (!current) throw new AuthError('Sign in again to manage your account.');
+
+  const expiresAt = jwtClaims(current.accessToken)?.exp;
+  if (!expiresAt || expiresAt * 1000 > Date.now() + 60_000) return current;
+
+  const payload = await authPost('token?grant_type=refresh_token', {
+    refresh_token: current.refreshToken,
+  });
+  if (!payload.access_token || !payload.refresh_token) {
+    throw new AuthError('Your session expired. Sign in again to continue.');
+  }
+  const email = payload.user?.email ?? current.email;
+  await saveSessionTokens(payload.access_token, payload.refresh_token, email);
+  return {
+    accessToken: payload.access_token,
+    refreshToken: payload.refresh_token,
+    email,
+  };
+}
+
 export async function createAccount(email: string, password: string) {
-  const payload = await requestAuth('signup', email, password);
+  const payload = await requestAuth(
+    `signup?redirect_to=${encodeURIComponent(OAUTH_REDIRECT)}`,
+    email,
+    password,
+  );
   const signedIn = await saveSession(payload, email);
   return { requiresEmailConfirmation: !signedIn };
 }
@@ -162,6 +213,70 @@ export async function signInWithGoogle(): Promise<{ email: string | null } | nul
   return { email };
 }
 
+/** Completes an email-confirmation or recovery link opened through the app scheme. */
+export async function completeAuthCallback(url: string): Promise<AuthAccount> {
+  assertSyncEnabled();
+  const params = parseFragmentParams(url);
+  const accessToken = params.access_token;
+  const refreshToken = params.refresh_token;
+  if (!accessToken || !refreshToken) {
+    throw new AuthError(
+      params.error_description?.replace(/\+/g, ' ') ?? 'This confirmation link is invalid or expired.',
+    );
+  }
+  const email = emailFromJwt(accessToken) ?? '';
+  const saved = await saveSessionTokens(accessToken, refreshToken, email);
+  if (!saved) throw new AuthError('Your account was confirmed, but the session could not be saved.');
+  return { email };
+}
+
+export async function getAuthAccount(): Promise<AuthAccount | null> {
+  const session = await readSession();
+  return session ? { email: session.email || emailFromJwt(session.accessToken) || 'Signed in' } : null;
+}
+
+/** Revokes the current session when possible and always removes it from this device. */
+export async function signOut() {
+  const session = await readSession();
+  try {
+    if (session) {
+      await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${session.accessToken}`,
+        },
+      });
+    }
+  } finally {
+    await clearSession();
+  }
+}
+
+/** Permanently deletes the authenticated Supabase user through a server-only function. */
+export async function deleteAccount() {
+  assertSyncEnabled();
+  const session = await freshSession();
+  let response: Response;
+  try {
+    response = await fetch(`${SUPABASE_URL}/functions/v1/delete-account`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${session.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+    });
+  } catch {
+    throw new AuthError('Could not connect. Check your internet connection and try again.');
+  }
+
+  const payload = (await response.json().catch(() => ({}))) as { error?: string };
+  if (!response.ok) throw new AuthError(payload.error ?? 'Your account could not be deleted. Try again.');
+  await clearSession();
+}
+
 /** Supabase returns OAuth tokens in the URL fragment (#access_token=…&…). */
 function parseFragmentParams(url: string): Record<string, string | undefined> {
   const fragment = url.split('#')[1] ?? url.split('?')[1] ?? '';
@@ -174,11 +289,15 @@ function parseFragmentParams(url: string): Record<string, string | undefined> {
 }
 
 function emailFromJwt(token: string): string | null {
+  return jwtClaims(token)?.email ?? null;
+}
+
+function jwtClaims(token: string): { email?: string; exp?: number } | null {
   try {
     const payload = token.split('.')[1];
     const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const claims = JSON.parse(atob(normalized)) as { email?: string };
-    return claims.email ?? null;
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+    return JSON.parse(atob(padded)) as { email?: string; exp?: number };
   } catch {
     return null;
   }

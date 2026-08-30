@@ -83,7 +83,7 @@ const DailyWordWidgetView = (
         modifiers={[
           containerRelativeFrame({ axes: 'both' }),
           background(widgetBackground),
-          padding({ all: isLockScreen ? 9 : environment.widgetFamily === 'systemMedium' ? 24 : 20 }),
+          padding({ all: isLockScreen ? 12 : environment.widgetFamily === 'systemMedium' ? 28 : 22 }),
         ]}
       >
         <Link destination={`emotionary://word/${props.slug}`}>

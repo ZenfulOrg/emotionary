@@ -114,7 +114,19 @@ export function ShareCard({ word, width }: { word: Word; width: number }) {
             marginTop: 18 * s,
           }}
         >
-          Download the Emotionary App
+          emotionarybook.com.
+        </Text>
+        <Text
+          style={{
+            fontFamily: font.serif,
+            fontSize: 30 * s,
+            color: palette.onDeep,
+            opacity: 0.85,
+            textAlign: 'center',
+            marginTop: 8 * s,
+          }}
+        >
+          Download the app
         </Text>
       </View>
     </View>

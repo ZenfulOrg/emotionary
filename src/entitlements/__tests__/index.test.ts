@@ -1,5 +1,5 @@
 import type { Word } from '@/content/types';
-import { canViewWord } from '@/entitlements';
+import { canBrowseWord, canViewWord } from '@/entitlements';
 
 const baseWord: Word = {
   id: 'word-id',
@@ -53,6 +53,24 @@ describe('free access policy', () => {
     );
     expect(readable).toHaveLength(11);
     expect(canViewWord({ ...baseWord, slug: 'eleventh-preview' }, 'daily-word', false)).toBe(false);
+  });
+
+  test('Browse exposes exactly ten previews, without adding today as an eleventh', () => {
+    const slugs = [
+      'acedia',
+      'alexithymia',
+      'ambivalence',
+      'anhedonia',
+      'apricity',
+      'catharsis',
+      'chrysalism',
+      'depaysement',
+      'duende',
+      'dysphoria',
+    ];
+    expect(slugs.filter((slug) => canBrowseWord({ ...baseWord, slug }, false))).toHaveLength(10);
+    expect(canBrowseWord({ ...baseWord, slug: 'daily-word' }, false)).toBe(false);
+    expect(canBrowseWord({ ...baseWord, slug: 'daily-word' }, true)).toBe(true);
   });
 
   test('locks other words until full access is active', () => {

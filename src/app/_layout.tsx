@@ -118,6 +118,10 @@ export default function RootLayout() {
       >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="auth-callback" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="account" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="legal/privacy" />
+        <Stack.Screen name="legal/terms" />
         <Stack.Screen name="word/[slug]" />
         <Stack.Screen name="favorites" />
         <Stack.Screen

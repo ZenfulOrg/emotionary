@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  PixelRatio,
   Platform,
   Pressable,
   StyleSheet,
@@ -55,21 +56,24 @@ export default function ShareModal() {
 
   // Fit the 9:16 preview inside the window with room for the buttons.
   const cardWidth = Math.min(winW * 0.72, (winH * 0.54 * CARD_BASE_WIDTH) / CARD_BASE_HEIGHT);
+  const pixelRatio = PixelRatio.get();
+  const captureWidth = CARD_BASE_WIDTH / pixelRatio;
+  const captureHeight = CARD_BASE_HEIGHT / pixelRatio;
 
   // Native-only modules are imported lazily inside the handlers — a static
   // import of expo-media-library breaks web/server rendering (its classes
   // extend a native module that is undefined off-device).
   //
-  // react-native-view-shot expects output pixels here. Supplying the full
-  // Story dimensions prevents high-density iPhones from producing a soft
-  // 360×640 image after an unnecessary PixelRatio division.
+  // captureRef measures width/height in logical points and then multiplies by
+  // the device scale. Render a dedicated full-size capture surface so the PNG
+  // lands at a sharp, exact 1080×1920 pixels instead of enlarging the preview.
   const capture = async () => {
     const { captureRef } = await import('react-native-view-shot');
     return captureRef(shotRef, {
       format: 'png',
       quality: 1,
-      width: CARD_BASE_WIDTH,
-      height: CARD_BASE_HEIGHT,
+      width: captureWidth,
+      height: captureHeight,
     });
   };
 
@@ -138,13 +142,25 @@ export default function ShareModal() {
           <Text style={styles.closeGlyph}>✕</Text>
         </Pressable>
 
+        <View style={styles.shadow}>
+          <ShareCard word={word} width={cardWidth} />
+        </View>
+
         <View
           ref={shotRef}
           collapsable={false}
+          pointerEvents="none"
           onLayout={() => setLaidOut(true)}
-          style={styles.shadow}
+          style={[
+            styles.captureSurface,
+            {
+              width: captureWidth,
+              height: captureHeight,
+              left: -captureWidth - 20,
+            },
+          ]}
         >
-          <ShareCard word={word} width={cardWidth} />
+          <ShareCard word={word} width={captureWidth} />
         </View>
 
         <View style={styles.buttons}>
@@ -215,6 +231,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     overflow: 'hidden',
     elevation: 8,
+  },
+  captureSurface: {
+    position: 'absolute',
+    top: 0,
+    overflow: 'hidden',
   },
   buttons: { flexDirection: 'row', gap: space.m, marginTop: space.l },
   button: {

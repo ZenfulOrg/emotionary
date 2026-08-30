@@ -122,11 +122,11 @@ function PlanOption({
 
 const styles = StyleSheet.create({
   wrap: { width: '100%', maxWidth: 390, alignItems: 'center', paddingHorizontal: space.m },
-  title: { fontFamily: font.display, fontSize: 36, color: color.ink },
+  title: { fontFamily: font.display, fontSize: 38, color: color.ink },
   subtitle: {
     fontFamily: font.serif,
-    fontSize: type.small,
-    lineHeight: 21,
+    fontSize: type.small + 2,
+    lineHeight: 23,
     color: color.inkMuted,
     textAlign: 'center',
     maxWidth: 285,
@@ -159,10 +159,10 @@ const styles = StyleSheet.create({
   radioInner: { width: 11, height: 11, borderRadius: 6, backgroundColor: color.ink },
   optionCopy: { flex: 1 },
   optionTitleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space.s },
-  optionTitle: { fontFamily: font.serifSemiBold, fontSize: type.body, color: color.ink },
+  optionTitle: { fontFamily: font.serifSemiBold, fontSize: type.body + 2, color: color.ink },
   badge: {
     fontFamily: font.serifMedium,
-    fontSize: 8,
+    fontSize: 10,
     letterSpacing: 0.7,
     color: '#2F6B45',
     backgroundColor: '#DCEEDE',
@@ -171,8 +171,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     overflow: 'hidden',
   },
-  price: { fontFamily: font.display, fontSize: 25, color: color.ink, marginTop: 4 },
-  cadence: { fontFamily: font.serif, fontSize: type.caption, color: color.inkMuted },
+  price: { fontFamily: font.display, fontSize: 27, color: color.ink, marginTop: 4 },
+  cadence: { fontFamily: font.serif, fontSize: type.caption + 2, color: color.inkMuted },
   note: {
     fontFamily: font.serifItalic,
     fontSize: 10,
@@ -187,11 +187,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: space.xl,
   },
-  continueText: { fontFamily: font.serifSemiBold, fontSize: type.body, color: color.paper },
+  continueText: { fontFamily: font.serifSemiBold, fontSize: type.body + 2, color: color.paper },
   freeButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: space.l },
   freeText: {
     fontFamily: font.serifMedium,
-    fontSize: type.small,
+    fontSize: type.small + 2,
     color: color.ink,
     textDecorationLine: 'underline',
   },

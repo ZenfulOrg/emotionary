@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
@@ -53,6 +53,17 @@ export function WidgetGuideModal({
   onClose: () => void;
 }) {
   const guide = GUIDES[variant];
+  const reducedMotion = useReducedMotion();
+  const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    if (!visible || reducedMotion) return;
+    const timer = setInterval(
+      () => setActiveStep((current) => (current + 1) % guide.steps.length),
+      1800,
+    );
+    return () => clearInterval(timer);
+  }, [guide.steps.length, reducedMotion, variant, visible]);
 
   const close = () => {
     selectionHaptic();
@@ -71,12 +82,21 @@ export function WidgetGuideModal({
 
             <View style={styles.stage}>
               <FloatingWidgetPreview variant={variant} />
+              <Text style={styles.stageStep}>STEP {activeStep + 1} OF {guide.steps.length}</Text>
+              <View style={styles.stageProgressTrack}>
+                <View
+                  style={[
+                    styles.stageProgressFill,
+                    { width: `${((activeStep + 1) / guide.steps.length) * 100}%` },
+                  ]}
+                />
+              </View>
             </View>
 
             <View style={styles.steps}>
               {guide.steps.map((step, index) => (
-                <View key={step} style={styles.stepRow}>
-                  <View style={styles.stepDot}>
+                <View key={step} style={[styles.stepRow, index === activeStep && styles.stepRowActive]}>
+                  <View style={[styles.stepDot, index === activeStep && styles.stepDotActive]}>
                     <Text style={styles.stepNumber}>{index + 1}</Text>
                   </View>
                   <Text style={styles.stepText}>{step}</Text>
@@ -198,6 +218,22 @@ const styles = StyleSheet.create({
     marginTop: space.m,
     overflow: 'hidden',
   },
+  stageStep: {
+    fontFamily: font.serifMedium,
+    fontSize: type.badge,
+    letterSpacing: letterSpacing.caps,
+    color: color.inkMuted,
+    marginTop: 3,
+  },
+  stageProgressTrack: {
+    width: 108,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: 'rgba(33,28,21,0.12)',
+    overflow: 'hidden',
+    marginTop: 6,
+  },
+  stageProgressFill: { height: 3, borderRadius: 2, backgroundColor: color.ink },
   homeWidget: {
     width: 138,
     height: 138,
@@ -241,7 +277,8 @@ const styles = StyleSheet.create({
     marginTop: 13,
   },
   steps: { alignSelf: 'stretch', gap: space.s + 2, marginTop: space.l },
-  stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.s + 2 },
+  stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.s + 2, borderRadius: 12, padding: 5 },
+  stepRowActive: { backgroundColor: 'rgba(255,255,255,0.68)' },
   stepDot: {
     width: 24,
     height: 24,
@@ -252,6 +289,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   stepNumber: { fontFamily: font.serifSemiBold, fontSize: type.caption, color: color.paper },
+  stepDotActive: { backgroundColor: levelPalettes[3].deep },
   stepText: {
     flex: 1,
     fontFamily: font.serif,

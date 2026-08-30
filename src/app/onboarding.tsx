@@ -1,11 +1,9 @@
-import { Checkbox, Host } from '@expo/ui';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -22,6 +20,7 @@ import { Paywall } from '@/components/Paywall';
 import { PronunciationButton } from '@/components/pronunciation-button';
 import { StatsBurst } from '@/components/stats-burst';
 import { SystemIcon } from '@/components/system-icon';
+import { TermsCheckbox } from '@/components/terms-checkbox';
 import { formatTime, TimeControl } from '@/components/TimeControl';
 import { WidgetGuideModal, type WidgetGuideVariant } from '@/components/WidgetGuideModal';
 import { WordTypeIcon } from '@/components/word-type-icon';
@@ -74,9 +73,6 @@ const QUICK_TIMES: NotifTime[] = [
   { hour: 18, minute: 0 },
   { hour: 21, minute: 0 },
 ];
-
-const TERMS_URL = 'https://emotionarybook.com/terms';
-const PRIVACY_URL = 'https://emotionarybook.com/privacy';
 
 const SOURCE_CARDS: {
   type: WordType;
@@ -196,6 +192,7 @@ export default function OnboardingScreen() {
       }
       setAccountComplete(true);
       successHaptic();
+      setStep((current) => Math.min(current + 1, PAGES.length - 1));
     } catch (error) {
       setAuthMessage(error instanceof Error ? error.message : 'Account request failed. Try again.');
     } finally {
@@ -686,18 +683,16 @@ function AccountPage({
       </View>
       {mode === 'create' && (
         <View style={styles.termsRow}>
-          <Host matchContents style={styles.checkboxHost} seedColor={color.ink}>
-            <Checkbox
-              value={termsAccepted}
-              onValueChange={onTermsAcceptedChange}
-              testID="terms-checkbox"
-            />
-          </Host>
+          <TermsCheckbox
+            value={termsAccepted}
+            onValueChange={onTermsAcceptedChange}
+            testID="terms-checkbox"
+          />
           <Text style={styles.termsText}>
             By continuing you agree to Emotionary&apos;s{' '}
             <Text
               style={styles.termsLink}
-              onPress={() => void Linking.openURL(TERMS_URL)}
+              onPress={() => router.push('/legal/terms' as Href)}
               accessibilityRole="link"
             >
               Terms of Use
@@ -705,7 +700,7 @@ function AccountPage({
             and{' '}
             <Text
               style={styles.termsLink}
-              onPress={() => void Linking.openURL(PRIVACY_URL)}
+              onPress={() => router.push('/legal/privacy' as Href)}
               accessibilityRole="link"
             >
               Privacy Policy
@@ -878,8 +873,8 @@ const styles = StyleSheet.create({
   markOverlapCompact: { marginLeft: -5 },
   wordmark: {
     fontFamily: font.display,
-    fontSize: 42,
-    lineHeight: 48,
+    fontSize: 44,
+    lineHeight: 50,
     color: color.ink,
     textAlign: 'center',
   },
@@ -905,10 +900,10 @@ const styles = StyleSheet.create({
     boxShadow: '0 12px 28px rgba(67, 52, 35, 0.10)',
   },
   notificationTop: { flexDirection: 'row', alignItems: 'center' },
-  notificationApp: { fontFamily: font.serifMedium, fontSize: 9, letterSpacing: 1.1, color: color.inkMuted, marginLeft: space.s },
-  notificationTime: { fontFamily: font.serif, fontSize: 10, color: color.inkFaint, marginLeft: 'auto' },
-  notificationTitle: { fontFamily: font.serifSemiBold, fontSize: type.small, color: color.ink, marginTop: space.s },
-  notificationBody: { fontFamily: font.serif, fontSize: type.caption, lineHeight: 18, color: color.inkMuted, marginTop: 2 },
+  notificationApp: { fontFamily: font.serifMedium, fontSize: 11, letterSpacing: 1.1, color: color.inkMuted, marginLeft: space.s },
+  notificationTime: { fontFamily: font.serif, fontSize: 12, color: color.inkFaint, marginLeft: 'auto' },
+  notificationTitle: { fontFamily: font.serifSemiBold, fontSize: type.small + 2, color: color.ink, marginTop: space.s },
+  notificationBody: { fontFamily: font.serif, fontSize: type.caption + 2, lineHeight: 20, color: color.inkMuted, marginTop: 2 },
   kicker: {
     fontFamily: font.serifMedium,
     fontSize: type.badge + 2,
@@ -972,15 +967,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.42)',
   },
   levelDot: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  levelNumber: { fontFamily: font.serifSemiBold, fontSize: type.caption, color: color.paper },
+  levelNumber: { fontFamily: font.serifSemiBold, fontSize: type.caption + 2, color: color.paper },
   levelCopy: { flex: 1 },
   levelTitle: {
     fontFamily: font.serifSemiBold,
-    fontSize: type.badge,
+    fontSize: type.badge + 2,
     letterSpacing: letterSpacing.caps,
     color: color.ink,
   },
-  levelBody: { fontFamily: font.serif, fontSize: type.caption, color: color.inkMuted, marginTop: 2 },
+  levelBody: { fontFamily: font.serif, fontSize: type.caption + 2, color: color.inkMuted, marginTop: 2 },
   optionList: { width: '100%', gap: space.s, marginTop: space.l },
   option: {
     minHeight: 62,
@@ -1000,7 +995,7 @@ const styles = StyleSheet.create({
   optionTitle: { fontFamily: font.serifSemiBold, fontSize: type.small + 2, color: color.ink },
   optionBody: { fontFamily: font.serif, fontSize: type.caption + 2, lineHeight: 19, color: color.inkMuted, marginTop: 2 },
   optionTextActive: { color: color.paper },
-  timeDisplay: { fontFamily: font.display, fontSize: 40, color: color.ink, marginTop: space.l },
+  timeDisplay: { fontFamily: font.display, fontSize: 42, color: color.ink, marginTop: space.l },
   timePills: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1048,7 +1043,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  lockTime: { fontFamily: font.display, fontSize: 23, color: color.paper },
+  lockTime: { fontFamily: font.display, fontSize: 25, color: color.paper },
   lockWord: { fontFamily: font.serifSemiBold, fontSize: type.small + 2, color: color.paper, marginTop: 4 },
   lockPronunciation: { fontFamily: font.serif, fontSize: 11, color: 'rgba(255,255,255,0.68)' },
   widgetButton: { minHeight: 42, borderRadius: 999, backgroundColor: color.ink, justifyContent: 'center', paddingHorizontal: space.m, marginTop: space.l },
@@ -1072,7 +1067,7 @@ const styles = StyleSheet.create({
   },
   googleG: {
     fontFamily: font.serifSemiBold,
-    fontSize: type.body,
+    fontSize: type.body + 2,
     color: '#3F73B3',
   },
   socialButtonText: {
@@ -1090,7 +1085,7 @@ const styles = StyleSheet.create({
   orLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: color.hairline },
   orText: {
     fontFamily: font.serifMedium,
-    fontSize: type.badge,
+    fontSize: type.badge + 2,
     letterSpacing: letterSpacing.caps,
     color: color.inkFaint,
   },
@@ -1105,7 +1100,7 @@ const styles = StyleSheet.create({
   authModeActive: { backgroundColor: color.ink },
   authModeText: {
     fontFamily: font.serifMedium,
-    fontSize: type.badge,
+    fontSize: type.badge + 2,
     letterSpacing: letterSpacing.caps,
     color: color.inkMuted,
   },
@@ -1118,12 +1113,11 @@ const styles = StyleSheet.create({
     gap: space.s,
     marginTop: space.s,
   },
-  checkboxHost: { width: 28, height: 28, marginTop: -2 },
   termsText: {
     flex: 1,
     fontFamily: font.serif,
-    fontSize: type.caption,
-    lineHeight: 18,
+    fontSize: type.caption + 2,
+    lineHeight: 20,
     color: color.inkMuted,
   },
   termsLink: { color: color.ink, textDecorationLine: 'underline' },
@@ -1155,16 +1149,16 @@ const styles = StyleSheet.create({
   firstType: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   firstTypeText: {
     fontFamily: font.serifMedium,
-    fontSize: type.badge,
+    fontSize: type.badge + 2,
     letterSpacing: letterSpacing.badge,
     color: color.inkMuted,
   },
-  firstWordTitle: { fontFamily: font.display, fontSize: 44, color: color.ink, marginTop: space.m },
+  firstWordTitle: { fontFamily: font.display, fontSize: 46, color: color.ink, marginTop: space.m },
   firstPronunciation: { fontFamily: font.serifItalic, fontSize: type.small + 2, color: color.inkMuted },
   firstPronunciationRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   firstOrigin: {
     fontFamily: font.serifMedium,
-    fontSize: type.badge,
+    fontSize: type.badge + 2,
     letterSpacing: letterSpacing.caps,
     color: color.inkFaint,
     marginTop: 3,
@@ -1180,8 +1174,8 @@ const styles = StyleSheet.create({
   previewRule: { height: 1, alignSelf: 'stretch', backgroundColor: color.inkMuted, opacity: 0.28, marginTop: space.l },
   firstWisdom: {
     fontFamily: font.serifItalic,
-    fontSize: type.small,
-    lineHeight: 21,
+    fontSize: type.small + 2,
+    lineHeight: 23,
     color: color.ink,
     textAlign: 'center',
     marginTop: space.m,
@@ -1208,8 +1202,8 @@ const styles = StyleSheet.create({
   },
   shareCoachmarkText: {
     fontFamily: font.serifMedium,
-    fontSize: type.caption + 1,
-    lineHeight: 19,
+    fontSize: type.caption + 2,
+    lineHeight: 20,
     color: color.ink,
     textAlign: 'center',
   },

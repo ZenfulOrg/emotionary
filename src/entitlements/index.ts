@@ -25,10 +25,15 @@ const FREE_PREVIEW_SLUGS = new Set([
   'dysphoria',
 ]);
 
+/** Browse has one exact preview shelf: the first ten alphabetized entries. */
+export function canBrowseWord(word: Word, hasFullAccess: boolean): boolean {
+  return hasFullAccess || FREE_PREVIEW_SLUGS.has(word.slug);
+}
+
 export function canViewWord(
   word: Word,
   todaysSlug: string | null,
   hasFullAccess: boolean,
 ): boolean {
-  return hasFullAccess || FREE_PREVIEW_SLUGS.has(word.slug) || word.slug === todaysSlug;
+  return canBrowseWord(word, hasFullAccess) || word.slug === todaysSlug;
 }

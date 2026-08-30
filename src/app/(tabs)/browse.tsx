@@ -6,8 +6,7 @@ import { WordCard } from '@/components/WordCard';
 import { WordTypeIcon } from '@/components/word-type-icon';
 import { useContentStore } from '@/content/store';
 import type { Level, WordType } from '@/content/types';
-import { localDateString, wordOfDay } from '@/daily/engine';
-import { canViewWord } from '@/entitlements';
+import { canBrowseWord } from '@/entitlements';
 import { selectionHaptic } from '@/feedback/haptics';
 import { useUserStore } from '@/store/userStore';
 import { color, font, letterSpacing, levelPalettes, space, type, typeMeta } from '@/theme/tokens';
@@ -32,7 +31,6 @@ export default function BrowseScreen() {
   const [typeFilter, setTypeFilter] = useState<WordType | 'all'>('all');
   const [keyOpen, setKeyOpen] = useState(false);
   const hasFullAccess = useUserStore((state) => state.accessLevel === 'full');
-  const todaysSlug = wordOfDay(words, localDateString())?.slug ?? null;
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
@@ -114,7 +112,7 @@ export default function BrowseScreen() {
         renderItem={({ item }) => (
           <WordCard
             word={item}
-            locked={!canViewWord(item, todaysSlug, hasFullAccess)}
+            locked={!canBrowseWord(item, hasFullAccess)}
           />
         )}
         contentContainerStyle={styles.list}
@@ -152,7 +150,7 @@ function BrowseKeyModal({ visible, onClose }: { visible: boolean; onClose: () =>
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Key</Text>
+            <Text style={styles.modalTitle}>COLOR DEPTH LEVELS</Text>
             <Pressable
               onPress={() => {
                 selectionHaptic();

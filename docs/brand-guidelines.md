@@ -130,7 +130,7 @@ app), 🥀 (broken streak).
 | File | What it is |
 | --- | --- |
 | `assets/images/icon.png` | App icon — three-dot mark, 1024×1024 |
-| `assets/images/book-cover.png` | Book mockup used in onboarding + stats |
+| `assets/images/book-cover.png` | Archived campaign mockup; retained as a source asset, not shown in the app |
 | `assets/images/splash-icon.png` | Splash mark on `#FAF7F0` |
 | `assets/images/android-icon-foreground.png` | Android adaptive icon |
 
@@ -138,5 +138,5 @@ app), 🥀 (broken streak).
 
 Lowercase-calm, second person, short sentences. The app "feels like opening
 the book": one word at a time, generous whitespace, wisdom lines in italics.
-CTA labels are letterspaced caps ("GET THE BOOK", "ENABLE DAILY WORD");
+CTA labels are letterspaced caps ("ENABLE DAILY WORD", "HOW TO ADD THE WIDGET");
 everything else reads like a sentence.
