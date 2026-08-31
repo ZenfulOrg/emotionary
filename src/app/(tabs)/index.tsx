@@ -46,6 +46,7 @@ export default function TodayScreen() {
   const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
   const [feedHeight, setFeedHeight] = useState(0);
   const [visibleLevel, setVisibleLevel] = useState<Word['level']>(1);
+  const [visibleSlug, setVisibleSlug] = useState<string | null>(null);
   const [streakVisible, setStreakVisible] = useState(() => !streakPopupShownThisSession);
   const [coachmarkVisible, setCoachmarkVisible] = useState(false);
   const [notificationPromptVisible, setNotificationPromptVisible] = useState(false);
@@ -64,10 +65,16 @@ export default function TodayScreen() {
     () => buildTodayFeed(words, today, hasFullAccess, cycleCount),
     [words, today, hasFullAccess, cycleCount],
   );
+  const firstFeedSlug = feed[0]?.kind === 'word' ? feed[0].word.slug : null;
+  const activeAudioSlug = feed.some(
+    (item) => item.kind === 'word' && item.word.slug === visibleSlug,
+  )
+    ? visibleSlug
+    : firstFeedSlug;
 
   useEffect(() => {
-    visibleSlugRef.current = feed[0]?.kind === 'word' ? feed[0].word.slug : null;
-  }, [feed]);
+    visibleSlugRef.current = activeAudioSlug;
+  }, [activeAudioSlug]);
 
   useEffect(() => {
     coachmarkSeenRef.current = todayActionCoachmarkSeen;
@@ -152,6 +159,7 @@ export default function TodayScreen() {
       const visibleToken = viewableItems.find((token) => token.isViewable);
       if (visibleToken?.item.kind === 'word') {
         visibleSlugRef.current = visibleToken.item.word.slug;
+        setVisibleSlug(visibleToken.item.word.slug);
         markRead(visibleToken.item.word.slug);
         setVisibleLevel(visibleToken.item.word.level);
         if (shouldShowTodayActionCoachmark(visibleToken.index, coachmarkSeenRef.current)) {
@@ -207,13 +215,19 @@ export default function TodayScreen() {
           renderItem={({ item }) => (
             <View style={feedHeight > 0 ? { height: feedHeight } : styles.page}>
               {item.kind === 'word' ? (
-                <WordFull word={item.word} feedPage insideSafeArea />
+                <WordFull
+                  word={item.word}
+                  feedPage
+                  insideSafeArea
+                  audioActive={item.word.slug === activeAudioSlug}
+                />
               ) : (
                 <UpgradeSlide />
               )}
             </View>
           )}
           pagingEnabled={feedHeight > 0}
+          extraData={activeAudioSlug}
           decelerationRate="fast"
           contentInsetAdjustmentBehavior="never"
           showsVerticalScrollIndicator={false}

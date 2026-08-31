@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { partOfSpeechFor } from '@/content/part-of-speech';
+import { pronunciationLineFor } from '@/content/part-of-speech';
 import type { Word } from '@/content/types';
 import { font, letterSpacing, levelPalettes, typeMeta } from '@/theme/tokens';
 
@@ -66,7 +66,7 @@ export function ShareCard({ word, width }: { word: Word; width: number }) {
             marginTop: 22 * s,
           }}
         >
-          {partOfSpeechFor(word)} · [{word.pronunciation}]
+          {pronunciationLineFor(word)}
         </Text>
         <View
           style={{
@@ -114,7 +114,7 @@ export function ShareCard({ word, width }: { word: Word; width: number }) {
             marginTop: 18 * s,
           }}
         >
-          emotionarybook.com.
+          emotionarybook.com
         </Text>
         <Text
           style={{

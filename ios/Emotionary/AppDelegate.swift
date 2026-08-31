@@ -1,4 +1,5 @@
 internal import Expo
+import AVFAudio
 import React
 import ReactAppDependencyProvider
 
@@ -13,6 +14,14 @@ class AppDelegate: ExpoAppDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    // Pronunciation is a core interaction, so keep it audible when an iPhone's
+    // Ring/Silent switch is enabled without opting into background playback.
+    try? AVAudioSession.sharedInstance().setCategory(
+      .playback,
+      mode: .spokenAudio,
+      options: [.duckOthers]
+    )
+
     let delegate = ReactNativeDelegate()
     let factory = ExpoReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()

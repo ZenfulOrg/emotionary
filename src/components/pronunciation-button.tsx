@@ -6,18 +6,49 @@ import { SystemIcon } from '@/components/system-icon';
 import { selectionHaptic } from '@/feedback/haptics';
 import { color } from '@/theme/tokens';
 
-export function PronunciationButton({ word, tint = color.inkMuted }: { word: string; tint?: string }) {
+export function PronunciationButton({
+  word,
+  tint = color.inkMuted,
+  active = true,
+}: {
+  word: string;
+  tint?: string;
+  active?: boolean;
+}) {
+  return (
+    <PronunciationButtonControl
+      key={`${word}:${active ? 'active' : 'inactive'}`}
+      word={word}
+      tint={tint}
+      active={active}
+    />
+  );
+}
+
+function PronunciationButtonControl({
+  word,
+  tint,
+  active,
+}: {
+  word: string;
+  tint: string;
+  active: boolean;
+}) {
   const [playback, setPlayback] = useState<'idle' | 'playing' | 'paused'>('idle');
   const activeRef = useRef(false);
+  const sessionRef = useRef(0);
 
   useEffect(
     () => () => {
+      sessionRef.current += 1;
       if (activeRef.current) void Speech.stop();
+      activeRef.current = false;
     },
     [],
   );
 
   const toggle = async () => {
+    if (!active) return;
     selectionHaptic();
     if (playback === 'playing') {
       try {
@@ -45,21 +76,28 @@ export function PronunciationButton({ word, tint = color.inkMuted }: { word: str
     }
 
     await Speech.stop();
+    const session = sessionRef.current + 1;
+    sessionRef.current = session;
     activeRef.current = true;
     setPlayback('playing');
     Speech.speak(word, {
       language: 'en-US',
       rate: 0.76,
       pitch: 1,
+      volume: 1,
+      useApplicationAudioSession: true,
       onDone: () => {
+        if (sessionRef.current !== session) return;
         activeRef.current = false;
         setPlayback('idle');
       },
       onStopped: () => {
+        if (sessionRef.current !== session) return;
         activeRef.current = false;
         setPlayback('idle');
       },
       onError: () => {
+        if (sessionRef.current !== session) return;
         activeRef.current = false;
         setPlayback('idle');
       },
@@ -74,7 +112,8 @@ export function PronunciationButton({ word, tint = color.inkMuted }: { word: str
       style={({ pressed }) => [styles.button, pressed && styles.pressed]}
       accessibilityRole="button"
       accessibilityLabel={`${action} pronunciation of ${word}`}
-      accessibilityState={{ selected: playback !== 'idle' }}
+      accessibilityState={{ disabled: !active, selected: playback !== 'idle' }}
+      disabled={!active}
       hitSlop={8}
     >
       <SystemIcon

@@ -13,3 +13,7 @@ export function partOfSpeechFor(word: Pick<Word, 'slug'>): PartOfSpeech {
   if (VERB_SLUGS.has(word.slug)) return 'V.';
   return 'N.';
 }
+
+export function pronunciationLineFor(word: Pick<Word, 'slug' | 'pronunciation'>): string {
+  return `${partOfSpeechFor(word)} · [${word.pronunciation}]`;
+}

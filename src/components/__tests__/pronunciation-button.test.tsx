@@ -47,6 +47,14 @@ describe('PronunciationButton', () => {
 
     await press();
     expect(Speech.speak).toHaveBeenCalledTimes(1);
+    expect(Speech.speak).toHaveBeenCalledWith(
+      'rumination',
+      expect.objectContaining({
+        language: 'en-US',
+        useApplicationAudioSession: true,
+        volume: 1,
+      }),
+    );
     expect(renderer.root.findByProps({ accessibilityRole: 'button' }).props.accessibilityLabel).toBe(
       'Pause pronunciation of rumination',
     );
@@ -66,6 +74,39 @@ describe('PronunciationButton', () => {
     expect(renderer.root.findByProps({ accessibilityRole: 'button' }).props.accessibilityLabel).toBe(
       'Play pronunciation of rumination',
     );
+  });
+
+  it('stops and resets playback when its Today card is no longer active', async () => {
+    await press();
+    expect(renderer.root.findByProps({ accessibilityRole: 'button' }).props.accessibilityLabel).toBe(
+      'Pause pronunciation of rumination',
+    );
+    jest.mocked(Speech.stop).mockClear();
+
+    await act(async () => {
+      renderer.update(<PronunciationButton word="rumination" active={false} />);
+      await Promise.resolve();
+    });
+
+    const button = renderer.root.findByProps({ accessibilityRole: 'button' });
+    expect(Speech.stop).toHaveBeenCalledTimes(1);
+    expect(button.props.accessibilityLabel).toBe('Play pronunciation of rumination');
+    expect(button.props.accessibilityState).toEqual({ disabled: true, selected: false });
+    expect(button.props.disabled).toBe(true);
+  });
+
+  it('resets when a recycled card receives a different word', async () => {
+    await press();
+    jest.mocked(Speech.stop).mockClear();
+
+    await act(async () => {
+      renderer.update(<PronunciationButton word="meraki" />);
+      await Promise.resolve();
+    });
+
+    const button = renderer.root.findByProps({ accessibilityRole: 'button' });
+    expect(Speech.stop).toHaveBeenCalledTimes(1);
+    expect(button.props.accessibilityLabel).toBe('Play pronunciation of meraki');
   });
 
   it('falls back to stopping when native pause is unavailable', async () => {

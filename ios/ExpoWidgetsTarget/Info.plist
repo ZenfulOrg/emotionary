@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleShortVersionString</key>
-	<string>1.5.4</string>
+	<string>1.5.5</string>
 	<key>CFBundleVersion</key>
-	<string>2026083001</string>
+	<string>2026083002</string>
 	<key>ExpoWidgetsAppGroupIdentifier</key>
 	<string>group.com.nowdrops.emotionary</string>
 	<key>NSExtension</key>

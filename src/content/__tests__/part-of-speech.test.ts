@@ -1,4 +1,4 @@
-import { partOfSpeechFor } from '@/content/part-of-speech';
+import { partOfSpeechFor, pronunciationLineFor } from '@/content/part-of-speech';
 
 describe('partOfSpeechFor', () => {
   test('labels curated adjectives and verbs', () => {
@@ -9,5 +9,11 @@ describe('partOfSpeechFor', () => {
 
   test('defaults catalog concepts to nouns', () => {
     expect(partOfSpeechFor({ slug: 'acedia' })).toBe('N.');
+  });
+
+  test('formats the grammatical type beside the phonetic pronunciation', () => {
+    expect(pronunciationLineFor({ slug: 'meraki', pronunciation: 'meh-rah-kee' })).toBe(
+      'V. · [meh-rah-kee]',
+    );
   });
 });

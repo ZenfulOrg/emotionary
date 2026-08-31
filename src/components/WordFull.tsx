@@ -8,6 +8,7 @@ import { SystemIcon } from '@/components/system-icon';
 import { PronunciationButton } from '@/components/pronunciation-button';
 import { wordTitleSize } from '@/components/word-title-size';
 import { TypeBadge } from '@/components/TypeBadge';
+import { pronunciationLineFor } from '@/content/part-of-speech';
 import type { Word } from '@/content/types';
 import { lightImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
 import { useUserStore } from '@/store/userStore';
@@ -25,10 +26,12 @@ export function WordFull({
   word,
   feedPage = false,
   insideSafeArea = false,
+  audioActive = true,
 }: {
   word: Word;
   feedPage?: boolean;
   insideSafeArea?: boolean;
+  audioActive?: boolean;
 }) {
   const isFavorite = useUserStore((s) => s.favorites.includes(word.slug));
   const toggleFavorite = useUserStore((s) => s.toggleFavorite);
@@ -74,9 +77,9 @@ export function WordFull({
         </Text>
         <View style={styles.pronunciationRow}>
           <Text style={styles.pronunciation} maxFontSizeMultiplier={1.6}>
-            [{word.pronunciation}]
+            {pronunciationLineFor(word)}
           </Text>
-          <PronunciationButton word={word.word} />
+          <PronunciationButton word={word.word} active={audioActive} />
         </View>
         <Text style={styles.origin}>{word.language.toUpperCase()}</Text>
         <Text
@@ -223,7 +226,12 @@ const styles = StyleSheet.create({
   },
   bottom: { alignItems: 'center', marginTop: space.xxl },
   feedBottom: { marginTop: space.xl },
-  rule: { height: StyleSheet.hairlineWidth, backgroundColor: color.hairline, alignSelf: 'stretch' },
+  rule: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: color.inkFaint,
+    alignSelf: 'stretch',
+  },
   wisdom: {
     fontFamily: font.serifItalic,
     fontSize: type.body,
