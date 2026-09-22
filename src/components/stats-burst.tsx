@@ -13,25 +13,27 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { levelPalettes } from '@/theme/tokens';
+import { brand } from '@/theme/tokens';
+
+// The planets, scattered: acid, blue and pink specks glowing on the page.
 
 const specks = [
-  { x: 0.08, y: 0.1, size: 8, color: levelPalettes[3].deep },
-  { x: 0.24, y: 0.16, size: 5, color: levelPalettes[2].deep },
-  { x: 0.48, y: 0.09, size: 7, color: levelPalettes[5].deep },
-  { x: 0.76, y: 0.15, size: 6, color: levelPalettes[1].deep },
-  { x: 0.92, y: 0.24, size: 9, color: levelPalettes[4].deep },
-  { x: 0.13, y: 0.35, size: 6, color: levelPalettes[2].deep },
-  { x: 0.82, y: 0.39, size: 8, color: levelPalettes[3].deep },
-  { x: 0.06, y: 0.54, size: 7, color: levelPalettes[1].deep },
-  { x: 0.94, y: 0.57, size: 6, color: levelPalettes[5].deep },
-  { x: 0.18, y: 0.7, size: 9, color: levelPalettes[4].deep },
-  { x: 0.5, y: 0.76, size: 5, color: levelPalettes[2].deep },
-  { x: 0.81, y: 0.72, size: 8, color: levelPalettes[1].deep },
-  { x: 0.1, y: 0.88, size: 5, color: levelPalettes[3].deep },
-  { x: 0.36, y: 0.91, size: 7, color: levelPalettes[5].deep },
-  { x: 0.66, y: 0.87, size: 6, color: levelPalettes[4].deep },
-  { x: 0.92, y: 0.9, size: 9, color: levelPalettes[2].deep },
+  { x: 0.08, y: 0.1, size: 8, color: brand.pink },
+  { x: 0.24, y: 0.16, size: 5, color: brand.blue },
+  { x: 0.48, y: 0.09, size: 7, color: brand.blue },
+  { x: 0.76, y: 0.15, size: 6, color: brand.acid },
+  { x: 0.92, y: 0.24, size: 9, color: brand.acid },
+  { x: 0.13, y: 0.35, size: 6, color: brand.blue },
+  { x: 0.82, y: 0.39, size: 8, color: brand.pink },
+  { x: 0.06, y: 0.54, size: 7, color: brand.acid },
+  { x: 0.94, y: 0.57, size: 6, color: brand.blue },
+  { x: 0.18, y: 0.7, size: 9, color: brand.acid },
+  { x: 0.5, y: 0.76, size: 5, color: brand.blue },
+  { x: 0.81, y: 0.72, size: 8, color: brand.acid },
+  { x: 0.1, y: 0.88, size: 5, color: brand.pink },
+  { x: 0.36, y: 0.91, size: 7, color: brand.blue },
+  { x: 0.66, y: 0.87, size: 6, color: brand.acid },
+  { x: 0.92, y: 0.9, size: 9, color: brand.blue },
 ] as const;
 
 /** Roughly how long the opening burst takes before the calm drift begins. */
@@ -174,6 +176,7 @@ function BurstSpeck({
           height: size,
           borderRadius: size / 2,
           backgroundColor: color,
+          boxShadow: `0 0 ${size}px ${color}88`,
         },
         animatedStyle,
       ]}

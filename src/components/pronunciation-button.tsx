@@ -2,16 +2,16 @@ import * as Speech from 'expo-speech';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { SystemIcon } from '@/components/system-icon';
+import { Glyph } from '@/components/brand/Glyph';
 import { selectionHaptic } from '@/feedback/haptics';
-import { color } from '@/theme/tokens';
 
 export function PronunciationButton({
   word,
-  tint = color.inkMuted,
+  tint,
   active = true,
 }: {
   word: string;
+  /** defaults to the ground's text color */
   tint?: string;
   active?: boolean;
 }) {
@@ -31,7 +31,7 @@ function PronunciationButtonControl({
   active,
 }: {
   word: string;
-  tint: string;
+  tint?: string;
   active: boolean;
 }) {
   const [playback, setPlayback] = useState<'idle' | 'playing' | 'paused'>('idle');
@@ -116,17 +116,12 @@ function PronunciationButtonControl({
       disabled={!active}
       hitSlop={8}
     >
-      <SystemIcon
-        name={playback === 'playing' ? 'pause.circle.fill' : 'speaker.wave.2.fill'}
-        fallback={playback === 'playing' ? 'Ⅱ' : '▶'}
-        size={18}
-        color={tint}
-      />
+      <Glyph name={playback === 'playing' ? 'pause' : 'listen'} size={18} color={tint} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  button: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  button: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   pressed: { opacity: 0.58 },
 });

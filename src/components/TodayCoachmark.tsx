@@ -1,8 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown, useReducedMotion } from 'react-native-reanimated';
 
-import { SystemIcon } from '@/components/system-icon';
-import { color, font, letterSpacing, space, type } from '@/theme/tokens';
+import { Body, Eyebrow, FloatingCard, Glyph } from '@/components/brand';
+import { brand, space } from '@/theme/tokens';
 
 export function TodayCoachmark({ onOpenShare }: { onOpenShare: () => void }) {
   const reducedMotion = useReducedMotion();
@@ -16,23 +16,25 @@ export function TodayCoachmark({ onOpenShare }: { onOpenShare: () => void }) {
     >
       <Pressable
         onPress={onOpenShare}
-        style={styles.bubble}
         accessibilityRole="button"
-        accessibilityLabel="Tip: save or share this word. Open the share card."
+        accessibilityLabel="Tip: save or share this word. Opens the share card."
       >
-        <Text style={styles.eyebrow}>A LITTLE TIP</Text>
-        <Text style={styles.copy}>Save your favorite words, and tap here to save or share them.</Text>
-        <View style={styles.actions} accessibilityElementsHidden>
-          <View style={styles.action}>
-            <SystemIcon name="heart" fallback="♡" size={18} color={color.ink} />
-            <Text style={styles.actionText}>SAVE</Text>
+        <FloatingCard style={styles.card}>
+          <Eyebrow>A little tip</Eyebrow>
+          <Body size={17} style={styles.copy}>
+            Save the words you love, and share any of them as a card.
+          </Body>
+          <View style={styles.actions} accessibilityElementsHidden>
+            <View style={styles.action}>
+              <Glyph name="heart" size={18} />
+              <Eyebrow tone="default">Save</Eyebrow>
+            </View>
+            <View style={styles.action}>
+              <Glyph name="leaves" size={18} />
+              <Eyebrow tone="default">Share</Eyebrow>
+            </View>
           </View>
-          <View style={styles.divider} />
-          <View style={styles.action}>
-            <SystemIcon name="square.and.arrow.up" fallback="↑" size={18} color={color.ink} />
-            <Text style={styles.actionText}>SHARE</Text>
-          </View>
-        </View>
+        </FloatingCard>
         <View style={styles.pointer} />
       </Pressable>
     </Animated.View>
@@ -46,58 +48,18 @@ const styles = StyleSheet.create({
     right: space.l,
     bottom: space.l,
     zIndex: 18,
-    alignItems: 'center',
   },
-  bubble: {
-    width: '100%',
-    maxWidth: 310,
-    alignItems: 'center',
-    borderRadius: 20,
-    borderCurve: 'continuous',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: color.hairline,
-    backgroundColor: 'rgba(255,255,255,0.97)',
-    paddingHorizontal: space.l,
-    paddingTop: space.m,
-    paddingBottom: 13,
-    boxShadow: '0 12px 30px rgba(67, 52, 35, 0.18)',
-  },
-  eyebrow: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.caps,
-    color: color.inkMuted,
-  },
-  copy: {
-    fontFamily: font.serif,
-    fontSize: type.small,
-    color: color.ink,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.m,
-    marginTop: space.m,
-  },
-  action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  actionText: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.caps,
-    color: color.inkMuted,
-  },
-  divider: { width: StyleSheet.hairlineWidth, height: 20, backgroundColor: color.hairline },
+  card: { padding: space.l, paddingBottom: space.m },
+  copy: { marginTop: space.xs },
+  actions: { flexDirection: 'row', gap: space.xl, marginTop: space.m },
+  action: { flexDirection: 'row', alignItems: 'center', gap: space.s },
   pointer: {
     position: 'absolute',
     bottom: -7,
+    left: space.l + 2,
     width: 14,
     height: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: brand.ink,
     transform: [{ rotate: '45deg' }],
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderColor: color.hairline,
   },
 });

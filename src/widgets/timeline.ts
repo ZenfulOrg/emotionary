@@ -2,17 +2,17 @@ import { Platform } from 'react-native';
 
 import type { Word } from '@/content/types';
 import { addDays, localDateString, wordOfDay } from '@/daily/engine';
-import { color, levelPalettes } from '@/theme/tokens';
+import { asEntry, displayWord } from '@/content/presentation';
+import { levelPalettes, planets } from '@/theme/tokens';
 import DailyWordWidget, { type DailyWordWidgetProps } from '@/widgets/DailyWordWidget';
 
 function propsForWord(word: Word, favorites: readonly string[]): DailyWordWidgetProps {
-  const palette = levelPalettes[word.level];
   return {
-    word: word.word,
+    word: displayWord(word.word),
     pronunciation: word.pronunciation,
-    definition: word.definition,
-    tint: palette.tint,
-    ink: color.ink,
+    definition: asEntry(word.definition),
+    category: `${planets[word.type].label} · ${word.language}`.toUpperCase(),
+    tint: levelPalettes[word.level].tint,
     slug: word.slug,
     liked: favorites.includes(word.slug),
   };

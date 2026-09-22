@@ -3,13 +3,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Linking,
-  Pressable,
   StyleSheet,
-  Text,
   View,
   type LayoutChangeEvent,
   type ViewToken,
 } from 'react-native';
+
+import { Body, Eyebrow, Headline, OrbitBackdrop, RoundCta, Screen } from '@/components/brand';
+import { GroundProvider } from '@/theme/ground';
 import { NotificationPermissionPrompt } from '@/components/NotificationPermissionPrompt';
 import { TodayCoachmark } from '@/components/TodayCoachmark';
 import { WordFull } from '@/components/WordFull';
@@ -22,8 +23,7 @@ import { shouldShowTodayActionCoachmark } from '@/daily/tutorial';
 import { mediumImpactHaptic, successHaptic } from '@/feedback/haptics';
 import { getPermissionGranted, requestPermission } from '@/notifications/scheduler';
 import { useUserStore } from '@/store/userStore';
-import { color, font, letterSpacing, levelPalettes, space, type } from '@/theme/tokens';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { brand, layout, levelPalettes, space } from '@/theme/tokens';
 
 const VIEWABILITY_CONFIG = {
   itemVisiblePercentThreshold: 70,
@@ -182,17 +182,14 @@ export default function TodayScreen() {
 
   if (feed.length === 0) {
     return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyText}>No words yet. Check back soon.</Text>
-      </View>
+      <Screen style={styles.empty}>
+        <Body tone="muted">No words yet. Check back soon.</Body>
+      </Screen>
     );
   }
 
   return (
-    <SafeAreaView
-      style={[styles.screen, { backgroundColor: levelPalettes[visibleLevel].tint }]}
-      edges={['top']}
-    >
+    <Screen background={levelPalettes[visibleLevel].tint}>
       {streakVisible && (
         <StreakPopup
           streak={Math.max(streak, 1)}
@@ -250,91 +247,45 @@ export default function TodayScreen() {
           accessibilityLabel="Daily word feed"
         />
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
+/** The end of the free feed: a page of ink, the orbit, one round CTA. */
 function UpgradeSlide() {
   return (
-    <View style={styles.upgradeSlide}>
-      <View style={styles.upgradeOrb}>
-        <Text style={styles.upgradeOrbText}>10</Text>
+    <GroundProvider ground="ink">
+      <View style={styles.upgradeSlide}>
+        <OrbitBackdrop top="6%" />
+        <View style={styles.upgradeCopy}>
+          <Eyebrow>Your free collection · 10 words</Eyebrow>
+          <Headline size={44}>Keep discovering.</Headline>
+          <Body tone="muted" style={styles.upgradeBody}>
+            Unlock thousands of unique words, more widget themes, and new words every month.
+          </Body>
+        </View>
+        <RoundCta
+          label={'Get full\naccess'}
+          onPress={() => router.push('/paywall' as Href)}
+          accessibilityHint="Opens Emotionary full access plans"
+        />
       </View>
-      <Text style={styles.upgradeKicker}>YOUR FREE COLLECTION</Text>
-      <Text style={styles.upgradeTitle}>Keep discovering</Text>
-      <Text style={styles.upgradeBody}>
-        Unlock thousands of unique words, more widget themes, and updates every month.
-      </Text>
-      <Pressable
-        onPress={() => router.push('/paywall' as Href)}
-        style={({ pressed }) => [styles.upgradeButton, pressed && styles.upgradePressed]}
-        accessibilityRole="button"
-        accessibilityLabel="Upgrade to full access"
-      >
-        <Text style={styles.upgradeButtonText}>UPGRADE</Text>
-      </Pressable>
-    </View>
+    </GroundProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.paper },
   container: { flex: 1 },
   page: { flex: 1 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: color.paper },
-  emptyText: { fontFamily: font.serif, fontSize: type.body, color: color.inkMuted },
+  empty: { alignItems: 'center', justifyContent: 'center' },
   upgradeSlide: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F8EEE8',
-    paddingHorizontal: space.xl,
+    gap: space.xl,
+    backgroundColor: brand.ink,
+    paddingHorizontal: layout.gutter,
+    overflow: 'hidden',
   },
-  upgradeOrb: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: levelPalettes[3].deep,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: space.l,
-  },
-  upgradeOrbText: { fontFamily: font.display, fontSize: 31, color: levelPalettes[3].onDeep },
-  upgradeKicker: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.caps,
-    color: color.inkMuted,
-  },
-  upgradeTitle: {
-    fontFamily: font.display,
-    fontSize: 38,
-    color: color.ink,
-    marginTop: space.s,
-  },
-  upgradeBody: {
-    maxWidth: 310,
-    fontFamily: font.serif,
-    fontSize: type.body,
-    lineHeight: 26,
-    color: color.inkMuted,
-    textAlign: 'center',
-    marginTop: space.m,
-  },
-  upgradeButton: {
-    minWidth: 190,
-    minHeight: 50,
-    borderRadius: 999,
-    backgroundColor: color.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: space.xl,
-  },
-  upgradeButtonText: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.caps,
-    color: color.paper,
-  },
-  upgradePressed: { opacity: 0.76 },
+  upgradeCopy: { gap: space.m },
+  upgradeBody: { maxWidth: 320 },
 });

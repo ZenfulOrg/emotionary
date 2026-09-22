@@ -1,11 +1,11 @@
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { Body, Button, Eyebrow, Headline, OrbitBackdrop, Screen, Wordmark } from '@/components/brand';
 import { completeAuthCallback } from '@/auth/client';
-import { color, font, space, type } from '@/theme/tokens';
+import { brand, layout, space } from '@/theme/tokens';
 
 export default function AuthCallbackScreen() {
   const liveUrl = Linking.useURL();
@@ -38,26 +38,31 @@ export default function AuthCallbackScreen() {
   }, [liveUrl]);
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <View style={styles.card}>
-        {!complete && <ActivityIndicator color={color.ink} />}
-        <Text style={styles.title}>{complete ? 'Account confirmed' : 'One moment'}</Text>
-        <Text style={styles.body}>{status}</Text>
+    <Screen ground="ink" edges={['top', 'bottom']}>
+      <OrbitBackdrop top="12%" />
+      <View style={styles.content}>
+        <Wordmark size={32} />
+        <View style={styles.copy} accessibilityLiveRegion="polite">
+          <Eyebrow>{complete ? 'Account' : 'One moment'}</Eyebrow>
+          <Headline size={44}>{complete ? 'You’re all set.' : 'Confirming.'}</Headline>
+          <Body tone="muted">{status}</Body>
+          {!complete && <ActivityIndicator color={brand.acid} style={styles.spinner} />}
+        </View>
         {complete && (
-          <Pressable onPress={() => router.replace('/')} style={styles.button} accessibilityRole="button">
-            <Text style={styles.buttonText}>CONTINUE TO EMOTIONARY</Text>
-          </Pressable>
+          <Button label="Continue to Emotionary" onPress={() => router.replace('/')} glyph="forward" />
         )}
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.paper, padding: space.l, justifyContent: 'center' },
-  card: { alignItems: 'center', backgroundColor: color.card, borderRadius: 24, borderCurve: 'continuous', padding: 34 },
-  title: { fontFamily: font.display, fontSize: 34, color: color.ink, marginTop: space.m, textAlign: 'center' },
-  body: { fontFamily: font.serif, fontSize: type.body, lineHeight: 25, color: color.inkMuted, marginTop: space.s, textAlign: 'center' },
-  button: { borderRadius: 999, backgroundColor: color.ink, paddingHorizontal: 24, paddingVertical: 14, marginTop: space.l },
-  buttonText: { fontFamily: font.serifMedium, fontSize: 11, letterSpacing: 1.2, color: color.paper },
+  content: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: layout.gutter,
+    paddingVertical: space.l,
+  },
+  copy: { gap: space.m },
+  spinner: { alignSelf: 'flex-start' },
 });

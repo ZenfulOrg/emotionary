@@ -1,32 +1,20 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import {
-  Alert,
-  PixelRatio,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, PixelRatio, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { findWord, useContentStore } from '@/content/store';
-import { SystemIcon } from '@/components/system-icon';
+import { Button, Eyebrow, IconButton, Mono, Separator, useGroundStatusBar } from '@/components/brand';
 import { localDateString, wordOfDay } from '@/daily/engine';
 import { canViewWord } from '@/entitlements';
-import { lightImpactHaptic, selectionHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
+import { lightImpactHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
 import { CARD_BASE_HEIGHT, CARD_BASE_WIDTH, ShareCard } from '@/share/ShareCard';
 import { useUserStore } from '@/store/userStore';
-import { color, font, letterSpacing, space, type } from '@/theme/tokens';
+import { GroundProvider } from '@/theme/ground';
+import { grounds, layout, scrim, space } from '@/theme/tokens';
 
-const SHARE_TARGETS = [
-  { key: 'messages', label: 'Messages', icon: 'message.fill', fallback: '✉' },
-  { key: 'instagram', label: 'Instagram', icon: 'camera', fallback: '◎' },
-  { key: 'facebook', label: 'Facebook', icon: 'f.cursive', fallback: 'f' },
-  { key: 'whatsapp', label: 'WhatsApp', icon: 'phone.fill', fallback: '☎' },
-] as const;
+/** Every target opens the system share sheet with the card attached. */
+const SHARE_TARGETS = ['Messages', 'Instagram', 'Facebook', 'WhatsApp'] as const;
 
 export default function ShareModal() {
   const { slug, demo } = useLocalSearchParams<{ slug: string; demo?: string }>();
@@ -34,6 +22,8 @@ export default function ShareModal() {
   const recordShare = useUserStore((s) => s.recordShare);
   const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
   const { width: winW, height: winH } = useWindowDimensions();
+  useGroundStatusBar('ink');
+  const insets = useSafeAreaInsets();
 
   const shotRef = useRef<View>(null);
   const [laidOut, setLaidOut] = useState(false);
@@ -55,7 +45,7 @@ export default function ShareModal() {
   if (locked) return null;
 
   // Fit the 9:16 preview inside the window with room for the buttons.
-  const cardWidth = Math.min(winW * 0.72, (winH * 0.54 * CARD_BASE_WIDTH) / CARD_BASE_HEIGHT);
+  const cardWidth = Math.min(winW * 0.7, (winH * 0.56 * CARD_BASE_WIDTH) / CARD_BASE_HEIGHT);
   const pixelRatio = PixelRatio.get();
   const captureWidth = CARD_BASE_WIDTH / pixelRatio;
   const captureHeight = CARD_BASE_HEIGHT / pixelRatio;
@@ -127,170 +117,131 @@ export default function ShareModal() {
   const ready = laidOut && busy === 'idle';
 
   return (
-    <View style={styles.backdrop}>
-      <SafeAreaView style={styles.safe}>
-        <Pressable
-          onPress={() => {
-            selectionHaptic();
-            router.back();
-          }}
-          style={styles.close}
-          accessibilityRole="button"
-          accessibilityLabel="Close"
-          hitSlop={10}
-        >
-          <Text style={styles.closeGlyph}>✕</Text>
-        </Pressable>
+    <GroundProvider ground="ink">
+      <View style={styles.backdrop}>
+        <View style={[styles.safe, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+          <View style={styles.header}>
+            <Eyebrow>Share a word</Eyebrow>
+            <IconButton
+              glyph="close"
+              accessibilityLabel="Close"
+              onPress={() => router.back()}
+              style={styles.close}
+            />
+          </View>
 
-        <View style={styles.shadow}>
-          <ShareCard word={word} width={cardWidth} />
-        </View>
-
-        <View
-          ref={shotRef}
-          collapsable={false}
-          pointerEvents="none"
-          onLayout={() => setLaidOut(true)}
-          style={[
-            styles.captureSurface,
-            {
-              width: captureWidth,
-              height: captureHeight,
-              left: -captureWidth - 20,
-            },
-          ]}
-        >
-          <ShareCard word={word} width={captureWidth} />
-        </View>
-
-        <View style={styles.buttons}>
-          <Pressable
-            onPress={onDownload}
-            disabled={!ready}
-            style={[styles.button, styles.buttonGhost, !ready && styles.disabled]}
-            accessibilityRole="button"
-          >
-            <Text style={styles.buttonGhostText}>
-              {busy === 'saving' ? 'SAVING…' : saved ? 'SAVED ✓' : 'DOWNLOAD'}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={onShare}
-            disabled={!ready}
-            style={[styles.button, styles.buttonSolid, !ready && styles.disabled]}
-            accessibilityRole="button"
-          >
-            <Text style={styles.buttonSolidText}>{busy === 'sharing' ? 'SHARING…' : 'SHARE'}</Text>
-          </Pressable>
-        </View>
-        <View style={styles.targetRow}>
-          {SHARE_TARGETS.map((target) => (
-            <Pressable
-              key={target.key}
-              onPress={onShare}
-              disabled={!ready}
-              style={[styles.targetButton, !ready && styles.disabled]}
-              accessibilityRole="button"
-              accessibilityLabel={`Share to ${target.label}`}
+          <View style={styles.preview}>
+            <View
+              style={styles.cardFrame}
+              accessible
+              accessibilityRole="image"
+              accessibilityLabel={`Share card for ${word.word}: ${word.definition}`}
             >
-              <View style={styles.targetIcon}>
-                <SystemIcon
-                  name={target.icon}
-                  fallback={target.fallback}
-                  size={22}
-                  color="#FFFFFF"
-                />
+              <ShareCard word={word} width={cardWidth} />
+            </View>
+          </View>
+
+          <View
+            ref={shotRef}
+            collapsable={false}
+            pointerEvents="none"
+            onLayout={() => setLaidOut(true)}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={[
+              styles.captureSurface,
+              {
+                width: captureWidth,
+                height: captureHeight,
+                left: -captureWidth - 20,
+              },
+            ]}
+          >
+            <ShareCard word={word} width={captureWidth} />
+          </View>
+
+          <View style={styles.buttons}>
+            <Button
+              label={busy === 'saving' ? 'Saving…' : saved ? 'Saved' : 'Download'}
+              glyph={saved ? 'check' : 'scrolls'}
+              variant="outline"
+              onPress={() => void onDownload()}
+              disabled={!ready}
+              haptic={false}
+              accessibilityLabel={saved ? 'Saved to Photos' : 'Download to Photos'}
+              style={styles.button}
+            />
+            <Button
+              label={busy === 'sharing' ? 'Sharing…' : 'Share'}
+              glyph="leaves"
+              onPress={() => void onShare()}
+              disabled={!ready}
+              haptic={false}
+              accessibilityLabel="Share the card"
+              style={styles.button}
+            />
+          </View>
+          <View style={styles.targets}>
+            {SHARE_TARGETS.map((target, index) => (
+              <View key={target} style={styles.target}>
+                {index > 0 && <Separator />}
+                <Pressable
+                  onPress={() => void onShare()}
+                  disabled={!ready}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Share to ${target}`}
+                  accessibilityState={{ disabled: !ready }}
+                  style={({ pressed }) => [styles.targetButton, (pressed || !ready) && styles.dim]}
+                >
+                  <Eyebrow tone="default" size={10} style={styles.targetLabel}>
+                    {target}
+                  </Eyebrow>
+                </Pressable>
               </View>
-              <Text style={styles.targetLabel}>{target.label}</Text>
-            </Pressable>
-          ))}
+            ))}
+          </View>
+          <Mono size={11} tone="faint" style={styles.caption}>
+            SIZED FOR STORIES · 1080 × 1920
+          </Mono>
         </View>
-        <Text style={styles.caption}>Sized for Instagram / Facebook Stories</Text>
-      </SafeAreaView>
-    </View>
+      </View>
+    </GroundProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: color.overlay },
-  safe: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  close: {
-    position: 'absolute',
-    top: 64,
-    right: space.l,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+  backdrop: { flex: 1, backgroundColor: scrim },
+  safe: { flex: 1, paddingHorizontal: layout.gutter },
+  header: {
+    minHeight: 52,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2,
+    justifyContent: 'space-between',
   },
-  closeGlyph: { fontSize: 15, color: color.ink },
-  shadow: {
-    borderRadius: 18,
-    overflow: 'hidden',
-    elevation: 8,
+  close: { marginRight: -10 },
+  preview: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  cardFrame: {
+    borderWidth: 1,
+    borderColor: grounds.ink.hairline,
+    boxShadow: '0 24px 60px rgba(0, 0, 0, 0.35)',
   },
   captureSurface: {
     position: 'absolute',
     top: 0,
     overflow: 'hidden',
   },
-  buttons: { flexDirection: 'row', gap: space.m, marginTop: space.l },
-  button: {
-    borderRadius: 999,
-    paddingHorizontal: 26,
-    paddingVertical: 12,
-    minWidth: 132,
-    alignItems: 'center',
-  },
-  buttonGhost: { backgroundColor: 'rgba(255,255,255,0.22)' },
-  buttonGhostText: {
-    fontFamily: font.serifMedium,
-    fontSize: type.small - 1,
-    letterSpacing: letterSpacing.caps,
-    color: '#FFFFFF',
-  },
-  buttonSolid: { backgroundColor: '#FFFFFF' },
-  buttonSolidText: {
-    fontFamily: font.serifMedium,
-    fontSize: type.small - 1,
-    letterSpacing: letterSpacing.caps,
-    color: color.ink,
-  },
-  disabled: { opacity: 0.5 },
-  targetRow: {
+  buttons: { flexDirection: 'row', gap: space.s, marginTop: space.l },
+  button: { flex: 1 },
+  targets: {
     flexDirection: 'row',
-    gap: space.m,
-    marginTop: space.m,
-    maxWidth: 330,
-  },
-  targetButton: {
-    alignItems: 'center',
-    gap: 5,
-    width: 66,
-  },
-  targetIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.92)',
-    backgroundColor: 'transparent',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: space.s,
   },
-  targetLabel: {
-    fontFamily: font.serif,
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.78)',
-    textAlign: 'center',
-  },
-  caption: {
-    fontFamily: font.serif,
-    fontSize: type.caption,
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: space.m,
-  },
+  target: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  targetButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
+  targetLabel: { textDecorationLine: 'underline', letterSpacing: 1.2 },
+  dim: { opacity: 0.6 },
+  caption: { textAlign: 'center', marginTop: space.xs, marginBottom: space.s },
 });

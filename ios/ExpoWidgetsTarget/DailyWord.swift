@@ -18,6 +18,7 @@ struct DailyWordConfigurationAppIntent: WidgetConfigurationIntent {
 
 enum DailyWordThemeEnum: String, CaseIterable, AppEnum {
   case automatic
+  case nightSky
   case moodyNature
   case duskyRose
 
@@ -25,6 +26,7 @@ enum DailyWordThemeEnum: String, CaseIterable, AppEnum {
 
   static var caseDisplayRepresentations: [DailyWordThemeEnum: DisplayRepresentation] = [
     .automatic: DisplayRepresentation(title: "Word Color"),
+    .nightSky: DisplayRepresentation(title: "Night Sky"),
     .moodyNature: DisplayRepresentation(title: "Moody Nature"),
     .duskyRose: DisplayRepresentation(title: "Dusky Rose")
   ]
@@ -53,7 +55,7 @@ struct DailyWordTimelineProvider: AppIntentTimelineProvider {
     let timeline = Timeline<DailyWordTimelineEntry>(entries: entries, policy: .atEnd)
     return timeline
   }
-
+  
   func parseTimeline(configuration: DailyWordConfigurationAppIntent) -> [DailyWordTimelineEntry] {
     let timeline = WidgetsStorage.getArray(forKey: "__expo_widgets_DailyWord_timeline") ?? []
     let entries: [DailyWordTimelineEntry?] = timeline.enumerated().map { index, entry in

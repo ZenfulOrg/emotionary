@@ -1,13 +1,19 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { SystemIcon } from '@/components/system-icon';
-import { lightImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
+import { Body, Button, Eyebrow, Headline, OptionRow, RoundCta } from '@/components/brand';
+import { lightImpactHaptic, successHaptic } from '@/feedback/haptics';
 import { useUserStore } from '@/store/userStore';
-import { color, font, space, type } from '@/theme/tokens';
+import { space } from '@/theme/tokens';
 
 type Plan = 'yearly' | 'lifetime';
 
+const PLANS: Record<Plan, { title: string; price: string; body: string; eyebrow?: string }> = {
+  yearly: { title: 'Yearly', price: '$4.99', body: 'Per year — less than a cup of coffee.' },
+  lifetime: { title: 'Lifetime', price: '$9.99', body: 'One time, yours to keep.', eyebrow: 'Best value' },
+};
+
+/** Full access, on ink: two square plans and the round CTA, last. */
 export function Paywall({
   onContinue,
   onContinueFree,
@@ -17,11 +23,6 @@ export function Paywall({
 }) {
   const [plan, setPlan] = useState<Plan>('lifetime');
   const unlockFullAccess = useUserStore((state) => state.unlockFullAccess);
-
-  const choosePlan = (next: Plan) => {
-    selectionHaptic();
-    setPlan(next);
-  };
 
   const unlock = () => {
     lightImpactHaptic();
@@ -33,167 +34,55 @@ export function Paywall({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title} accessibilityRole="header">Get full access</Text>
-      <Text style={styles.subtitle}>Thousands of unique words, and updates every month.</Text>
+      <Eyebrow>Full access</Eyebrow>
+      <Headline size={48} style={styles.title}>
+        Every word,{'\n'}every month.
+      </Headline>
+      <Body tone="muted" style={styles.subtitle}>
+        Thousands of unique words, every widget theme, and new words every month.
+      </Body>
 
-      <View style={styles.options}>
-        <PlanOption
-          selected={plan === 'yearly'}
-          onPress={() => choosePlan('yearly')}
-          title="Yearly"
-          price="$4.99"
-          cadence="per year"
-          note="Less than your cup of coffee ☕️"
-        />
-        <PlanOption
-          selected={plan === 'lifetime'}
-          onPress={() => choosePlan('lifetime')}
-          title="Lifetime"
-          price="$9.99"
-          cadence="one time"
-          badge="BEST VALUE"
-        />
+      <View style={styles.options} accessibilityRole="radiogroup">
+        {(Object.keys(PLANS) as Plan[]).map((key) => {
+          const option = PLANS[key];
+          return (
+            <OptionRow
+              key={key}
+              role="radio"
+              selected={plan === key}
+              onPress={() => setPlan(key)}
+              eyebrow={option.eyebrow}
+              title={option.title}
+              body={option.body}
+              accessibilityLabel={`${option.title}, ${option.price}. ${option.body}`}
+              aside={<Headline accessibilityRole="text" size={30}>{option.price}</Headline>}
+            />
+          );
+        })}
       </View>
 
-      <Pressable
-        onPress={unlock}
-        style={({ pressed }) => [styles.continueButton, pressed && styles.pressed]}
-        accessibilityRole="button"
-        accessibilityLabel={`Continue with ${plan} full access`}
-      >
-        <Text style={styles.continueText}>Continue</Text>
-      </Pressable>
-      <Pressable
-        onPress={() => {
-          selectionHaptic();
-          onContinueFree();
-        }}
-        style={styles.freeButton}
-        accessibilityRole="button"
-      >
-        <Text style={styles.freeText}>Continue with free</Text>
-      </Pressable>
+      <View style={styles.actions}>
+        <Button label="Continue free" variant="link" onPress={onContinueFree} />
+        <RoundCta
+          label="Continue"
+          onPress={unlock}
+          size={120}
+          accessibilityHint={`Unlocks ${plan} full access`}
+        />
+      </View>
     </View>
   );
 }
 
-function PlanOption({
-  selected,
-  onPress,
-  title,
-  price,
-  cadence,
-  badge,
-  note,
-}: {
-  selected: boolean;
-  onPress: () => void;
-  title: string;
-  price: string;
-  cadence: string;
-  badge?: string;
-  note?: string;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.option, selected && styles.optionSelected]}
-      accessibilityRole="radio"
-      accessibilityState={{ selected }}
-    >
-      <View style={[styles.radio, selected && styles.radioSelected]}>
-        {selected && <View style={styles.radioInner} />}
-      </View>
-      <View style={styles.optionCopy}>
-        <View style={styles.optionTitleRow}>
-          <Text style={styles.optionTitle}>{title}</Text>
-          {badge && <Text style={styles.badge}>{badge}</Text>}
-          {note && <Text style={styles.note}>{note}</Text>}
-        </View>
-        <Text style={styles.price}>{price}</Text>
-        <Text style={styles.cadence}>{cadence}</Text>
-      </View>
-      {selected && (
-        <SystemIcon name="checkmark" fallback="✓" size={18} color={color.ink} />
-      )}
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  wrap: { width: '100%', maxWidth: 390, alignItems: 'center', paddingHorizontal: space.m },
-  title: { fontFamily: font.display, fontSize: 38, color: color.ink },
-  subtitle: {
-    fontFamily: font.serif,
-    fontSize: type.small + 2,
-    lineHeight: 23,
-    color: color.inkMuted,
-    textAlign: 'center',
-    maxWidth: 285,
-    marginTop: space.s,
-  },
-  options: { width: '100%', gap: 10, marginTop: space.xl },
-  option: {
-    minHeight: 92,
-    borderWidth: 1,
-    borderColor: color.hairline,
-    borderRadius: 14,
-    borderCurve: 'continuous',
-    backgroundColor: 'rgba(255,255,255,0.68)',
-    paddingHorizontal: space.m,
+  wrap: { width: '100%', maxWidth: 440 },
+  title: { marginTop: space.s },
+  subtitle: { marginTop: space.m, maxWidth: 320 },
+  options: { gap: space.s, marginTop: space.xl },
+  actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.m,
-  },
-  optionSelected: { borderColor: color.ink, borderWidth: 1.5, backgroundColor: '#FFFFFF' },
-  radio: {
-    width: 21,
-    height: 21,
-    borderRadius: 11,
-    borderWidth: 1,
-    borderColor: color.inkFaint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioSelected: { borderColor: color.ink },
-  radioInner: { width: 11, height: 11, borderRadius: 6, backgroundColor: color.ink },
-  optionCopy: { flex: 1 },
-  optionTitleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space.s },
-  optionTitle: { fontFamily: font.serifSemiBold, fontSize: type.body + 2, color: color.ink },
-  badge: {
-    fontFamily: font.serifMedium,
-    fontSize: 10,
-    letterSpacing: 0.7,
-    color: '#2F6B45',
-    backgroundColor: '#DCEEDE',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  price: { fontFamily: font.display, fontSize: 27, color: color.ink, marginTop: 4 },
-  cadence: { fontFamily: font.serif, fontSize: type.caption + 2, color: color.inkMuted },
-  note: {
-    fontFamily: font.serifItalic,
-    fontSize: 10,
-    color: '#2F6B45',
-  },
-  continueButton: {
-    width: '100%',
-    minHeight: 52,
-    borderRadius: 14,
-    backgroundColor: color.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     marginTop: space.xl,
   },
-  continueText: { fontFamily: font.serifSemiBold, fontSize: type.body + 2, color: color.paper },
-  freeButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: space.l },
-  freeText: {
-    fontFamily: font.serifMedium,
-    fontSize: type.small + 2,
-    color: color.ink,
-    textDecorationLine: 'underline',
-  },
-  pressed: { opacity: 0.78 },
 });

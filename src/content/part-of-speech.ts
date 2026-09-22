@@ -15,5 +15,5 @@ export function partOfSpeechFor(word: Pick<Word, 'slug'>): PartOfSpeech {
 }
 
 export function pronunciationLineFor(word: Pick<Word, 'slug' | 'pronunciation'>): string {
-  return `${partOfSpeechFor(word)} · [${word.pronunciation}]`;
+  return `${partOfSpeechFor(word)} · /${word.pronunciation}/`;
 }

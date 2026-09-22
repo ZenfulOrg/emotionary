@@ -1,10 +1,12 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
+import { Eyebrow, Headline, IconButton } from '@/components/brand';
 import { selectionHaptic } from '@/feedback/haptics';
 import type { NotifTime } from '@/store/userStore';
-import { color, font, space, type } from '@/theme/tokens';
+import { useGround } from '@/theme/ground';
+import { space } from '@/theme/tokens';
 
 export function formatTime({ hour, minute }: NotifTime): string {
   const h12 = hour % 12 === 0 ? 12 : hour % 12;
@@ -29,23 +31,21 @@ export function TimeControl({
   value: NotifTime;
   onChange: (t: NotifTime) => void;
 }) {
+  const ground = useGround();
   const [showAndroidPicker, setShowAndroidPicker] = useState(false);
 
   if (Platform.OS === 'web') {
     const step = (deltaMinutes: number) => {
-      selectionHaptic();
       const total = (value.hour * 60 + value.minute + deltaMinutes + 1440) % 1440;
       onChange({ hour: Math.floor(total / 60), minute: total % 60 });
     };
     return (
       <View style={styles.webRow}>
-        <Pressable onPress={() => step(-30)} style={styles.stepper} accessibilityRole="button">
-          <Text style={styles.stepperText}>−</Text>
-        </Pressable>
-        <Text style={styles.webTime}>{formatTime(value)}</Text>
-        <Pressable onPress={() => step(30)} style={styles.stepper} accessibilityRole="button">
-          <Text style={styles.stepperText}>＋</Text>
-        </Pressable>
+        <IconButton glyph="minus" accessibilityLabel="Thirty minutes earlier" onPress={() => step(-30)} />
+        <Headline accessibilityRole="text" size={28}>
+          {formatTime(value)}
+        </Headline>
+        <IconButton glyph="plus" accessibilityLabel="Thirty minutes later" onPress={() => step(30)} />
       </View>
     );
   }
@@ -60,10 +60,14 @@ export function TimeControl({
           }}
           style={styles.androidRow}
           accessibilityRole="button"
-          accessibilityLabel={`Delivery time, ${formatTime(value)}`}
+          accessibilityLabel={`Delivery time, ${formatTime(value)}. Change.`}
         >
-          <Text style={styles.webTime}>{formatTime(value)}</Text>
-          <Text style={styles.changeText}>CHANGE</Text>
+          <Headline accessibilityRole="text" size={28}>
+            {formatTime(value)}
+          </Headline>
+          <Eyebrow tone="default" style={styles.change}>
+            Change
+          </Eyebrow>
         </Pressable>
         {showAndroidPicker && (
           <DateTimePicker
@@ -86,6 +90,8 @@ export function TimeControl({
       value={toDate(value)}
       mode="time"
       display="spinner"
+      textColor={ground.text}
+      themeVariant={ground.name === 'ink' ? 'dark' : 'light'}
       style={styles.iosPicker}
       onValueChange={(_event, date) => {
         selectionHaptic();
@@ -97,17 +103,6 @@ export function TimeControl({
 
 const styles = StyleSheet.create({
   webRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.l },
-  stepper: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderColor: color.hairline,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepperText: { fontSize: 18, color: color.ink },
-  webTime: { fontFamily: font.serifSemiBold, fontSize: type.title - 4, color: color.ink },
   androidRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -115,12 +110,6 @@ const styles = StyleSheet.create({
     gap: space.m,
     paddingVertical: space.s,
   },
-  changeText: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: 1.4,
-    color: color.inkMuted,
-    textDecorationLine: 'underline',
-  },
+  change: { textDecorationLine: 'underline' },
   iosPicker: { alignSelf: 'center' },
 });

@@ -13,7 +13,7 @@ describe('partOfSpeechFor', () => {
 
   test('formats the grammatical type beside the phonetic pronunciation', () => {
     expect(pronunciationLineFor({ slug: 'meraki', pronunciation: 'meh-rah-kee' })).toBe(
-      'V. · [meh-rah-kee]',
+      'V. · /meh-rah-kee/',
     );
   });
 });

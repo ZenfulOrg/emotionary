@@ -21,7 +21,7 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.5.5</string>
+	<string>1.6.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleURLTypes</key>
@@ -35,7 +35,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>2026083002</string>
+	<string>2026092101</string>
 	<key>ExpoWidgetsAppGroupIdentifier</key>
 	<string>group.com.nowdrops.emotionary</string>
 	<key>ExpoWidgets_EnablePushNotifications</key>

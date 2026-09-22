@@ -1,11 +1,9 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, StyleSheet } from 'react-native';
 
-import { AmbientInk } from '@/components/AmbientInk';
+import { OrbitBackdrop, Screen, ScreenHeader } from '@/components/brand';
 import { Paywall } from '@/components/Paywall';
-import { selectionHaptic } from '@/feedback/haptics';
-import { color, space } from '@/theme/tokens';
+import { layout, space } from '@/theme/tokens';
 
 export default function PaywallScreen() {
   const close = () => {
@@ -14,38 +12,21 @@ export default function PaywallScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <AmbientInk />
-      <Pressable
-        onPress={() => {
-          selectionHaptic();
-          close();
-        }}
-        style={styles.close}
-        accessibilityRole="button"
-        accessibilityLabel="Close"
-      >
-        <Text style={styles.closeText}>×</Text>
-      </Pressable>
-      <View style={styles.content}>
+    <Screen ground="ink" edges={['top', 'bottom']}>
+      <OrbitBackdrop top={-40} />
+      <ScreenHeader left={{ glyph: 'close', label: 'Close', onPress: close }} />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Paywall onContinue={close} onContinueFree={close} />
-      </View>
-    </SafeAreaView>
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F8EEE8' },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.m },
-  close: {
-    position: 'absolute',
-    zIndex: 2,
-    right: space.m,
-    top: 8,
-    width: 44,
-    height: 44,
-    alignItems: 'center',
+  content: {
+    flexGrow: 1,
     justifyContent: 'center',
+    paddingHorizontal: layout.gutter,
+    paddingBottom: space.xl,
   },
-  closeText: { color: color.ink, fontSize: 27 },
 });

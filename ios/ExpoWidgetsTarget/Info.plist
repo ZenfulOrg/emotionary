@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleShortVersionString</key>
-	<string>1.5.5</string>
+	<string>1.6.0</string>
 	<key>CFBundleVersion</key>
-	<string>2026083002</string>
+	<string>2026092101</string>
 	<key>ExpoWidgetsAppGroupIdentifier</key>
 	<string>group.com.nowdrops.emotionary</string>
 	<key>NSExtension</key>
@@ -15,5 +15,10 @@
 	</dict>
 	<key>RCTNewArchEnabled</key>
 	<true/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>CormorantGaramond_500Medium.ttf</string>
+		<string>DMMono_400Regular.ttf</string>
+	</array>
 </dict>
 </plist>

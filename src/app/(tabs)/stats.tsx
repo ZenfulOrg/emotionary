@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -7,123 +6,156 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AmbientInk } from '@/components/AmbientInk';
+import {
+  Body,
+  Eyebrow,
+  Glyph,
+  Headline,
+  IconButton,
+  Mono,
+  OrbitBackdrop,
+  Panel,
+  PlanetDot,
+  RoundCta,
+  Rule,
+  Screen,
+} from '@/components/brand';
 import { StatsBurst } from '@/components/stats-burst';
-import { StopMotionFlame } from '@/components/stop-motion-flame';
-import { SystemIcon } from '@/components/system-icon';
 import { WidgetGuideModal, type WidgetGuideVariant } from '@/components/WidgetGuideModal';
+import { WidgetPreview } from '@/components/WidgetPreview';
 import { mediumImpactHaptic, selectionHaptic } from '@/feedback/haptics';
 import { STATS_OPEN_EVENT } from '@/stats/events';
 import { useUserStore } from '@/store/userStore';
-import { color, font, letterSpacing, levelPalettes, space, type } from '@/theme/tokens';
+import { useGround } from '@/theme/ground';
+import { font, layout, space, tracking } from '@/theme/tokens';
 
 const INSTAGRAM_URL = 'https://www.instagram.com/emotionarybook?igsi=ZTZ5MWFyMG1tbmZo';
+const BOOK_URL = 'https://emotionarybook.com';
 
-function StatTile({ value, label, flame = false }: { value: number; label: string; flame?: boolean }) {
+function StatTile({
+  index,
+  value,
+  label,
+  streak = false,
+  second = false,
+}: {
+  second?: boolean;
+  index: string;
+  value: number;
+  label: string;
+  streak?: boolean;
+}) {
+  const ground = useGround();
   return (
-    <View style={styles.tile} accessibilityLabel={`${value} ${label.toLowerCase()}`}>
-      <View style={styles.tileValueWrap}>
-        {flame && value > 0 && (
-          <StopMotionFlame size={46} opacity={0.32} style={styles.tileFlame} />
-        )}
-        <Text style={styles.tileValue}>{value}</Text>
+    <View
+      style={[styles.tile, second && styles.tileSecond, { borderColor: ground.hairline }]}
+      accessible
+      accessibilityLabel={`${value} ${label.toLowerCase()}`}
+    >
+      <View style={styles.tileTop}>
+        <Mono size={11} tone="faint">
+          {index}
+        </Mono>
+        {streak && value > 0 && <PlanetDot wordType="wanderword" glow breathing />}
       </View>
-      <Text style={styles.tileLabel}>{label}</Text>
+      <Headline accessibilityRole="text" size={56} style={styles.tileValue}>
+        {value}
+      </Headline>
+      <Eyebrow tone="muted">{label}</Eyebrow>
     </View>
   );
 }
 
-function SettingsMark() {
-  return (
-    <View style={styles.settingsMark}>
-      <View style={styles.settingsLine}>
-        <View style={[styles.settingsKnob, { left: 5 }]} />
-      </View>
-      <View style={styles.settingsLine}>
-        <View style={[styles.settingsKnob, { right: 6 }]} />
-      </View>
-      <View style={styles.settingsLine}>
-        <View style={[styles.settingsKnob, { left: 13 }]} />
-      </View>
-    </View>
-  );
-}
-
-function WidgetShowcase({ onOpen }: { onOpen: (variant: WidgetGuideVariant) => void }) {
-  return (
-    <View style={styles.widgetWrap}>
-      <Text style={styles.section}>WIDGETS</Text>
-      <View style={styles.widgetCards}>
-        <Pressable style={styles.widgetCard} onPress={() => onOpen('home')} accessibilityRole="button">
-          <View style={styles.homeWidgetPreview}>
-            <Text style={styles.widgetWord}>Apricity</Text>
-            <Text style={styles.widgetDefinition} numberOfLines={4}>
-              The warmth of the sun on a cold winter&apos;s day.
-            </Text>
-          </View>
-          <Text style={styles.widgetTitle}>Home Screen</Text>
-          <Text style={styles.widgetLink}>CONFIGURE</Text>
-        </Pressable>
-        <Pressable style={styles.widgetCard} onPress={() => onOpen('lock')} accessibilityRole="button">
-          <View style={styles.lockWidgetPreview}>
-            <Text style={styles.lockTime}>11:19</Text>
-            <Text style={styles.lockWidgetWord}>Apricity</Text>
-            <Text style={styles.lockWidgetPronunciation}>[uh-PRIS-ih-tee]</Text>
-          </View>
-          <Text style={styles.widgetTitle}>Lock Screen</Text>
-          <Text style={styles.widgetLink}>LEARN HOW</Text>
-        </Pressable>
-      </View>
-      <View style={styles.widgetSettings}>
-        <Text style={styles.widgetSettingsTitle}>Widget Settings</Text>
-        <SettingsRow label="Topics" value="Mix" />
-        <SettingsRow label="Theme" value="Word Color · Nature · Rose" />
-        <SettingsRow label="Widget Border" value="On" />
-        <SettingsRow label="Refresh" value="Hourly" />
-      </View>
-    </View>
-  );
-}
-
-function SettingsRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.widgetSettingsRow}>
-      <Text style={styles.widgetSettingsLabel}>{label}</Text>
-      <Text style={styles.widgetSettingsValue}>{value}</Text>
-    </View>
-  );
-}
-
-function InstagramBanner() {
+function LinkRow({
+  eyebrow,
+  title,
+  aside,
+  glyph,
+  onPress,
+  accessibilityLabel,
+  accessibilityRole = 'button',
+}: {
+  eyebrow: string;
+  title: string;
+  aside?: string;
+  glyph: 'forward' | 'leaves';
+  onPress: () => void;
+  accessibilityLabel: string;
+  accessibilityRole?: 'button' | 'link';
+}) {
   return (
     <Pressable
       onPress={() => {
         selectionHaptic();
-        void Linking.openURL(INSTAGRAM_URL);
+        onPress();
       }}
-      style={({ pressed }) => [styles.instagramBanner, pressed && styles.instagramPressed]}
-      accessibilityRole="link"
-      accessibilityLabel="Follow Emotionary on Instagram"
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel}
+      style={({ pressed }) => [pressed && styles.pressed]}
     >
-      <View style={styles.instagramMark}>
-        <Image
-          source={require('../../../assets/images/icon.png')}
-          style={styles.instagramLogo}
-          contentFit="cover"
-          accessibilityLabel="Emotionary logo"
-        />
-      </View>
-      <View style={styles.instagramCopy}>
-        <Text style={styles.instagramEyebrow}>FOLLOW US ON INSTAGRAM</Text>
-        <Text style={styles.instagramHandle}>@emotionarybook</Text>
-      </View>
-      <SystemIcon name="arrow.up.right" fallback="↗" size={17} color={color.inkMuted} />
+      <Panel style={styles.linkRow}>
+        <View style={styles.linkCopy}>
+          <Eyebrow>{eyebrow}</Eyebrow>
+          <Headline accessibilityRole="text" size={26}>
+            {title}
+          </Headline>
+        </View>
+        {aside !== undefined && <Headline accessibilityRole="text" size={26}>{aside}</Headline>}
+        <Glyph name={glyph} size={20} />
+      </Panel>
     </Pressable>
+  );
+}
+
+function WidgetShowcase({ onOpen }: { onOpen: (variant: WidgetGuideVariant) => void }) {
+  const ground = useGround();
+  return (
+    <View style={styles.section}>
+      <Eyebrow tone="muted">02 / Widgets</Eyebrow>
+      <Rule style={styles.sectionRule} />
+      <View style={styles.widgetCards}>
+        {(['home', 'lock'] as const).map((variant) => (
+          <Pressable
+            key={variant}
+            onPress={() => onOpen(variant)}
+            accessibilityRole="button"
+            accessibilityLabel={
+              variant === 'home' ? 'How to add the Home Screen widget' : 'How to add the Lock Screen widget'
+            }
+            style={({ pressed }) => [styles.widgetCard, { borderColor: ground.hairline }, pressed && styles.pressed]}
+          >
+            <WidgetPreview variant={variant} size={108} />
+            <Eyebrow tone="default" style={styles.widgetLabel}>
+              {variant === 'home' ? 'Home Screen' : 'Lock Screen'}
+            </Eyebrow>
+            <Mono size={11} tone="muted">
+              {variant === 'home' ? 'Configure ↗' : 'Learn how ↗'}
+            </Mono>
+          </Pressable>
+        ))}
+      </View>
+      <Panel style={styles.widgetSettings}>
+        {[
+          ['Topics', 'Mix'],
+          ['Themes', 'Word color · Night sky · Rose · Nature'],
+          ['Refresh', 'Daily at midnight'],
+        ].map(([label, value], index) => (
+          <View
+            key={label}
+            style={[styles.settingRow, index > 0 && { borderTopColor: ground.hairline, borderTopWidth: 1 }]}
+            accessible
+          >
+            <Body size={17}>{label}</Body>
+            <Mono size={12} tone="muted" style={styles.settingValue}>
+              {value}
+            </Mono>
+          </View>
+        ))}
+      </Panel>
+    </View>
   );
 }
 
@@ -159,8 +191,8 @@ export default function StatsScreen() {
   }, [openStats]);
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
-      <AmbientInk />
+    <Screen ground="ink">
+      <OrbitBackdrop top={-20} />
       <StatsBurst burstKey={burstKey} />
       <ScrollView
         ref={scrollRef}
@@ -169,54 +201,48 @@ export default function StatsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerRow}>
-            <Text style={styles.title} accessibilityRole="header">
-              Your Stats
-            </Text>
-            <Pressable
-              onPress={() => {
-                selectionHaptic();
-                router.push('/settings');
-              }}
-              style={styles.settingsButton}
-              accessibilityRole="button"
-              accessibilityLabel="Settings"
-              hitSlop={8}
-            >
-              <SettingsMark />
-            </Pressable>
+          <Eyebrow>Your emotionary</Eyebrow>
+          <IconButton
+            glyph="menu"
+            accessibilityLabel="Settings"
+            onPress={() => router.push('/settings')}
+            style={styles.settings}
+          />
+        </View>
+        <Headline size={52}>Your stats.</Headline>
+        <Body tone="muted" style={styles.lead}>
+          {allZero ? 'Your streak starts today. Read your first word.' : 'A small window into language, every day.'}
+        </Body>
+
+        <View style={styles.section}>
+          <Eyebrow tone="muted">01 / Practice</Eyebrow>
+          <Rule style={styles.sectionRule} />
+          <View style={styles.grid}>
+            <StatTile index="01" value={streak} label="Day streak" streak />
+            <StatTile index="02" value={readCount} label="Words read" second />
+            <StatTile index="03" value={favorites.length} label="Saved" />
+            <StatTile index="04" value={sharedCount} label="Shared" second />
+          </View>
         </View>
 
-        {allZero && (
-          <Text style={styles.zeroCopy}>Your streak starts today. Read your first word.</Text>
-        )}
-
-        <View style={styles.grid}>
-          <StatTile value={streak} label="DAY STREAK" flame />
-          <StatTile value={readCount} label="WORDS READ" />
-          <StatTile value={favorites.length} label="FAVORITED" />
-          <StatTile value={sharedCount} label="SHARED" />
+        <View style={styles.links}>
+          <LinkRow
+            eyebrow="Saved words"
+            title="Words to keep close"
+            aside={String(favorites.length)}
+            glyph="forward"
+            onPress={() => router.push('/favorites' as Href)}
+            accessibilityLabel={`Saved words, ${favorites.length} saved. Opens the list.`}
+          />
+          <LinkRow
+            eyebrow="Follow along"
+            title="@emotionarybook"
+            glyph="leaves"
+            accessibilityRole="link"
+            onPress={() => void Linking.openURL(INSTAGRAM_URL)}
+            accessibilityLabel="Follow Emotionary on Instagram. Opens Instagram."
+          />
         </View>
-
-        <Pressable
-          style={styles.favoritesPill}
-          onPress={() => {
-            selectionHaptic();
-            router.push('/favorites' as Href);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={`Favorited words, ${favorites.length} saved. Opens the list.`}
-        >
-          <View style={styles.favoritesPillLeft}>
-            <SystemIcon name="heart.fill" fallback="♥" size={15} color={levelPalettes[3].deep} />
-            <Text style={styles.favoritesPillLabel}>FAVORITED WORDS</Text>
-          </View>
-          <View style={styles.favoritesPillRight}>
-            <Text style={styles.favoritesPillCount}>{favorites.length}</Text>
-            <SystemIcon name="chevron.right" fallback="›" size={13} color={color.inkMuted} />
-          </View>
-        </Pressable>
-
-        <InstagramBanner />
 
         <WidgetShowcase
           onOpen={(variant) => {
@@ -225,6 +251,17 @@ export default function StatsScreen() {
           }}
         />
 
+        <View style={styles.book}>
+          <View style={styles.bookCopy}>
+            <Eyebrow>The book</Eyebrow>
+            <Headline size={34}>A dictionary of emotions.</Headline>
+          </View>
+          <RoundCta
+            label={'Get the\nbook'}
+            onPress={() => void Linking.openURL(BOOK_URL)}
+            accessibilityHint="Opens emotionarybook.com"
+          />
+        </View>
       </ScrollView>
 
       <WidgetGuideModal
@@ -232,232 +269,63 @@ export default function StatsScreen() {
         visible={widgetGuide !== null}
         onClose={() => setWidgetGuide(null)}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.paper },
-  scroll: { paddingHorizontal: space.l, paddingBottom: 112 },
-  headerRow: { marginTop: space.s },
-  title: {
-    fontFamily: font.display,
-    fontSize: type.title,
-    color: color.ink,
-    textAlign: 'center',
-  },
-  settingsButton: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    width: 44,
-    height: 40,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  settingsMark: { width: 24, gap: 5 },
-  settingsLine: {
-    height: 1,
-    backgroundColor: color.inkMuted,
-  },
-  settingsKnob: {
-    position: 'absolute',
-    top: -3,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: color.inkMuted,
-    backgroundColor: color.paper,
-  },
-  zeroCopy: {
-    fontFamily: font.serifItalic,
-    fontSize: type.small,
-    color: color.inkMuted,
-    textAlign: 'center',
-    marginTop: space.m,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: space.s + 2,
-    marginTop: space.l,
-  },
-  tile: {
-    width: '48%',
-    flexGrow: 1,
-    backgroundColor: color.card,
-    borderColor: color.hairline,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 12,
-    alignItems: 'center',
-    paddingVertical: space.l,
-  },
-  tileValueWrap: { alignItems: 'center', justifyContent: 'center' },
-  tileFlame: { position: 'absolute', top: -10 },
-  tileValue: { fontFamily: font.display, fontSize: 34, color: color.ink },
-  tileLabel: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.caps,
-    color: color.inkFaint,
-    marginTop: 4,
-  },
-  section: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.caps,
-    color: color.inkMuted,
-    marginTop: space.xl,
-    marginBottom: space.m,
-  },
-  favoritesPill: {
-    minHeight: 56,
+  scroll: { paddingHorizontal: layout.gutter, paddingBottom: 120 },
+  headerRow: {
+    minHeight: layout.touch,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: color.hairline,
-    backgroundColor: color.card,
-    paddingHorizontal: space.m + 4,
-    marginTop: space.l,
+    marginTop: space.s,
   },
-  favoritesPillLeft: { flexDirection: 'row', alignItems: 'center', gap: space.s + 2 },
-  favoritesPillLabel: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.caps,
-    color: color.ink,
+  settings: { marginRight: -10 },
+  lead: { marginTop: space.s, maxWidth: 300 },
+  section: { marginTop: space.xl },
+  sectionRule: { marginTop: space.s },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  tile: {
+    width: '50%',
+    borderBottomWidth: 1,
+    paddingVertical: space.m,
+    paddingRight: space.m,
+    gap: 2,
   },
-  favoritesPillRight: { flexDirection: 'row', alignItems: 'center', gap: space.s },
-  favoritesPillCount: { fontFamily: font.display, fontSize: type.body + 1, color: color.ink },
-  instagramBanner: {
+  tileSecond: { borderLeftWidth: 1, paddingLeft: space.m, paddingRight: 0 },
+  tileTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  tileValue: { fontFamily: font.display, letterSpacing: tracking(56, -0.05) },
+  links: { gap: space.s, marginTop: space.xl },
+  linkRow: {
     minHeight: 76,
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.m,
-    borderRadius: 18,
-    borderCurve: 'continuous',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#D8B8CA',
-    backgroundColor: '#F6E8EF',
     paddingHorizontal: space.m,
-    marginTop: space.m,
+    paddingVertical: space.m,
   },
-  instagramPressed: { opacity: 0.76 },
-  instagramMark: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: color.paper,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  instagramLogo: { width: 44, height: 44 },
-  instagramCopy: { flex: 1, gap: 3 },
-  instagramEyebrow: {
-    fontFamily: font.serifMedium,
-    fontSize: type.badge,
-    letterSpacing: letterSpacing.caps,
-    color: color.inkMuted,
-  },
-  instagramHandle: { fontFamily: font.display, fontSize: type.body + 1, color: color.ink },
-  widgetWrap: { marginTop: space.xl },
-  widgetCards: {
+  linkCopy: { flex: 1, gap: 2 },
+  pressed: { opacity: 0.7 },
+  widgetCards: { flexDirection: 'row', gap: space.s, marginTop: space.m },
+  widgetCard: { flex: 1, borderWidth: 1, alignItems: 'center', paddingVertical: space.l, gap: 4 },
+  widgetLabel: { marginTop: space.m },
+  widgetSettings: { marginTop: space.s },
+  settingRow: {
+    minHeight: 52,
     flexDirection: 'row',
-    gap: space.s + 2,
-  },
-  widgetCard: {
-    flex: 1,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: color.hairline,
-    backgroundColor: 'rgba(255,255,255,0.68)',
-    padding: space.m,
     alignItems: 'center',
-  },
-  homeWidgetPreview: {
-    width: 82,
-    height: 82,
-    borderRadius: 16,
-    backgroundColor: levelPalettes[1].deep,
-    padding: space.s,
-    justifyContent: 'center',
-  },
-  widgetWord: {
-    fontFamily: font.display,
-    fontSize: type.small,
-    color: levelPalettes[1].onDeep,
-    textAlign: 'center',
-  },
-  widgetDefinition: {
-    fontFamily: font.serif,
-    fontSize: 8,
-    lineHeight: 10,
-    color: levelPalettes[1].onDeep,
-    textAlign: 'center',
-    marginTop: 3,
-  },
-  lockWidgetPreview: {
-    width: 82,
-    height: 82,
-    borderRadius: 18,
-    backgroundColor: color.ink,
-    padding: space.s,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  lockTime: { fontFamily: font.display, fontSize: type.body, color: color.paper },
-  lockWidgetWord: {
-    fontFamily: font.serifSemiBold,
-    fontSize: type.caption,
-    color: color.paper,
-    marginTop: 2,
-  },
-  lockWidgetPronunciation: {
-    fontFamily: font.serif,
-    fontSize: 7,
-    color: 'rgba(255,255,255,0.68)',
-  },
-  widgetTitle: {
-    fontFamily: font.serifSemiBold,
-    fontSize: type.caption,
-    color: color.ink,
-    marginTop: space.s,
-  },
-  widgetLink: {
-    fontFamily: font.serifMedium,
-    fontSize: 8,
-    letterSpacing: 0.6,
-    color: color.inkMuted,
-    textDecorationLine: 'underline',
-    marginTop: 2,
-  },
-  widgetSettings: {
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: color.hairline,
-    backgroundColor: color.card,
-    paddingHorizontal: space.m,
-    paddingTop: space.m,
-    marginTop: space.s + 2,
-  },
-  widgetSettingsTitle: {
-    fontFamily: font.display,
-    fontSize: type.body,
-    color: color.ink,
-    textAlign: 'center',
-    marginBottom: space.s,
-  },
-  widgetSettingsRow: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: color.hairline,
-    paddingVertical: space.s,
+    gap: space.m,
+    paddingHorizontal: space.m,
   },
-  widgetSettingsLabel: { fontFamily: font.serif, fontSize: type.small, color: color.ink },
-  widgetSettingsValue: { fontFamily: font.serif, fontSize: type.small, color: color.inkMuted },
+  settingValue: { flexShrink: 1, textAlign: 'right' },
+  book: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.m,
+    marginTop: space.xxl,
+  },
+  bookCopy: { flex: 1, gap: space.s },
 });

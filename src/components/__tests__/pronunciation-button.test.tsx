@@ -13,7 +13,7 @@ jest.mock('expo-speech', () => ({
 }));
 
 jest.mock('@/feedback/haptics', () => ({ selectionHaptic: jest.fn() }));
-jest.mock('@/components/system-icon', () => ({ SystemIcon: () => null }));
+jest.mock('@/components/brand/Glyph', () => ({ Glyph: () => null }));
 
 describe('PronunciationButton', () => {
   let renderer: ReactTestRenderer;

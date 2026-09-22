@@ -1,13 +1,20 @@
 import { Redirect, Tabs } from 'expo-router';
-import { DeviceEventEmitter, Text, type ColorValue } from 'react-native';
+import { DeviceEventEmitter, StyleSheet, View } from 'react-native';
 
+import { Glyph, type GlyphName } from '@/components/brand';
 import { selectionHaptic } from '@/feedback/haptics';
 import { STATS_OPEN_EVENT } from '@/stats/events';
 import { useUserStore } from '@/store/userStore';
-import { color, font } from '@/theme/tokens';
+import { brand, font, grounds, tracking } from '@/theme/tokens';
 
-function TabGlyph({ glyph, color: tint }: { glyph: string; color: ColorValue }) {
-  return <Text style={{ fontSize: 17, color: tint, lineHeight: 20 }}>{glyph}</Text>;
+/** The phone nav, as on the site: ○ ⌁ ♡ — and an acid dot on the page you're on. */
+function TabGlyph({ name, color, focused }: { name: GlyphName; color: string; focused: boolean }) {
+  return (
+    <View style={styles.glyph}>
+      <Glyph name={name} size={22} color={color} />
+      <View style={[styles.dot, focused && styles.dotOn]} />
+    </View>
+  );
 }
 
 export default function TabsLayout() {
@@ -26,40 +33,58 @@ export default function TabsLayout() {
       })}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: color.ink,
-        tabBarInactiveTintColor: color.inkFaint,
+        tabBarActiveTintColor: brand.ink,
+        tabBarInactiveTintColor: grounds.cream.textMuted,
         tabBarStyle: {
-          backgroundColor: color.paper,
-          borderTopColor: color.hairline,
+          backgroundColor: brand.cream,
+          borderTopColor: grounds.cream.hairline,
+          borderTopWidth: 1,
         },
         tabBarLabelStyle: {
-          fontFamily: font.serifMedium,
-          fontSize: 11,
-          letterSpacing: 0.4,
+          fontFamily: font.mono,
+          fontSize: 10,
+          letterSpacing: tracking(10, 0.16),
+          textTransform: 'uppercase',
         },
+        tabBarAllowFontScaling: true,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Today',
-          tabBarIcon: ({ color: tint }) => <TabGlyph glyph="✦" color={tint} />,
+          tabBarAccessibilityLabel: "Today's word",
+          tabBarIcon: ({ color, focused }) => (
+            <TabGlyph name="home" color={color as string} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="browse"
         options={{
           title: 'Browse',
-          tabBarIcon: ({ color: tint }) => <TabGlyph glyph="≡" color={tint} />,
+          tabBarAccessibilityLabel: 'Browse every word',
+          tabBarIcon: ({ color, focused }) => (
+            <TabGlyph name="spark" color={color as string} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="stats"
         options={{
           title: 'Stats',
-          tabBarIcon: ({ color: tint }) => <TabGlyph glyph="◈" color={tint} />,
+          tabBarAccessibilityLabel: 'Your stats and saved words',
+          tabBarIcon: ({ color, focused }) => (
+            <TabGlyph name="heart" color={color as string} focused={focused} />
+          ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  glyph: { alignItems: 'center', justifyContent: 'center' },
+  dot: { position: 'absolute', right: -7, top: 1, width: 4, height: 4, borderRadius: 2 },
+  dotOn: { backgroundColor: brand.acid },
+});

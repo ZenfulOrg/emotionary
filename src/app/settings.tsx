@@ -1,15 +1,15 @@
 import Constants from 'expo-constants';
 import { router, useFocusEffect, type Href } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useCallback, useState, type ReactNode } from 'react';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { deleteAccount, getAuthAccount, signOut, type AuthAccount } from '@/auth/client';
-import { SystemIcon } from '@/components/system-icon';
+import { Body, Eyebrow, Glyph, Headline, Mono, Panel, Screen, ScreenHeader, Wordmark } from '@/components/brand';
 import { selectionHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
 import { requestPermission } from '@/notifications/scheduler';
 import { useUserStore } from '@/store/userStore';
-import { color, font, space, type } from '@/theme/tokens';
+import { useGround } from '@/theme/ground';
+import { brand, grounds, layout, space } from '@/theme/tokens';
 
 export default function SettingsScreen() {
   const notifEnabled = useUserStore((state) => state.notifEnabled);
@@ -97,117 +97,111 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.backdrop} edges={['top']}>
-      <View style={styles.sheet}>
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => router.back()}
-            style={styles.backButton}
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-          >
-            <SystemIcon name="arrow.left" fallback="←" size={20} color={color.ink} />
-          </Pressable>
-          <Text style={styles.title}>Settings</Text>
-          <View style={styles.backButton} />
+    <Screen edges={['top', 'bottom']}>
+      <ScreenHeader
+        left={{ glyph: 'close', label: 'Close settings', onPress: () => router.back() }}
+        eyebrow="Settings"
+      />
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.accountBlock}>
+          <Eyebrow>{account ? 'Signed in as' : hasFullAccess ? 'Full access is active' : 'Using Emotionary free'}</Eyebrow>
+          <Headline size={34} numberOfLines={1} adjustsFontSizeToFit>
+            {account?.email ?? (hasFullAccess ? 'Emotionary Pro' : 'Guest')}
+          </Headline>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.accountBlock}>
-            <Text style={styles.accountTitle}>{account?.email ?? (hasFullAccess ? 'Emotionary Pro' : 'Guest')}</Text>
-            <Text style={styles.accountSubtitle}>
-              {account ? 'Signed in' : hasFullAccess ? 'Full access is active' : 'Using Emotionary free'}
-            </Text>
-          </View>
+        <SettingsGroup index="01" title="Account">
+          <SettingsRow
+            label="Account"
+            value={account?.email ?? 'Sign in'}
+            onPress={account ? undefined : () => router.push('/account' as Href)}
+          />
+          <SettingsRow
+            label="Emotionary Pro"
+            value={hasFullAccess ? 'Active' : 'Upgrade'}
+            onPress={hasFullAccess ? undefined : () => router.push('/paywall' as Href)}
+          />
+          <SettingsRow label="Restore purchases" onPress={restore} />
+          {account && (
+            <>
+              <SettingsRow label="Sign out" onPress={accountBusy ? undefined : confirmSignOut} />
+              <SettingsRow
+                label={accountBusy ? 'Working…' : 'Delete account'}
+                onPress={accountBusy ? undefined : confirmDeleteAccount}
+                danger
+              />
+            </>
+          )}
+        </SettingsGroup>
 
-          <Text style={styles.section}>ACCOUNT</Text>
-          <View style={styles.group}>
-            <SettingsRow
-              label="Account"
-              value={account?.email ?? 'Sign In'}
-              onPress={account ? undefined : () => router.push('/account' as Href)}
-              chevron={!account}
-            />
-            <SettingsRow
-              label="Emotionary Pro"
-              value={hasFullAccess ? 'Active' : 'Upgrade'}
-              onPress={hasFullAccess ? undefined : () => router.push('/paywall' as Href)}
-              chevron={!hasFullAccess}
-            />
-            <SettingsRow label="Restore Purchases" onPress={restore} chevron />
-            {account && (
-              <>
-                <SettingsRow label="Sign Out" onPress={accountBusy ? undefined : confirmSignOut} chevron />
-                <SettingsRow
-                  label={accountBusy ? 'Working…' : 'Delete Account'}
-                  onPress={accountBusy ? undefined : confirmDeleteAccount}
-                  danger
-                  chevron
-                />
-              </>
-            )}
-          </View>
+        <SettingsGroup index="02" title="Preferences">
+          <SettingsRow
+            label="Daily reminder"
+            control={
+              <Switch
+                value={notifEnabled}
+                onValueChange={(value) => void toggleNotifications(value)}
+                trackColor={{ false: grounds.cream.hairline, true: brand.ink }}
+                thumbColor={brand.cream}
+                ios_backgroundColor={grounds.cream.hairline}
+                accessibilityLabel="Daily reminder"
+              />
+            }
+          />
+          <SettingsRow
+            label="Haptics"
+            control={
+              <Switch
+                value={hapticsEnabled}
+                onValueChange={setHapticsEnabled}
+                trackColor={{ false: grounds.cream.hairline, true: brand.ink }}
+                thumbColor={brand.cream}
+                ios_backgroundColor={grounds.cream.hairline}
+                accessibilityLabel="Haptics"
+              />
+            }
+          />
+          <SettingsRow
+            label="Notifications"
+            value={notifEnabled ? 'On' : 'Off'}
+            onPress={() => void Linking.openSettings()}
+            leaves
+          />
+        </SettingsGroup>
 
-          <Text style={styles.section}>PREFERENCES</Text>
-          <View style={styles.group}>
-            <SettingsRow
-              label="Daily Reminder"
-              control={
-                <Switch
-                  value={notifEnabled}
-                  onValueChange={(value) => void toggleNotifications(value)}
-                  trackColor={{ false: color.hairline, true: color.ink }}
-                  thumbColor={color.card}
-                />
-              }
-            />
-            <SettingsRow
-              label="Haptics"
-              control={
-                <Switch
-                  value={hapticsEnabled}
-                  onValueChange={setHapticsEnabled}
-                  trackColor={{ false: color.hairline, true: color.ink }}
-                  thumbColor={color.card}
-                />
-              }
-            />
-            <SettingsRow
-              label="Notifications"
-              value={notifEnabled ? 'On' : 'Off'}
-              onPress={() => void Linking.openSettings()}
-              chevron
-            />
-          </View>
+        <SettingsGroup index="03" title="More">
+          <SettingsRow
+            label="Rate Emotionary"
+            onPress={() => Alert.alert('Thank you', 'Rating will be available when Emotionary is public on the App Store.')}
+          />
+          <SettingsRow
+            label="Send feedback"
+            onPress={() => void Linking.openURL('mailto:hello@emotionarybook.com?subject=Emotionary%20feedback')}
+            leaves
+          />
+          <SettingsRow label="Privacy policy" onPress={() => router.push('/legal/privacy' as Href)} />
+          <SettingsRow label="Terms of use" onPress={() => router.push('/legal/terms' as Href)} />
+        </SettingsGroup>
 
-          <Text style={styles.section}>MORE</Text>
-          <View style={styles.group}>
-            <SettingsRow
-              label="Rate Emotionary"
-              onPress={() => Alert.alert('Thank you', 'Rating will be available when Emotionary is public on the App Store.')}
-              chevron
-            />
-            <SettingsRow
-              label="Send Feedback"
-              onPress={() => void Linking.openURL('mailto:hello@emotionarybook.com?subject=Emotionary%20feedback')}
-              chevron
-            />
-            <SettingsRow
-              label="Privacy Policy"
-              onPress={() => router.push('/legal/privacy' as Href)}
-              chevron
-            />
-            <SettingsRow
-              label="Terms of Use"
-              onPress={() => router.push('/legal/terms' as Href)}
-              chevron
-            />
-          </View>
+        <View style={styles.footer}>
+          <Wordmark size={28} />
+          <Mono size={11} tone="muted">
+            VERSION {Constants.expoConfig?.version ?? ''}
+          </Mono>
+        </View>
+      </ScrollView>
+    </Screen>
+  );
+}
 
-          <Text style={styles.version}>Version {Constants.expoConfig?.version ?? '1.5.1'}</Text>
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+function SettingsGroup({ index, title, children }: { index: string; title: string; children: ReactNode }) {
+  return (
+    <View style={styles.group}>
+      <Eyebrow tone="muted" style={styles.groupTitle}>
+        {index} / {title}
+      </Eyebrow>
+      <Panel>{children}</Panel>
+    </View>
   );
 }
 
@@ -215,49 +209,72 @@ function SettingsRow({
   label,
   value,
   onPress,
-  chevron = false,
   control,
   danger = false,
+  leaves = false,
 }: {
   label: string;
   value?: string;
   onPress?: () => void;
-  chevron?: boolean;
-  control?: React.ReactNode;
+  control?: ReactNode;
   danger?: boolean;
+  /** the action leaves the app */
+  leaves?: boolean;
 }) {
+  const ground = useGround();
   const content = (
-    <View style={styles.row}>
-      <Text style={[styles.rowLabel, danger && styles.rowLabelDanger]}>{label}</Text>
+    <View style={[styles.row, { borderBottomColor: ground.hairline }]}>
+      {danger && <View style={styles.dangerDot} />}
+      <Body size={18} style={styles.rowLabel}>
+        {label}
+      </Body>
       <View style={styles.rowEnd}>
-        {value && <Text style={styles.rowValue} numberOfLines={1}>{value}</Text>}
+        {value && (
+          <Mono size={12} tone="muted" numberOfLines={1} style={styles.rowValue}>
+            {value}
+          </Mono>
+        )}
         {control}
-        {chevron && <Text style={styles.chevron}>›</Text>}
+        {onPress && <Glyph name={leaves ? 'leaves' : 'forward'} size={16} color={ground.textMuted} />}
       </View>
     </View>
   );
   return onPress ? (
-    <Pressable onPress={onPress} accessibilityRole="button">{content}</Pressable>
-  ) : content;
+    <Pressable
+      onPress={() => {
+        selectionHaptic();
+        onPress();
+      }}
+      accessibilityRole={leaves ? 'link' : 'button'}
+      accessibilityLabel={value ? `${label}, ${value}` : label}
+      style={({ pressed }) => pressed && { backgroundColor: ground.wash }}
+    >
+      {content}
+    </Pressable>
+  ) : (
+    <View accessible={!control} accessibilityLabel={value ? `${label}, ${value}` : undefined}>
+      {content}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: '#DFDCD5', padding: 10 },
-  sheet: { flex: 1, backgroundColor: color.card, borderRadius: 26, borderCurve: 'continuous', overflow: 'hidden' },
-  header: { minHeight: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.m },
-  backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  title: { fontFamily: font.display, fontSize: 26, color: color.ink },
-  scroll: { paddingHorizontal: space.l, paddingBottom: space.xl },
-  accountBlock: { alignItems: 'center', paddingVertical: space.m },
-  accountTitle: { fontFamily: font.serifSemiBold, fontSize: type.body, color: color.ink },
-  accountSubtitle: { fontFamily: font.serif, fontSize: type.caption, color: color.inkMuted, marginTop: 3 },
-  section: { fontFamily: font.serifMedium, fontSize: 10, letterSpacing: 1.8, color: color.inkFaint, marginTop: space.l, marginBottom: space.s, paddingLeft: space.s },
-  group: { borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: color.hairline, backgroundColor: '#FFFEFB', overflow: 'hidden' },
-  row: { minHeight: 55, paddingHorizontal: space.m, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.hairline },
-  rowLabel: { fontFamily: font.serif, fontSize: type.small, color: color.ink },
-  rowLabelDanger: { color: '#A33D39' },
-  rowEnd: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: space.s, marginLeft: space.s },
-  rowValue: { flexShrink: 1, fontFamily: font.serif, fontSize: type.small, color: color.inkMuted },
-  chevron: { fontFamily: font.serif, fontSize: 25, color: color.inkFaint, lineHeight: 28 },
-  version: { fontFamily: font.serif, fontSize: type.caption, color: color.inkFaint, textAlign: 'center', marginTop: space.xl },
+  scroll: { paddingHorizontal: layout.gutter, paddingBottom: space.xxl },
+  accountBlock: { gap: space.xs, paddingTop: space.m, paddingBottom: space.s },
+  group: { marginTop: space.xl },
+  groupTitle: { marginBottom: space.s },
+  row: {
+    minHeight: 56,
+    paddingHorizontal: space.m,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.s,
+    borderBottomWidth: 1,
+    marginBottom: -1,
+  },
+  rowLabel: { flexShrink: 1, paddingVertical: space.s },
+  dangerDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: brand.rust },
+  rowEnd: { flexGrow: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: space.s },
+  rowValue: { flexShrink: 1, textAlign: 'right' },
+  footer: { alignItems: 'center', gap: space.s, marginTop: space.xxl },
 });
