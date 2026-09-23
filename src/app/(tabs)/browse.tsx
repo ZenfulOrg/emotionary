@@ -153,6 +153,7 @@ const styles = StyleSheet.create({
     gap: space.s,
     paddingHorizontal: layout.gutter,
     marginTop: space.m,
+    paddingBottom: space.m,
   },
   list: { paddingHorizontal: layout.gutter, paddingTop: space.m, paddingBottom: 120 },
   emptyWrap: { alignItems: 'center', marginTop: space.xxl, gap: space.s },

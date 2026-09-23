@@ -1,23 +1,21 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Grain, Orbit, Planets, Wordmark } from '@/components/brand';
+import { Grain, Planets, Wordmark } from '@/components/brand';
 import { wordTitleSize } from '@/components/word-title-size';
 import { pronunciationLineFor } from '@/content/part-of-speech';
 import { asEntry, displayWord } from '@/content/presentation';
 import type { Word } from '@/content/types';
 import { GroundProvider } from '@/theme/ground';
-import { brand, font, grounds, levelPalettes, planets, tracking } from '@/theme/tokens';
+import { brand, font, grounds, planets, tracking } from '@/theme/tokens';
 
-/**
- * The share card — the site, folded into a post (brand guide §13). Designed
- * on a 1080×1920 canvas (Instagram / Facebook Stories) and rendered at any
- * width via a scale factor; capture resizes to exactly 1080×1920.
- *
- * Ink ground, the orbit behind the word. Meta row on top over a hairline;
- * pronunciation in mono between slashes; the word lowercase and huge; the
- * definition lowercase ending in a period, then the italic line. Wordmark
- * bottom left, the planets bottom right. The level's mood color is the accent.
- */
+/** A clean 1080×1920 story card, with the same theme in preview and export. */
+export const SHARE_THEMES = [
+  { id: 'ink', label: 'Midnight', ground: 'ink', background: brand.ink },
+  { id: 'cream', label: 'Cream', ground: 'cream', background: brand.cream },
+  { id: 'rose', label: 'Rose', ground: 'cream', background: '#F4E3DB' },
+] as const;
+export type ShareTheme = (typeof SHARE_THEMES)[number]['id'];
+
 export const CARD_BASE_WIDTH = 1080;
 export const CARD_BASE_HEIGHT = 1920;
 
@@ -25,12 +23,13 @@ const PAD = 96;
 /** The word's phone size, scaled to the card's text column. */
 const WORD_SCALE = (CARD_BASE_WIDTH - PAD * 2) / 327;
 
-export function ShareCard({ word, width }: { word: Word; width: number }) {
+export function ShareCard({ word, width, theme = 'ink' }: { word: Word; width: number; theme?: ShareTheme }) {
   const s = width / CARD_BASE_WIDTH;
-  const level = levelPalettes[word.level];
+  const palette = SHARE_THEMES.find((item) => item.id === theme) ?? SHARE_THEMES[0];
+  const ground = grounds[palette.ground];
   const px = (n: number) => n * s;
   const wordSize = px(wordTitleSize(word.word) * WORD_SCALE);
-  const muted = grounds.ink.textMuted;
+  const muted = ground.textMuted;
 
   const mono = (size: number) => ({
     fontFamily: font.mono,
@@ -40,19 +39,13 @@ export function ShareCard({ word, width }: { word: Word; width: number }) {
   });
 
   return (
-    <GroundProvider ground="ink">
+    <GroundProvider ground={palette.ground}>
       <View
         style={[
           styles.card,
-          { width, height: px(CARD_BASE_HEIGHT), paddingHorizontal: px(PAD), paddingVertical: px(120) },
+          { backgroundColor: palette.background, width, height: px(CARD_BASE_HEIGHT), paddingHorizontal: px(PAD), paddingVertical: px(120) },
         ]}
       >
-        <Orbit
-          size={px(1500)}
-          planets={false}
-          style={{ position: 'absolute', top: px(380), left: px(180) }}
-        />
-
         <View>
           <View style={styles.metaRow}>
             <View
@@ -66,21 +59,11 @@ export function ShareCard({ word, width }: { word: Word; width: number }) {
             />
             <Text allowFontScaling={false} style={[mono(26), styles.flex]} numberOfLines={1}>
               {planets[word.type].label.toUpperCase()}
-              <Text allowFontScaling={false} style={{ color: brand.acid }}> · </Text>
+              <Text allowFontScaling={false} style={{ color: ground.eyebrow }}> · </Text>
               {word.language.toUpperCase()}
             </Text>
-            <Text allowFontScaling={false} style={mono(26)}>LEVEL {word.level}</Text>
-            <View
-              style={{
-                width: px(18),
-                height: px(18),
-                borderRadius: px(9),
-                backgroundColor: level.accent,
-                marginLeft: px(18),
-              }}
-            />
           </View>
-          <View style={{ height: Math.max(1, px(2)), backgroundColor: grounds.ink.hairline, marginTop: px(32) }} />
+          <View style={{ height: Math.max(1, px(2)), backgroundColor: ground.hairline, marginTop: px(32) }} />
         </View>
 
         <View style={styles.entry}>
@@ -92,7 +75,7 @@ export function ShareCard({ word, width }: { word: Word; width: number }) {
               fontSize: wordSize,
               lineHeight: wordSize * 1.1,
               letterSpacing: tracking(wordSize, -0.05),
-              color: brand.cream,
+              color: ground.text,
               marginTop: px(12),
               marginLeft: -px(8),
             }}
@@ -107,7 +90,7 @@ export function ShareCard({ word, width }: { word: Word; width: number }) {
               fontFamily: font.text,
               fontSize: px(58),
               lineHeight: px(76),
-              color: brand.cream,
+              color: ground.text,
               marginTop: px(40),
             }}
             numberOfLines={6}
@@ -130,7 +113,7 @@ export function ShareCard({ word, width }: { word: Word; width: number }) {
         </View>
 
         <View>
-          <View style={{ height: Math.max(1, px(2)), backgroundColor: grounds.ink.hairline, marginBottom: px(48) }} />
+          <View style={{ height: Math.max(1, px(2)), backgroundColor: ground.hairline, marginBottom: px(48) }} />
           <View style={styles.footer}>
             <View>
               <Wordmark size={px(72)} fixed />
@@ -146,7 +129,7 @@ export function ShareCard({ word, width }: { word: Word; width: number }) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: brand.ink, justifyContent: 'space-between', overflow: 'hidden' },
+  card: { justifyContent: 'space-between', overflow: 'hidden' },
   metaRow: { flexDirection: 'row', alignItems: 'center' },
   flex: { flex: 1 },
   entry: { flex: 1, justifyContent: 'center' },

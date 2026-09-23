@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet } from 'react-native';
 
-import { OrbitBackdrop, Screen, ScreenHeader } from '@/components/brand';
+import { Screen, ScreenHeader } from '@/components/brand';
 import { Paywall } from '@/components/Paywall';
 import { layout, space } from '@/theme/tokens';
 
@@ -12,8 +12,7 @@ export default function PaywallScreen() {
   };
 
   return (
-    <Screen ground="ink" edges={['top', 'bottom']}>
-      <OrbitBackdrop top={-40} />
+    <Screen ground="cream" edges={['top', 'bottom']}>
       <ScreenHeader left={{ glyph: 'close', label: 'Close', onPress: close }} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Paywall onContinue={close} onContinueFree={close} />

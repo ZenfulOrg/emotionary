@@ -1,6 +1,7 @@
 """
 Regenerates the brand raster assets from the brand guide's rules:
-app icon, Android adaptive icon layers, splash wordmark, favicon, grain tile.
+Android adaptive icon layers, splash wordmark, favicon, grain tile.
+The supplied September 23 app icon is preserved as-is.
 
     python3 scripts/generate-brand-assets.py   (needs Pillow)
 
@@ -103,7 +104,6 @@ def grain_tile(size=192):
 
 
 if __name__ == '__main__':
-    icon().convert('RGB').save('assets/images/icon.png')
     icon(transparent=True, safe=0.6).save('assets/images/android-icon-foreground.png')
     icon(transparent=True, mono=True, safe=0.6).save('assets/images/android-icon-monochrome.png')
     splash_wordmark().save('assets/images/splash-icon.png')

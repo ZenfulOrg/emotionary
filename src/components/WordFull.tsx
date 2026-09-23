@@ -64,9 +64,10 @@ export function WordFull({
     <>
       <View>
         <MetaRow
+          centered={feedPage}
           leading={<PlanetDot wordType={word.type} />}
           items={[planets[word.type].label, word.language]}
-          trailing={
+          trailing={!feedPage && (
             <View
               style={styles.level}
               accessible
@@ -75,22 +76,22 @@ export function WordFull({
               <Eyebrow tone="muted">Level {word.level}</Eyebrow>
               <View style={[styles.levelDot, { backgroundColor: level.accent }]} />
             </View>
-          }
+          )}
         />
         <Rule style={styles.metaRule} />
       </View>
 
-      <View style={styles.entry}>
-        <View style={styles.pronunciationRow}>
+      <View style={[styles.entry, feedPage && styles.centeredEntry]}>
+        <View style={[styles.pronunciationRow, feedPage && styles.centeredRow]}>
           <Mono size={14} accessibilityLabel={`Pronounced ${word.pronunciation}`}>
             {pronunciationLineFor(word)}
           </Mono>
           <PronunciationButton word={word.word} active={audioActive} />
         </View>
-        <WordTitle word={word} onLongPress={() => copyToClipboard('word')} />
+        <WordTitle word={word} centered={feedPage} onLongPress={() => copyToClipboard('word')} />
         <Body
           size={type.definition}
-          style={styles.definition}
+          style={[styles.definition, feedPage && styles.centeredText]}
           accessibilityLabel={word.definition}
           accessibilityHint="Long press to copy the definition"
           onLongPress={() => copyToClipboard('definition')}
@@ -102,10 +103,10 @@ export function WordFull({
 
       <View style={[styles.bottom, feedPage && styles.feedBottom]}>
         <Rule />
-        <Body italic size={type.lead} tone="muted" style={styles.wisdom}>
+        <Body italic size={type.lead} tone="muted" style={[styles.wisdom, feedPage && styles.centeredText]}>
           {word.wisdom}
         </Body>
-        <View style={styles.actions}>
+        <View style={[styles.actions, feedPage && styles.centeredRow]}>
           <WordAction
             glyph={isFavorite ? 'heartFilled' : 'heart'}
             label={isFavorite ? 'Saved' : 'Save'}
@@ -172,10 +173,12 @@ export function WordFull({
 export function WordTitle({
   word,
   size,
+  centered = false,
   onLongPress,
 }: {
   word: Pick<Word, 'word' | 'language' | 'level'>;
   size?: number;
+  centered?: boolean;
   onLongPress?: () => void;
 }) {
   const ground = useGround();
@@ -184,6 +187,7 @@ export function WordTitle({
     <Text
       style={[
         styles.word,
+        centered && styles.centeredWord,
         {
           color: ground.text,
           fontSize,
@@ -243,6 +247,10 @@ const styles = StyleSheet.create({
     paddingBottom: 112,
   },
   feedScroll: { flex: 1 },
+  centeredEntry: { alignItems: 'center' },
+  centeredRow: { justifyContent: 'center', marginLeft: 0 },
+  centeredText: { textAlign: 'center' },
+  centeredWord: { textAlign: 'center', marginLeft: 0, width: '100%' },
   level: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   levelDot: { width: 7, height: 7, borderRadius: 3.5 },
   metaRule: { marginTop: space.s + 2 },

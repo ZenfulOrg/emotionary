@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, PixelRatio, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Alert, PixelRatio, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { findWord, useContentStore } from '@/content/store';
@@ -8,7 +8,7 @@ import { Button, Eyebrow, IconButton, Mono, Separator, useGroundStatusBar } from
 import { localDateString, wordOfDay } from '@/daily/engine';
 import { canViewWord } from '@/entitlements';
 import { lightImpactHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
-import { CARD_BASE_HEIGHT, CARD_BASE_WIDTH, ShareCard } from '@/share/ShareCard';
+import { CARD_BASE_HEIGHT, CARD_BASE_WIDTH, ShareCard, SHARE_THEMES } from '@/share/ShareCard';
 import { useUserStore } from '@/store/userStore';
 import { GroundProvider } from '@/theme/ground';
 import { grounds, layout, scrim, space } from '@/theme/tokens';
@@ -26,6 +26,9 @@ export default function ShareModal() {
   const insets = useSafeAreaInsets();
 
   const shotRef = useRef<View>(null);
+  const carouselRef = useRef<ScrollView>(null);
+  const [themeIndex, setThemeIndex] = useState(0);
+  const [scrolling, setScrolling] = useState(false);
   const [laidOut, setLaidOut] = useState(false);
   const [busy, setBusy] = useState<'idle' | 'saving' | 'sharing'>('idle');
   const [saved, setSaved] = useState(false);
@@ -45,7 +48,8 @@ export default function ShareModal() {
   if (locked) return null;
 
   // Fit the 9:16 preview inside the window with room for the buttons.
-  const cardWidth = Math.min(winW * 0.7, (winH * 0.56 * CARD_BASE_WIDTH) / CARD_BASE_HEIGHT);
+  const previewHeight = Math.max(160, winH - insets.top - insets.bottom - 300);
+  const cardWidth = Math.min(winW * 0.7, (previewHeight * CARD_BASE_WIDTH) / CARD_BASE_HEIGHT);
   const pixelRatio = PixelRatio.get();
   const captureWidth = CARD_BASE_WIDTH / pixelRatio;
   const captureHeight = CARD_BASE_HEIGHT / pixelRatio;
@@ -114,7 +118,16 @@ export default function ShareModal() {
     }
   };
 
-  const ready = laidOut && busy === 'idle';
+  const ready = laidOut && !scrolling && busy === 'idle';
+  const pageWidth = winW - layout.gutter * 2;
+  const theme = SHARE_THEMES[themeIndex];
+  const chooseTheme = (index: number) => {
+    if (index !== themeIndex) {
+      setLaidOut(false);
+      setSaved(false);
+      setThemeIndex(index);
+    }
+  };
 
   return (
     <GroundProvider ground="ink">
@@ -131,17 +144,69 @@ export default function ShareModal() {
           </View>
 
           <View style={styles.preview}>
-            <View
-              style={styles.cardFrame}
-              accessible
-              accessibilityRole="image"
-              accessibilityLabel={`Share card for ${word.word}: ${word.definition}`}
+            <ScrollView
+              ref={carouselRef}
+              horizontal
+              pagingEnabled
+              scrollEnabled={busy === 'idle'}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.carouselContent}
+              onScrollBeginDrag={() => setScrolling(true)}
+              onScrollEndDrag={(event) => {
+                const { contentOffset, targetContentOffset, velocity } = event.nativeEvent;
+                // A drag at an outer edge may finish without any momentum event.
+                if (velocity?.x === 0 &&
+                  Math.abs((targetContentOffset?.x ?? contentOffset.x) - contentOffset.x) < 1) {
+                  chooseTheme(Math.max(0, Math.min(SHARE_THEMES.length - 1,
+                    Math.round(contentOffset.x / pageWidth))));
+                  setScrolling(false);
+                }
+              }}
+              onMomentumScrollEnd={(event) => {
+                chooseTheme(Math.max(0, Math.min(SHARE_THEMES.length - 1,
+                  Math.round(event.nativeEvent.contentOffset.x / pageWidth))));
+                setScrolling(false);
+              }}
+              accessibilityLabel="Swipe to choose a share card color"
             >
-              <ShareCard word={word} width={cardWidth} />
-            </View>
+              {SHARE_THEMES.map((option) => (
+                <View key={option.id} style={[styles.previewPage, { width: pageWidth }]}>
+                  <View
+                    style={styles.cardFrame}
+                    accessible
+                    accessibilityRole="image"
+                    accessibilityLabel={`${option.label} share card for ${word.word}: ${word.definition}`}
+                  >
+                    <ShareCard word={word} width={cardWidth} theme={option.id} />
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+          <View style={styles.themeChoices} accessibilityRole="radiogroup" accessibilityLabel="Card color">
+            {SHARE_THEMES.map((option, index) => (
+              <Pressable
+                key={option.id}
+                accessibilityRole="radio"
+                accessibilityLabel={option.label}
+                accessibilityState={{ checked: index === themeIndex, disabled: busy !== 'idle' }}
+                disabled={busy !== 'idle'}
+                onPress={() => {
+                  chooseTheme(index);
+                  setScrolling(false);
+                  carouselRef.current?.scrollTo({ x: index * pageWidth, animated: false });
+                }}
+                style={styles.themeChoice}
+              >
+                <View style={[styles.swatch, { backgroundColor: option.background },
+                  index === themeIndex && styles.selectedSwatch]} />
+                <Mono size={10} tone={index === themeIndex ? 'default' : 'muted'}>{option.label}</Mono>
+              </Pressable>
+            ))}
           </View>
 
           <View
+            key={theme.id}
             ref={shotRef}
             collapsable={false}
             pointerEvents="none"
@@ -157,7 +222,7 @@ export default function ShareModal() {
               },
             ]}
           >
-            <ShareCard word={word} width={captureWidth} />
+            <ShareCard word={word} width={captureWidth} theme={theme.id} />
           </View>
 
           <View style={styles.buttons}>
@@ -219,7 +284,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   close: { marginRight: -10 },
-  preview: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  preview: { flex: 1 },
+  carouselContent: { alignItems: 'center' },
+  previewPage: { alignItems: 'center', justifyContent: 'center' },
+  themeChoices: { flexDirection: 'row', justifyContent: 'center', gap: space.l },
+  themeChoice: { minHeight: 44, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  swatch: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: grounds.ink.textFaint },
+  selectedSwatch: { borderWidth: 3, borderColor: grounds.ink.eyebrow },
   cardFrame: {
     borderWidth: 1,
     borderColor: grounds.ink.hairline,

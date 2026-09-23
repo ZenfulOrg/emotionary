@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Body, Button, Eyebrow, Headline, OptionRow, RoundCta } from '@/components/brand';
+import { Body, Button, Eyebrow, Headline, OptionRow, Planets, RoundCta } from '@/components/brand';
 import { lightImpactHaptic, successHaptic } from '@/feedback/haptics';
 import { useUserStore } from '@/store/userStore';
-import { space } from '@/theme/tokens';
+import { GroundProvider } from '@/theme/ground';
+import { brand, space } from '@/theme/tokens';
 
 type Plan = 'yearly' | 'lifetime';
 
@@ -13,7 +14,7 @@ const PLANS: Record<Plan, { title: string; price: string; body: string; eyebrow?
   lifetime: { title: 'Lifetime', price: '$9.99', body: 'One time, yours to keep.', eyebrow: 'Best value' },
 };
 
-/** Full access, on ink: two square plans and the round CTA, last. */
+/** Full access, on cream: two square plans and the round CTA, last. */
 export function Paywall({
   onContinue,
   onContinueFree,
@@ -34,6 +35,7 @@ export function Paywall({
 
   return (
     <View style={styles.wrap}>
+      <View style={styles.planets}><Planets /></View>
       <Eyebrow>Full access</Eyebrow>
       <Headline size={48} style={styles.title}>
         Every word,{'\n'}every month.
@@ -46,17 +48,20 @@ export function Paywall({
         {(Object.keys(PLANS) as Plan[]).map((key) => {
           const option = PLANS[key];
           return (
-            <OptionRow
-              key={key}
-              role="radio"
-              selected={plan === key}
-              onPress={() => setPlan(key)}
-              eyebrow={option.eyebrow}
-              title={option.title}
-              body={option.body}
-              accessibilityLabel={`${option.title}, ${option.price}. ${option.body}`}
-              aside={<Headline accessibilityRole="text" size={30}>{option.price}</Headline>}
-            />
+            <GroundProvider key={key} ground={plan === key ? 'ink' : 'cream'}>
+              <View style={plan === key ? styles.selectedPlan : undefined}>
+                <OptionRow
+                  role="radio"
+                  selected={plan === key}
+                  onPress={() => setPlan(key)}
+                  eyebrow={option.eyebrow}
+                  title={option.title}
+                  body={option.body}
+                  accessibilityLabel={`${option.title}, ${option.price}. ${option.body}`}
+                  aside={<Headline accessibilityRole="text" size={30}>{option.price}</Headline>}
+                />
+              </View>
+            </GroundProvider>
           );
         })}
       </View>
@@ -76,6 +81,8 @@ export function Paywall({
 
 const styles = StyleSheet.create({
   wrap: { width: '100%', maxWidth: 440 },
+  planets: { alignItems: 'flex-end', marginBottom: space.l },
+  selectedPlan: { backgroundColor: brand.ink },
   title: { marginTop: space.s },
   subtitle: { marginTop: space.m, maxWidth: 320 },
   options: { gap: space.s, marginTop: space.xl },

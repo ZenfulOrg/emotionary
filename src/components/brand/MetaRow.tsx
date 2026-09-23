@@ -18,18 +18,20 @@ export function MetaRow({
   leading,
   trailing,
   tone = 'muted',
+  centered = false,
   style,
 }: {
   items: string[];
+  centered?: boolean;
   leading?: ReactNode;
   trailing?: ReactNode;
   tone?: 'default' | 'muted';
   style?: ViewStyle;
 }) {
   return (
-    <View style={[styles.row, style]} accessible accessibilityLabel={items.join(', ')}>
+    <View style={[styles.row, centered && styles.centered, style]} accessible accessibilityLabel={items.join(', ')}>
       {leading}
-      <View style={styles.items}>
+      <View style={[styles.items, centered && styles.centeredItems]}>
         {items.map((item, index) => (
           <Fragment key={item + index}>
             {index > 0 && <Separator />}
@@ -47,5 +49,7 @@ export function MetaRow({
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   items: { flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 8 },
+  centered: { justifyContent: 'center' },
+  centeredItems: { flex: 0, flexShrink: 1, justifyContent: 'center' },
   separator: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: brand.acid },
 });

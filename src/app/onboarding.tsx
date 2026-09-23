@@ -7,7 +7,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import Animated, { FadeIn, FadeInDown, useReducedMotion } from 'react-native-reanimated';
+import Animated, { Easing, FadeInDown, FadeOutUp, useReducedMotion } from 'react-native-reanimated';
 
 import { useAuthForm } from '@/auth/useAuthForm';
 import { AuthForm } from '@/components/AuthForm';
@@ -68,7 +68,7 @@ const PAGE_GROUNDS: Record<OnboardingPage, GroundName> = {
   drawn: 'cream',
   account: 'cream',
   'first-word': 'cream',
-  paywall: 'ink',
+  paywall: 'cream',
 };
 
 const DRAWN_TO = [
@@ -151,7 +151,8 @@ export default function OnboardingScreen() {
         >
           <Animated.View
             key={page}
-            entering={reducedMotion ? undefined : FadeIn.duration(320)}
+            entering={reducedMotion ? undefined : FadeInDown.duration(280).easing(Easing.bezier(0.23, 1, 0.32, 1))}
+            exiting={reducedMotion ? undefined : FadeOutUp.duration(160)}
             style={styles.page}
           >
             {page === 'welcome' && <WelcomePage />}
@@ -404,7 +405,7 @@ function WidgetPage({
           </Pressable>
         ))}
       </View>
-      <Button label="Skip for now" variant="link" glyph="forward" onPress={onNext} style={styles.skip} />
+      <Button label="Next" glyph="forward" onPress={onNext} style={styles.skip} />
     </PageCopy>
   );
 }

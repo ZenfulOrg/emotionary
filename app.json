@@ -2,7 +2,7 @@
   "expo": {
     "name": "Emotionary",
     "slug": "emotionary",
-    "version": "1.6.0",
+    "version": "1.6.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "emotionary",
@@ -10,7 +10,7 @@
     "ios": {
       "appleTeamId": "GRM466YG9B",
       "bundleIdentifier": "com.nowdrops.emotionary",
-      "buildNumber": "2026092101",
+      "buildNumber": "2026092301",
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "privacyManifests": {
@@ -45,8 +45,8 @@
     "android": {
       "package": "com.emotionary.app",
       "adaptiveIcon": {
-        "backgroundColor": "#18334D",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundColor": "#F5F0E6",
+        "foregroundImage": "./assets/images/icon.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "blockedPermissions": [
