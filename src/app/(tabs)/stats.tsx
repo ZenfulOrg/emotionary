@@ -64,7 +64,7 @@ function StatTile({
       <Headline accessibilityRole="text" size={56} style={styles.tileValue}>
         {value}
       </Headline>
-      <Eyebrow tone="muted">{label}</Eyebrow>
+      <Eyebrow tone="muted" style={styles.centeredText}>{label}</Eyebrow>
     </View>
   );
 }
@@ -98,12 +98,12 @@ function LinkRow({
     >
       <Panel style={styles.linkRow}>
         <View style={styles.linkCopy}>
-          <Eyebrow>{eyebrow}</Eyebrow>
-          <Headline accessibilityRole="text" size={26}>
+          <Eyebrow style={styles.centeredText}>{eyebrow}</Eyebrow>
+          <Headline accessibilityRole="text" size={26} style={styles.centeredText}>
             {title}
           </Headline>
         </View>
-        {aside !== undefined && <Headline accessibilityRole="text" size={26}>{aside}</Headline>}
+        {aside !== undefined && <Headline accessibilityRole="text" size={26} style={styles.centeredText}>{aside}</Headline>}
         <Glyph name={glyph} size={20} />
       </Panel>
     </Pressable>
@@ -114,7 +114,7 @@ function WidgetShowcase({ onOpen }: { onOpen: (variant: WidgetGuideVariant) => v
   const ground = useGround();
   return (
     <View style={styles.section}>
-      <Eyebrow tone="muted">02 / Widgets</Eyebrow>
+      <Eyebrow tone="muted" style={styles.centeredText}>02 / Widgets</Eyebrow>
       <Rule style={styles.sectionRule} />
       <View style={styles.widgetCards}>
         {(['home', 'lock'] as const).map((variant) => (
@@ -201,7 +201,7 @@ export default function StatsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerRow}>
-          <Eyebrow>Your emotionary</Eyebrow>
+          <Eyebrow style={styles.centeredText}>Your emotionary</Eyebrow>
           <IconButton
             glyph="menu"
             accessibilityLabel="Settings"
@@ -209,13 +209,13 @@ export default function StatsScreen() {
             style={styles.settings}
           />
         </View>
-        <Headline size={52}>Your stats.</Headline>
+        <Headline size={52} style={styles.centeredText}>Your stats.</Headline>
         <Body tone="muted" style={styles.lead}>
           {allZero ? 'Your streak starts today. Read your first word.' : 'A small window into language, every day.'}
         </Body>
 
         <View style={styles.section}>
-          <Eyebrow tone="muted">01 / Practice</Eyebrow>
+          <Eyebrow tone="muted" style={styles.centeredText}>01 / Practice</Eyebrow>
           <Rule style={styles.sectionRule} />
           <View style={styles.grid}>
             <StatTile index="01" value={streak} label="Day streak" streak />
@@ -253,8 +253,8 @@ export default function StatsScreen() {
 
         <View style={styles.book}>
           <View style={styles.bookCopy}>
-            <Eyebrow>The book</Eyebrow>
-            <Headline size={34}>A dictionary of emotions.</Headline>
+            <Eyebrow style={styles.centeredText}>The book</Eyebrow>
+            <Headline size={34} style={styles.centeredText}>A dictionary of emotions.</Headline>
           </View>
           <RoundCta
             label={'Get the\nbook'}
@@ -279,11 +279,12 @@ const styles = StyleSheet.create({
     minHeight: layout.touch,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginTop: space.s,
   },
-  settings: { marginRight: -10 },
-  lead: { marginTop: space.s, maxWidth: 300 },
+  settings: { position: 'absolute', right: -10 },
+  centeredText: { textAlign: 'center' },
+  lead: { marginTop: space.s, maxWidth: 300, alignSelf: 'center', textAlign: 'center' },
   section: { marginTop: space.xl },
   sectionRule: { marginTop: space.s },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
@@ -291,22 +292,22 @@ const styles = StyleSheet.create({
     width: '50%',
     borderBottomWidth: 1,
     paddingVertical: space.m,
-    paddingRight: space.m,
+    paddingHorizontal: space.m,
+    alignItems: 'center',
     gap: 2,
   },
-  tileSecond: { borderLeftWidth: 1, paddingLeft: space.m, paddingRight: 0 },
-  tileTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  tileSecond: { borderLeftWidth: 1 },
+  tileTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.s },
   tileValue: { fontFamily: font.display, letterSpacing: tracking(56, -0.05) },
   links: { gap: space.s, marginTop: space.xl },
   linkRow: {
     minHeight: 76,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: space.m,
+    gap: space.s,
     paddingHorizontal: space.m,
     paddingVertical: space.m,
   },
-  linkCopy: { flex: 1, gap: 2 },
+  linkCopy: { gap: 2, alignItems: 'center' },
   pressed: { opacity: 0.7 },
   widgetCards: { flexDirection: 'row', gap: space.s, marginTop: space.m },
   widgetCard: { flex: 1, borderWidth: 1, alignItems: 'center', paddingVertical: space.l, gap: 4 },
@@ -314,18 +315,17 @@ const styles = StyleSheet.create({
   widgetSettings: { marginTop: space.s },
   settingRow: {
     minHeight: 52,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: space.m,
+    justifyContent: 'center',
+    gap: space.xs,
     paddingHorizontal: space.m,
+    paddingVertical: space.s,
   },
-  settingValue: { flexShrink: 1, textAlign: 'right' },
+  settingValue: { flexShrink: 1, textAlign: 'center' },
   book: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: space.m,
+    gap: space.s,
     marginTop: space.xxl,
   },
-  bookCopy: { flex: 1, gap: space.s },
+  bookCopy: { gap: space.s, alignItems: 'center' },
 });

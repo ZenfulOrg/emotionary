@@ -1,0 +1,25 @@
+{
+  "identifier": "EC16B9A2",
+  "nonRenewingSubscriptions": [],
+  "products": [{
+    "displayPrice": "9.99",
+    "familyShareable": false,
+    "internalID": "6815382138",
+    "localizations": [{"description": "Full dictionary and widget themes.", "displayName": "Emotionary Pro Lifetime", "locale": "en_US"}],
+    "productID": "com.nowdrops.emotionary.pro.lifetime",
+    "referenceName": "Emotionary Pro Lifetime",
+    "type": "NonConsumable"
+  }],
+  "settings": {"_applicationInternalID": "6803190171", "_developerTeamID": "GRM466YG9B", "_failTransactionsEnabled": false, "_locale": "en_US", "_storefront": "USA", "_storeKitErrors": []},
+  "subscriptionGroups": [{
+    "id": "22408477", "localizations": [], "name": "Emotionary Pro",
+    "subscriptions": [{
+      "adHocOffers": [], "codeOffers": [], "displayPrice": "4.99", "familyShareable": false,
+      "groupNumber": 1, "internalID": "6815384458", "introductoryOffer": null,
+      "localizations": [{"description": "Full access for one year.", "displayName": "Emotionary Pro Yearly", "locale": "en_US"}],
+      "productID": "com.nowdrops.emotionary.pro.yearly", "recurringSubscriptionPeriod": "P1Y",
+      "referenceName": "Emotionary Pro Yearly", "subscriptionGroupID": "22408477", "type": "RecurringSubscription"
+    }]
+  }],
+  "version": {"major": 3, "minor": 0}
+}

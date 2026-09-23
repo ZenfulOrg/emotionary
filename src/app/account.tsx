@@ -28,7 +28,7 @@ export default function AccountScreen() {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Headline size={44}>{form.mode === 'create' ? 'Make it yours.' : 'Welcome back.'}</Headline>
           <Body tone="muted" style={styles.subtitle}>
-            Keep your saved words and your streak connected across devices.
+            Sign in to manage your Emotionary account. Saved words and reading progress stay on this device.
           </Body>
           <AuthForm form={form} />
         </ScrollView>

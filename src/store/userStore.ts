@@ -35,7 +35,7 @@ interface UserState {
   recordShare: (slug: string, localDate: string) => boolean;
   setNotifTime: (time: NotifTime) => void;
   setNotifEnabled: (enabled: boolean) => void;
-  unlockFullAccess: () => void;
+  setStoreAccess: (active: boolean) => void;
   setHapticsEnabled: (enabled: boolean) => void;
   markTodayActionCoachmarkSeen: () => void;
 }
@@ -95,13 +95,21 @@ export const useUserStore = create<UserState>()(
 
       setNotifTime: (notifTime) => set({ notifTime }),
       setNotifEnabled: (notifEnabled) => set({ notifEnabled }),
-      unlockFullAccess: () => set({ accessLevel: 'full' }),
+      setStoreAccess: (active) => set({ accessLevel: active ? 'full' : 'free' }),
       setHapticsEnabled: (hapticsEnabled) => set({ hapticsEnabled }),
       markTodayActionCoachmarkSeen: () => set({ todayActionCoachmarkSeen: true }),
     }),
     {
       name: 'emotionary.user.v1',
       storage: createJSONStorage(() => AsyncStorage),
+      // An old beta unlock must never become a paid entitlement. StoreKit is
+      // checked on every launch; access is deliberately excluded from storage.
+      partialize: ({ accessLevel: _access, ...state }) => state,
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as Partial<UserState>),
+        accessLevel: current.accessLevel,
+      }),
     },
   ),
 );

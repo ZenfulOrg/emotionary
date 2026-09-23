@@ -14,8 +14,10 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 
+import { checkAppleCredential } from '@/auth/client';
 import { useContentStore } from '@/content/store';
 import { configureNotificationHandler, rebuildQueue } from '@/notifications/scheduler';
+import { observePurchases, refreshPurchases } from '@/purchases/client';
 import { useUserStore } from '@/store/userStore';
 import { brand } from '@/theme/tokens';
 import { refreshDailyWordWidget } from '@/widgets/timeline';
@@ -47,6 +49,37 @@ export default function RootLayout() {
   const favorites = useUserStore((s) => s.favorites);
 
   useEffect(() => useUserStore.persist.onFinishHydration(() => setUserHydrated(true)), []);
+
+  useEffect(() => {
+    const stop = observePurchases();
+    const refresh = () => { void refreshPurchases().catch(() => {}); };
+    refresh();
+    const foreground = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refresh();
+    });
+    // Also catch a subscription expiring while the app stays open.
+    const timer = setInterval(refresh, 60_000);
+    return () => { stop(); foreground.remove(); clearInterval(timer); };
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    let disposed = false;
+    let removeAppleListener: (() => void) | undefined;
+    const check = () => { void checkAppleCredential().then((revoked) => {
+      if (revoked && !disposed) router.replace('/account');
+    }); };
+    void import('expo-apple-authentication').then((Apple) => {
+      if (disposed) return;
+      const listener = Apple.addRevokeListener(check);
+      removeAppleListener = () => listener.remove();
+      check();
+    });
+    const foreground = AppState.addEventListener('change', (state) => {
+      if (state === 'active') check();
+    });
+    return () => { disposed = true; removeAppleListener?.(); foreground.remove(); };
+  }, []);
 
   // Boot: load cached content, then check for new words.
   useEffect(() => {

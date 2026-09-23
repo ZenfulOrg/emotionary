@@ -7,6 +7,7 @@ import { deleteAccount, getAuthAccount, signOut, type AuthAccount } from '@/auth
 import { Body, Eyebrow, Glyph, Headline, Mono, Panel, Screen, ScreenHeader, Wordmark } from '@/components/brand';
 import { selectionHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
 import { requestPermission } from '@/notifications/scheduler';
+import { restorePurchases } from '@/purchases/client';
 import { useUserStore } from '@/store/userStore';
 import { useGround } from '@/theme/ground';
 import { brand, grounds, layout, space } from '@/theme/tokens';
@@ -17,7 +18,7 @@ export default function SettingsScreen() {
   const hapticsEnabled = useUserStore((state) => state.hapticsEnabled);
   const setHapticsEnabled = useUserStore((state) => state.setHapticsEnabled);
   const hasFullAccess = useUserStore((state) => state.accessLevel === 'full');
-  const unlockFullAccess = useUserStore((state) => state.unlockFullAccess);
+  const [restoring, setRestoring] = useState(false);
   const [account, setAccount] = useState<AuthAccount | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
 
@@ -41,11 +42,19 @@ export default function SettingsScreen() {
     }
   };
 
-  const restore = () => {
+  const restore = async () => {
+    if (restoring) return;
+    setRestoring(true);
     selectionHaptic();
-    unlockFullAccess();
-    successHaptic();
-    Alert.alert('Full access restored', 'This beta now has Emotionary Pro access.');
+    try {
+      const active = await restorePurchases();
+      if (active) successHaptic();
+      Alert.alert(active ? 'Full access restored' : 'No purchases found', active
+        ? 'Your Apple purchase is active on this device.'
+        : 'No active Emotionary purchase was found for this Apple Account.');
+    } catch {
+      Alert.alert('Could not restore', 'Check your connection and App Store account, then try again.');
+    } finally { setRestoring(false); }
   };
 
   const confirmSignOut = () => {
@@ -71,7 +80,7 @@ export default function SettingsScreen() {
     warningHaptic();
     Alert.alert(
       'Delete your account?',
-      'This permanently deletes your Emotionary account. Favorites and progress saved on this device will remain.',
+      'This permanently deletes your Emotionary account. Favorites and progress saved on this device will remain. Deleting your account does not cancel an Apple subscription. Cancel it first using Manage subscription.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -83,7 +92,10 @@ export default function SettingsScreen() {
               .then(() => {
                 setAccount(null);
                 successHaptic();
-                Alert.alert('Account deleted', 'Your Emotionary account has been permanently deleted.');
+                Alert.alert('Account deleted', 'Your Emotionary account has been permanently deleted. If you used Sign in with Apple, also remove Emotionary from your Apple Account using Apple’s instructions.', [
+                  { text: 'Done', style: 'cancel' },
+                  { text: 'Apple access instructions', onPress: () => void Linking.openURL('https://support.apple.com/en-us/102571') },
+                ]);
               })
               .catch((error) => {
                 warningHaptic();
@@ -121,7 +133,8 @@ export default function SettingsScreen() {
             value={hasFullAccess ? 'Active' : 'Upgrade'}
             onPress={hasFullAccess ? undefined : () => router.push('/paywall' as Href)}
           />
-          <SettingsRow label="Restore purchases" onPress={restore} />
+          <SettingsRow label={restoring ? 'Restoring…' : 'Restore purchases'} onPress={restoring ? undefined : () => void restore()} />
+          <SettingsRow label="Manage subscription" onPress={() => void Linking.openURL('https://apps.apple.com/account/subscriptions')} leaves />
           {account && (
             <>
               <SettingsRow label="Sign out" onPress={accountBusy ? undefined : confirmSignOut} />
@@ -176,7 +189,7 @@ export default function SettingsScreen() {
           />
           <SettingsRow
             label="Send feedback"
-            onPress={() => void Linking.openURL('mailto:hello@emotionarybook.com?subject=Emotionary%20feedback')}
+            onPress={() => void Linking.openURL('mailto:support@emotionarybook.com?subject=Emotionary%20feedback')}
             leaves
           />
           <SettingsRow label="Privacy policy" onPress={() => router.push('/legal/privacy' as Href)} />

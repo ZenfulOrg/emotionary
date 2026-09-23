@@ -5,6 +5,7 @@ import { fetch } from 'expo/fetch';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, syncEnabled } from '@/config';
 
 const SESSION_KEY = 'emotionary.auth.session.v1';
+const APPLE_USER_KEY = 'emotionary.auth.apple-user.v1';
 
 /** Must be allow-listed in the Supabase Auth redirect URLs. */
 const OAUTH_REDIRECT = 'emotionary://auth-callback';
@@ -106,7 +107,9 @@ async function readSession(): Promise<AuthSession | null> {
 }
 
 async function clearSession() {
-  if (process.env.EXPO_OS !== 'web') await SecureStore.deleteItemAsync(SESSION_KEY);
+  if (process.env.EXPO_OS !== 'web') await Promise.all([
+    SecureStore.deleteItemAsync(SESSION_KEY), SecureStore.deleteItemAsync(APPLE_USER_KEY),
+  ]);
 }
 
 async function freshSession(): Promise<AuthSession> {
@@ -145,6 +148,7 @@ export async function signIn(email: string, password: string) {
   const payload = await requestAuth('token?grant_type=password', email, password);
   const signedIn = await saveSession(payload, email);
   if (!signedIn) throw new AuthError('Your session could not be saved securely. Please try again.');
+  await SecureStore.deleteItemAsync(APPLE_USER_KEY);
 }
 
 /**
@@ -182,6 +186,7 @@ export async function signInWithApple(): Promise<{ email: string | null } | null
   const email = payload.user?.email ?? credential.email ?? '';
   const signedIn = await saveSession(payload, email);
   if (!signedIn) throw new AuthError('Your session could not be saved securely. Please try again.');
+  await SecureStore.setItemAsync(APPLE_USER_KEY, credential.user);
   return { email: email || null };
 }
 
@@ -210,6 +215,7 @@ export async function signInWithGoogle(): Promise<{ email: string | null } | nul
   const email = emailFromJwt(accessToken);
   const signedIn = await saveSessionTokens(accessToken, refreshToken, email ?? '');
   if (!signedIn) throw new AuthError('Your session could not be saved securely. Please try again.');
+  await SecureStore.deleteItemAsync(APPLE_USER_KEY);
   return { email };
 }
 
@@ -227,6 +233,7 @@ export async function completeAuthCallback(url: string): Promise<AuthAccount> {
   const email = emailFromJwt(accessToken) ?? '';
   const saved = await saveSessionTokens(accessToken, refreshToken, email);
   if (!saved) throw new AuthError('Your account was confirmed, but the session could not be saved.');
+  await SecureStore.deleteItemAsync(APPLE_USER_KEY);
   return { email };
 }
 
@@ -301,4 +308,21 @@ function jwtClaims(token: string): { email?: string; exp?: number } | null {
   } catch {
     return null;
   }
+}
+
+/** Apple TN3194: respond to manually revoked Apple access when no Apple refresh token is retained. */
+export async function checkAppleCredential(): Promise<boolean> {
+  if (process.env.EXPO_OS !== 'ios') return false;
+  const user = await SecureStore.getItemAsync(APPLE_USER_KEY);
+  if (!user) return false;
+  try {
+    const Apple = await import('expo-apple-authentication');
+    const state = await Apple.getCredentialStateAsync(user);
+    if (state === Apple.AppleAuthenticationCredentialState.REVOKED ||
+        state === Apple.AppleAuthenticationCredentialState.NOT_FOUND) {
+      await signOut().catch(() => {}); // signOut always clears the local credentials.
+      return true;
+    }
+  } catch { /* A temporary Apple/network failure does not invalidate the account. */ }
+  return false;
 }

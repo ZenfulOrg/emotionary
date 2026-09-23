@@ -15,7 +15,6 @@ import { NotificationPermissionPrompt } from '@/components/NotificationPermissio
 import { TodayCoachmark } from '@/components/TodayCoachmark';
 import { WordFull } from '@/components/WordFull';
 import { StreakPopup } from '@/components/StreakPopup';
-import type { Word } from '@/content/types';
 import { useContentStore } from '@/content/store';
 import { localDateString } from '@/daily/engine';
 import { buildTodayFeed, type TodayFeedItem } from '@/daily/today-feed';
@@ -45,7 +44,6 @@ export default function TodayScreen() {
   const setNotifEnabled = useUserStore((s) => s.setNotifEnabled);
   const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
   const [feedHeight, setFeedHeight] = useState(0);
-  const [visibleLevel, setVisibleLevel] = useState<Word['level']>(1);
   const [visibleSlug, setVisibleSlug] = useState<string | null>(null);
   const [streakVisible, setStreakVisible] = useState(() => !streakPopupShownThisSession);
   const [coachmarkVisible, setCoachmarkVisible] = useState(false);
@@ -161,7 +159,6 @@ export default function TodayScreen() {
         visibleSlugRef.current = visibleToken.item.word.slug;
         setVisibleSlug(visibleToken.item.word.slug);
         markRead(visibleToken.item.word.slug);
-        setVisibleLevel(visibleToken.item.word.level);
         if (shouldShowTodayActionCoachmark(visibleToken.index, coachmarkSeenRef.current)) {
           showCoachmark();
         }
@@ -189,7 +186,7 @@ export default function TodayScreen() {
   }
 
   return (
-    <Screen background={levelPalettes[visibleLevel].tint}>
+    <Screen edges={[]}>
       {streakVisible && (
         <StreakPopup
           streak={Math.max(streak, 1)}
@@ -210,12 +207,14 @@ export default function TodayScreen() {
           data={feed}
           keyExtractor={(item) => item.key}
           renderItem={({ item }) => (
-            <View style={feedHeight > 0 ? { height: feedHeight } : styles.page}>
+            <View style={[
+              feedHeight > 0 ? { height: feedHeight } : styles.page,
+              { backgroundColor: item.kind === 'word' ? levelPalettes[item.word.level].tint : brand.ink },
+            ]}>
               {item.kind === 'word' ? (
                 <WordFull
                   word={item.word}
                   feedPage
-                  insideSafeArea
                   audioActive={item.word.slug === activeAudioSlug}
                 />
               ) : (
@@ -259,9 +258,9 @@ function UpgradeSlide() {
         <OrbitBackdrop top="6%" />
         <View style={styles.upgradeCopy}>
           <Eyebrow>Your free collection · 10 words</Eyebrow>
-          <Headline size={44}>Keep discovering.</Headline>
+          <Headline size={44} style={{ textAlign: 'center' }}>Keep discovering.</Headline>
           <Body tone="muted" style={styles.upgradeBody}>
-            Unlock thousands of unique words, more widget themes, and new words every month.
+            Unlock the full emotional vocabulary dictionary, every widget theme, and future word updates.
           </Body>
         </View>
         <RoundCta
@@ -281,11 +280,12 @@ const styles = StyleSheet.create({
   upgradeSlide: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     gap: space.xl,
     backgroundColor: brand.ink,
     paddingHorizontal: layout.gutter,
     overflow: 'hidden',
   },
-  upgradeCopy: { gap: space.m },
-  upgradeBody: { maxWidth: 320 },
+  upgradeCopy: { gap: space.m, alignItems: 'center' },
+  upgradeBody: { maxWidth: 320, textAlign: 'center' },
 });

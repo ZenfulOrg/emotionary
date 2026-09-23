@@ -1,9 +1,7 @@
 import type { Word } from '@/content/types';
 
 /**
- * Monetization seam. The beta uses a local full-access flag so both the free
- * and unlocked experiences can be tested without charging anyone in TestFlight.
- * A store-backed entitlement can replace that flag in this module later.
+ * Full access is supplied by verified StoreKit entitlements.
  *
  * Locked product rule: today's word is ALWAYS free (freemium must never
  * break the daily loop).
