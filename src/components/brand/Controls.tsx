@@ -100,11 +100,13 @@ export function RoundCta({
   onPress,
   size = 132,
   accessibilityHint,
+  disabled = false,
 }: {
   label: string;
   onPress: () => void;
   size?: number;
   accessibilityHint?: string;
+  disabled?: boolean;
 }) {
   return (
     <Pressable
@@ -112,11 +114,14 @@ export function RoundCta({
         selectionHaptic();
         onPress();
       }}
+      disabled={disabled}
+      accessibilityState={{ disabled }}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
       style={({ pressed }) => [
         styles.round,
+        disabled && styles.inactive,
         { width: size, height: size, borderRadius: size / 2 },
         pressed && styles.roundPressed,
       ]}

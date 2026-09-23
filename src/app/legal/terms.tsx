@@ -4,7 +4,7 @@ export default function TermsScreen() {
   return (
     <LegalDocument
       title="Terms of Use"
-      effectiveDate="August 30, 2026"
+      effectiveDate="September 23, 2026"
       intro="These terms govern your use of the Emotionary app and its word, definition, and reflection content. By creating an account or using the app, you agree to these terms."
       sections={[
         {
@@ -25,6 +25,14 @@ export default function TermsScreen() {
           paragraphs: [
             'You may stop using Emotionary at any time. If you created an account, you can permanently delete it from Settings. We may suspend access where reasonably necessary to protect the service, other users, or legal rights.',
           ],
+        },
+        {
+          heading: 'Purchases and subscriptions',
+          paragraphs: [
+            'Emotionary Pro is available as a yearly auto-renewing subscription or a one-time lifetime purchase. The App Store displays your local price before confirmation and charges your Apple Account.',
+            'A yearly subscription renews automatically unless canceled at least 24 hours before the current period ends. Manage or cancel it through your Apple Account subscriptions. Deleting your Emotionary account does not cancel a subscription. Use Restore purchases to restore eligible purchases with the same Apple Account.',
+          ],
+          link: { label: 'Manage Apple subscriptions', url: 'https://apps.apple.com/account/subscriptions' },
         },
         {
           heading: 'Wellness notice',
@@ -50,7 +58,7 @@ export default function TermsScreen() {
         },
         {
           heading: 'Contact',
-          paragraphs: ['Questions about these terms can be sent to hello@emotionarybook.com.'],
+          paragraphs: ['Questions about these terms can be sent to support@emotionarybook.com.'],
         },
       ]}
     />

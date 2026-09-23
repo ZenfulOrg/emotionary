@@ -1,4 +1,6 @@
 PODS:
+  - EmotionaryPurchases (1.0.0):
+    - ExpoModulesCore
   - EXApplication (57.0.2):
     - ExpoModulesCore
   - EXConstants (57.0.16):
@@ -2389,6 +2391,7 @@ PODS:
   - Yoga (0.0.0)
 
 DEPENDENCIES:
+  - EmotionaryPurchases (from `../modules/emotionary-purchases/ios`)
   - EXApplication (from `../node_modules/expo-application/ios`)
   - EXConstants (from `../node_modules/expo-constants/ios`)
   - Expo (from `../node_modules/expo`)
@@ -2510,6 +2513,8 @@ DEPENDENCIES:
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 EXTERNAL SOURCES:
+  EmotionaryPurchases:
+    :path: "../modules/emotionary-purchases/ios"
   EXApplication:
     :path: "../node_modules/expo-application/ios"
   EXConstants:
@@ -2749,6 +2754,7 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
+  EmotionaryPurchases: 85d80140b60a78bb3ec264357ccd8d54552012e5
   EXApplication: bbd517d50878ca1d121fb3843392beb210181e28
   EXConstants: 736b7f1ed7235956785cb81e0ce37ab6a4f33fb4
   Expo: b3509245f68fe53664ff17b31bb1eda11c24e684

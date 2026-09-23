@@ -260,7 +260,7 @@ function UpgradeSlide() {
           <Eyebrow>Your free collection · 10 words</Eyebrow>
           <Headline size={44} style={{ textAlign: 'center' }}>Keep discovering.</Headline>
           <Body tone="muted" style={styles.upgradeBody}>
-            Unlock thousands of unique words, more widget themes, and new words every month.
+            Unlock the full emotional vocabulary dictionary, every widget theme, and future word updates.
           </Body>
         </View>
         <RoundCta
