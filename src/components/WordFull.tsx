@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -182,7 +182,8 @@ export function WordTitle({
   onLongPress?: () => void;
 }) {
   const ground = useGround();
-  const fontSize = size ?? wordTitleSize(word.word);
+  const { width } = useWindowDimensions();
+  const fontSize = size ?? wordTitleSize(word.word, width - layout.gutter * 2);
   return (
     <Text
       style={[
@@ -197,8 +198,6 @@ export function WordTitle({
       ]}
       maxFontSizeMultiplier={1.2}
       numberOfLines={1}
-      adjustsFontSizeToFit
-      minimumFontScale={0.6}
       accessibilityRole="header"
       accessibilityLabel={`${word.word}. ${word.language}. Level ${word.level}.`}
       accessibilityHint={onLongPress ? 'Long press to copy the word' : undefined}
@@ -250,7 +249,7 @@ const styles = StyleSheet.create({
   centeredEntry: { alignItems: 'center' },
   centeredRow: { justifyContent: 'center', marginLeft: 0 },
   centeredText: { textAlign: 'center' },
-  centeredWord: { textAlign: 'center', marginLeft: 0, width: '100%' },
+  centeredWord: { textAlign: 'center', marginLeft: 0, alignSelf: 'stretch' },
   level: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   levelDot: { width: 7, height: 7, borderRadius: 3.5 },
   metaRule: { marginTop: space.s + 2 },

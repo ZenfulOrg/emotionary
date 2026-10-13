@@ -30,20 +30,23 @@ type DailyWordWidgetConfiguration = {
   theme: 'automatic' | 'nightSky' | 'moodyNature' | 'duskyRose';
 };
 
-const CREAM = '#F5F0E6';
-const INK = '#18334D';
-const ACID = '#F5C400';
-const PINK = '#E9828C';
-
-/** Fonts are bundled into the widget extension by plugins/with-widget-assets. */
-const VOICE = 'CormorantGaramond-Medium';
-const WHISPER = 'DMMono-Regular';
-
+/**
+ * The 'widget' function is serialized to a string and evaluated alone in the
+ * extension, so it cannot reference module scope: every constant lives inside.
+ * Fonts are bundled into the widget extension by plugins/with-widget-assets.
+ */
 const DailyWordWidgetView = (
   props: DailyWordWidgetProps,
   environment: WidgetEnvironment<DailyWordWidgetConfiguration>,
 ) => {
   'widget';
+
+  const CREAM = '#F5F0E6';
+  const INK = '#18334D';
+  const ACID = '#F5C400';
+  const PINK = '#E9828C';
+  const VOICE = 'CormorantGaramond-Medium';
+  const WHISPER = 'DMMono-Regular';
 
   const family = environment.widgetFamily;
   const isInline = family === 'accessoryInline';

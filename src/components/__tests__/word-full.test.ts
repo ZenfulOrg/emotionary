@@ -10,3 +10,10 @@ describe('wordTitleSize', () => {
     expect(wordTitleSize('Waldeinsamkeit')).toBe(52);
   });
 });
+
+describe('wordTitleSize width cap', () => {
+  it('shrinks a word that would overflow the available width', () => {
+    expect(wordTitleSize('Torschlusspanik', 280)).toBeLessThan(44);
+    expect(wordTitleSize('Duende', 327)).toBe(84);
+  });
+});
