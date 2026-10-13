@@ -14,6 +14,47 @@ export function AuthForm({ form, showSubmit = true }: { form: AuthFormState; sho
   const [passwordVisible, setPasswordVisible] = useState(false);
   const creating = form.mode === 'create';
 
+  if (form.verificationEmail) {
+    return (
+      <View style={styles.wrap}>
+        <Eyebrow>Check your email</Eyebrow>
+        <Body tone="muted" style={styles.message}>
+          Enter the code sent to {form.verificationEmail}.
+        </Body>
+        <View style={styles.fields}>
+          <TextField
+            value={form.code}
+            onChangeText={(value) => form.setCode(value.replace(/\s/g, ''))}
+            placeholder="Verification code"
+            accessibilityLabel="Email verification code"
+            keyboardType="number-pad"
+            textContentType="oneTimeCode"
+            autoComplete="one-time-code"
+            autoCorrect={false}
+            autoCapitalize="none"
+            maxLength={10}
+            editable={!form.busy}
+            onSubmitEditing={() => void form.submit()}
+          />
+        </View>
+        {form.message.length > 0 && (
+          <Body tone="muted" size={type.small} style={styles.message} accessibilityLiveRegion="polite">
+            {form.message}
+          </Body>
+        )}
+        {showSubmit && <Button label={form.submitLabel} onPress={() => void form.submit()} busy={form.busy} style={styles.submit} />}
+        <Button
+          label={form.resendSeconds > 0 ? `Resend code in ${form.resendSeconds}s` : 'Resend code'}
+          variant="link"
+          disabled={form.busy || form.resendSeconds > 0}
+          onPress={() => void form.resend()}
+        />
+        <Button label="Use a different email" variant="link" disabled={form.busy} onPress={form.changeEmail} />
+        <Button label="Already confirmed? Sign in" variant="link" disabled={form.busy} onPress={() => form.setMode('sign-in')} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.wrap}>
       <View style={styles.socials}>
@@ -124,7 +165,7 @@ export function AuthForm({ form, showSubmit = true }: { form: AuthFormState; sho
 
       {showSubmit && (
         <Button
-          label={creating ? 'Create account' : 'Sign in'}
+          label={form.submitLabel}
           onPress={() => void form.submit()}
           busy={form.busy}
           style={styles.submit}

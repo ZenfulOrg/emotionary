@@ -9,28 +9,34 @@ import { brand, layout, space } from '@/theme/tokens';
 
 export default function AuthCallbackScreen() {
   const liveUrl = Linking.useURL();
+  return <AuthCallbackContent key={liveUrl ?? 'initial'} liveUrl={liveUrl} />;
+}
+
+function AuthCallbackContent({ liveUrl }: { liveUrl: string | null }) {
   const [status, setStatus] = useState('Confirming your account…');
-  const [complete, setComplete] = useState(false);
+  const [result, setResult] = useState<'pending' | 'success' | 'error'>('pending');
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       const url = liveUrl ?? (await Linking.getInitialURL());
       if (!url) {
-        setStatus('This confirmation link is invalid or expired.');
-        setComplete(true);
+        if (!cancelled) {
+          setStatus('This confirmation link is invalid or expired.');
+          setResult('error');
+        }
         return;
       }
       try {
         const account = await completeAuthCallback(url);
         if (!cancelled) {
           setStatus(account.email ? `${account.email} is confirmed.` : 'Your email is confirmed.');
-          setComplete(true);
+          setResult('success');
         }
       } catch (error) {
         if (!cancelled) {
           setStatus(error instanceof Error ? error.message : 'This confirmation link could not be completed.');
-          setComplete(true);
+          setResult('error');
         }
       }
     })();
@@ -43,13 +49,17 @@ export default function AuthCallbackScreen() {
       <View style={styles.content}>
         <Wordmark size={32} />
         <View style={styles.copy} accessibilityLiveRegion="polite">
-          <Eyebrow>{complete ? 'Account' : 'One moment'}</Eyebrow>
-          <Headline size={44}>{complete ? 'You’re all set.' : 'Confirming.'}</Headline>
+          <Eyebrow>{result === 'pending' ? 'One moment' : 'Account'}</Eyebrow>
+          <Headline size={44}>{result === 'success' ? 'You’re all set.' : result === 'error' ? 'Let’s try again.' : 'Confirming.'}</Headline>
           <Body tone="muted">{status}</Body>
-          {!complete && <ActivityIndicator color={brand.acid} style={styles.spinner} />}
+          {result === 'pending' && <ActivityIndicator color={brand.acid} style={styles.spinner} />}
         </View>
-        {complete && (
-          <Button label="Continue to Emotionary" onPress={() => router.replace('/')} glyph="forward" />
+        {result !== 'pending' && (
+          <Button
+            label={result === 'success' ? 'Continue to Emotionary' : 'Return to sign in'}
+            onPress={() => router.replace(result === 'success' ? '/' : '/account')}
+            glyph="forward"
+          />
         )}
       </View>
     </Screen>

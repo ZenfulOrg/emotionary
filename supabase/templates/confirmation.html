@@ -8,12 +8,14 @@
             <tr>
               <td style="padding:42px 36px;text-align:center;">
                 <div style="font-size:38px;line-height:1.1;">Emotionary</div>
-                <div style="margin-top:8px;font-size:11px;letter-spacing:2px;color:#6e675c;">ONE WORD, EVERY DAY</div>
                 <p style="margin:34px auto 0;max-width:360px;font-size:18px;line-height:1.55;">
-                  Confirm your email to keep your saved words and daily ritual connected.
+                  Enter this code in the Emotionary app to confirm your email and finish creating your account.
                 </p>
-                <p style="margin:30px 0;">
-                  <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#211c15;color:#faf7f0;text-decoration:none;border-radius:999px;padding:15px 28px;font-size:13px;letter-spacing:1.2px;">CONFIRM MY EMAIL</a>
+                <p style="margin:30px 0;background:#faf7f0;padding:20px 12px;font-family:monospace;font-size:32px;letter-spacing:6px;">
+                  {{ .Token }}
+                </p>
+                <p style="margin:0 0 20px;color:#6e675c;font-size:13px;line-height:1.5;">
+                  This code expires in 10 minutes. Never share it with anyone. If you request another code, use the most recent email.
                 </p>
                 <p style="margin:0;color:#6e675c;font-size:13px;line-height:1.5;">
                   If you didn’t create an Emotionary account, you can safely ignore this message.

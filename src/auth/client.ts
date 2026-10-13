@@ -26,11 +26,13 @@ interface SupabaseAuthResponse {
   user?: { email?: string };
   error?: string;
   error_description?: string;
+  error_code?: string;
+  message?: string;
   msg?: string;
 }
 
 export class AuthError extends Error {
-  constructor(message: string) {
+  constructor(message: string, public readonly code?: string, public readonly status?: number) {
     super(message);
     this.name = 'AuthError';
   }
@@ -62,7 +64,9 @@ async function authPost(path: string, body: Record<string, unknown>) {
   const payload = (await response.json().catch(() => ({}))) as SupabaseAuthResponse;
   if (!response.ok) {
     throw new AuthError(
-      payload.error_description ?? payload.msg ?? payload.error ?? 'Account request failed. Try again.',
+      payload.error_description ?? payload.msg ?? payload.message ?? payload.error ?? 'Account request failed. Try again.',
+      payload.error_code,
+      response.status,
     );
   }
 
@@ -151,6 +155,26 @@ export async function signIn(email: string, password: string) {
   await SecureStore.deleteItemAsync(APPLE_USER_KEY);
 }
 
+/** Confirms an email/password signup with the code from the confirmation email. */
+export async function verifySignupCode(email: string, code: string): Promise<AuthAccount> {
+  const token = code.replace(/\s/g, '');
+  if (!/^\d{6,10}$/.test(token)) throw new AuthError('Enter the verification code from your email.');
+  const normalizedEmail = email.trim().toLowerCase();
+  const payload = await authPost('verify', { email: normalizedEmail, token, type: 'email' });
+  if (!(await saveSession(payload, normalizedEmail))) {
+    throw new AuthError('Your session could not be saved securely. Please sign in again.');
+  }
+  await SecureStore.deleteItemAsync(APPLE_USER_KEY);
+  return { email: payload.user?.email ?? normalizedEmail };
+}
+
+export async function resendSignupCode(email: string): Promise<void> {
+  await authPost(`resend?redirect_to=${encodeURIComponent(OAUTH_REDIRECT)}`, {
+    email: email.trim().toLowerCase(),
+    type: 'signup',
+  });
+}
+
 /**
  * Native Sign in with Apple → Supabase id_token grant.
  * Resolves null when the person cancels the Apple sheet.
@@ -219,10 +243,19 @@ export async function signInWithGoogle(): Promise<{ email: string | null } | nul
   return { email };
 }
 
-/** Completes an email-confirmation or recovery link opened through the app scheme. */
+/** Legacy email links and OAuth use the implicit flow; new signups use an in-app code. */
 export async function completeAuthCallback(url: string): Promise<AuthAccount> {
   assertSyncEnabled();
+  if (url.split(/[?#]/)[0] !== OAUTH_REDIRECT) {
+    throw new AuthError('This is not an Emotionary confirmation link.');
+  }
   const params = parseFragmentParams(url);
+  if (params.error || params.error_description) {
+    throw new AuthError(params.error_description ?? 'This confirmation link is invalid or expired.');
+  }
+  if (params.type === 'recovery') {
+    throw new AuthError('This is a password-reset link, not an email confirmation link.');
+  }
   const accessToken = params.access_token;
   const refreshToken = params.refresh_token;
   if (!accessToken || !refreshToken) {
@@ -230,7 +263,18 @@ export async function completeAuthCallback(url: string): Promise<AuthAccount> {
       params.error_description?.replace(/\+/g, ' ') ?? 'This confirmation link is invalid or expired.',
     );
   }
-  const email = emailFromJwt(accessToken) ?? '';
+  // Never treat unverified token claims in an incoming URL as a signed-in account.
+  let response: Response;
+  try {
+    response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new AuthError('Could not confirm the link. Check your connection and try again.');
+  }
+  const user = (await response.json().catch(() => ({}))) as { id?: string; email?: string };
+  if (!response.ok || !user.id) throw new AuthError('This confirmation link is invalid or expired.');
+  const email = user.email ?? '';
   const saved = await saveSessionTokens(accessToken, refreshToken, email);
   if (!saved) throw new AuthError('Your account was confirmed, but the session could not be saved.');
   await SecureStore.deleteItemAsync(APPLE_USER_KEY);
@@ -286,13 +330,19 @@ export async function deleteAccount() {
 
 /** Supabase returns OAuth tokens in the URL fragment (#access_token=…&…). */
 function parseFragmentParams(url: string): Record<string, string | undefined> {
-  const fragment = url.split('#')[1] ?? url.split('?')[1] ?? '';
-  const params: Record<string, string> = {};
-  for (const pair of fragment.split('&')) {
-    const [key, value] = pair.split('=');
-    if (key && value !== undefined) params[key] = decodeURIComponent(value);
+  const fragment = url.includes('#') ? url.slice(url.indexOf('#') + 1) : url.split('?')[1] ?? '';
+  try {
+    const params: Record<string, string> = {};
+    for (const pair of fragment.split('&')) {
+      const separator = pair.indexOf('=');
+      if (separator < 1) continue;
+      const decode = (value: string) => decodeURIComponent(value.replace(/\+/g, ' '));
+      params[decode(pair.slice(0, separator))] = decode(pair.slice(separator + 1));
+    }
+    return params;
+  } catch {
+    throw new AuthError('This confirmation link is invalid or expired.');
   }
-  return params;
 }
 
 function emailFromJwt(token: string): string | null {

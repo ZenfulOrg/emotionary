@@ -11,6 +11,8 @@ import {
   signInWithApple,
   signInWithGoogle,
   signOut,
+  resendSignupCode,
+  verifySignupCode,
 } from '@/auth/client';
 
 jest.mock('expo/fetch', () => ({ fetch: jest.fn() }));
@@ -45,7 +47,7 @@ const mockOpenAuthSession = WebBrowser.openAuthSessionAsync as jest.MockedFuncti
 >;
 
 function response(body: object, ok = true): Awaited<ReturnType<typeof fetch>> {
-  return { ok, json: async () => body } as unknown as Awaited<ReturnType<typeof fetch>>;
+  return { ok, status: ok ? 200 : 400, json: async () => body } as unknown as Awaited<ReturnType<typeof fetch>>;
 }
 
 describe('auth client', () => {
@@ -71,7 +73,7 @@ describe('auth client', () => {
     );
   });
 
-  test('allows account creation to continue when email confirmation is required', async () => {
+  test('reports pending email confirmation without creating a local session', async () => {
     mockFetch.mockResolvedValue(response({ user: { email: 'me@example.com' } }));
 
     await expect(createAccount('me@example.com', 'password123')).resolves.toEqual({
@@ -158,6 +160,7 @@ describe('auth client', () => {
   test('completes an email confirmation deep link and exposes the signed-in account', async () => {
     const jwtPayload = 'eyJlbWFpbCI6ImNvbmZpcm1lZEBleGFtcGxlLmNvbSJ9';
     const accessToken = `header.${jwtPayload}.signature`;
+    mockFetch.mockResolvedValue(response({ id: 'confirmed-user', email: 'confirmed@example.com' }));
 
     await expect(
       completeAuthCallback(
@@ -173,6 +176,58 @@ describe('auth client', () => {
       }),
     );
     await expect(getAuthAccount()).resolves.toEqual({ email: 'confirmed@example.com' });
+  });
+
+  test.each([
+    ['123 456', '123456'],
+    ['1234 5678', '12345678'],
+  ])('verifies signup code %s and saves the server-issued session', async (enteredCode, token) => {
+    mockFetch.mockResolvedValue(response({
+      access_token: 'verified-access', refresh_token: 'verified-refresh',
+      user: { email: 'new@example.com' },
+    }));
+    await expect(verifySignupCode(' NEW@example.com ', enteredCode)).resolves.toEqual({ email: 'new@example.com' });
+    expect(mockFetch).toHaveBeenCalledWith('https://example.supabase.co/auth/v1/verify', expect.objectContaining({
+      body: JSON.stringify({ email: 'new@example.com', token, type: 'email' }),
+    }));
+    expect(mockSetItem).toHaveBeenCalledWith('emotionary.auth.session.v1', JSON.stringify({
+      accessToken: 'verified-access', refreshToken: 'verified-refresh', email: 'new@example.com',
+    }));
+  });
+
+  test('does not save a session for an invalid code or an incomplete verification response', async () => {
+    await expect(verifySignupCode('new@example.com', 'abc')).rejects.toThrow('verification code');
+    expect(mockFetch).not.toHaveBeenCalled();
+    mockFetch.mockResolvedValueOnce(response({ error_code: 'otp_expired', msg: 'Token has expired or is invalid' }, false));
+    await expect(verifySignupCode('new@example.com', '123456')).rejects.toMatchObject({ code: 'otp_expired', status: 400 });
+    mockFetch.mockResolvedValueOnce(response({ user: { email: 'new@example.com' } }));
+    await expect(verifySignupCode('new@example.com', '123456')).rejects.toThrow('session');
+    expect(mockSetItem).not.toHaveBeenCalled();
+  });
+
+  test('resends the signup confirmation without creating an account or requesting a magic login', async () => {
+    mockFetch.mockResolvedValue(response({}));
+    await resendSignupCode(' NEW@example.com ');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://example.supabase.co/auth/v1/resend?redirect_to=emotionary%3A%2F%2Fauth-callback',
+      expect.objectContaining({ body: JSON.stringify({ email: 'new@example.com', type: 'signup' }) }),
+    );
+    expect(mockSetItem).not.toHaveBeenCalled();
+  });
+
+  test('rejects expired, foreign and unsupported links without accepting tokens', async () => {
+    await expect(completeAuthCallback('emotionary://auth-callback#error=access_denied&error_description=Link+expired')).rejects.toThrow('Link expired');
+    await expect(completeAuthCallback('https://other.example/auth-callback#access_token=a&refresh_token=b')).rejects.toThrow('not an Emotionary');
+    await expect(completeAuthCallback('emotionary://auth-callback?code=pkce-code')).rejects.toThrow('invalid or expired');
+    await expect(completeAuthCallback('emotionary://auth-callback#access_token=a&refresh_token=b&type=recovery')).rejects.toThrow('password-reset');
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockSetItem).not.toHaveBeenCalled();
+  });
+
+  test('rejects callback tokens that Supabase does not validate', async () => {
+    mockFetch.mockResolvedValue(response({ msg: 'invalid JWT' }, false));
+    await expect(completeAuthCallback('emotionary://auth-callback#access_token=forged&refresh_token=fake')).rejects.toThrow('invalid or expired');
+    expect(mockSetItem).not.toHaveBeenCalled();
   });
 
   test('signs out remotely and always clears the local session', async () => {

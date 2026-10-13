@@ -9,9 +9,8 @@ import { layout, space } from '@/theme/tokens';
 export default function AccountScreen() {
   const form = useAuthForm({
     initialMode: 'sign-in',
-    confirmationMessage: 'Check your email to confirm your account, then return here to sign in.',
-    onComplete: ({ confirmed }) => {
-      if (confirmed) setTimeout(() => router.back(), 550);
+    onComplete: () => {
+      setTimeout(() => router.back(), 550);
     },
   });
 
@@ -26,7 +25,7 @@ export default function AccountScreen() {
         behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Headline size={44}>{form.mode === 'create' ? 'Make it yours.' : 'Welcome back.'}</Headline>
+          <Headline size={44}>{form.verificationEmail ? 'Confirm your email.' : form.mode === 'create' ? 'Make it yours.' : 'Welcome back.'}</Headline>
           <Body tone="muted" style={styles.subtitle}>
             Sign in to manage your Emotionary account. Saved words and reading progress stay on this device.
           </Body>

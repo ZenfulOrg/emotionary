@@ -109,7 +109,6 @@ export default function OnboardingScreen() {
 
   const authForm = useAuthForm({
     initialMode: 'create',
-    confirmationMessage: 'Check your email to confirm your account. You can keep exploring now.',
     onComplete: () => {
       setAccountComplete(true);
       goNext();
@@ -165,7 +164,7 @@ export default function OnboardingScreen() {
               <PageCopy
                 eyebrow="Your account"
                 title="Keep your words close."
-                body="Create an account to keep your saved words connected."
+                body="Create your Emotionary account. Saved words and reading progress stay on this device."
               >
                 <AuthForm form={authForm} showSubmit={false} />
               </PageCopy>
@@ -197,9 +196,7 @@ export default function OnboardingScreen() {
                 label={
                   accountComplete
                     ? 'Continue'
-                    : authForm.mode === 'create'
-                      ? 'Create account'
-                      : 'Sign in'
+                    : authForm.submitLabel
                 }
                 onPress={accountComplete ? goNext : () => void authForm.submit()}
                 busy={authForm.busy}
