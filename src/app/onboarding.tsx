@@ -143,7 +143,7 @@ export default function OnboardingScreen() {
         behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
+          contentInsetAdjustmentBehavior="never"
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -246,7 +246,7 @@ function PageCopy({
 }) {
   return (
     <View style={styles.copy}>
-      <Eyebrow>{eyebrow}</Eyebrow>
+      <Eyebrow style={styles.centeredText}>{eyebrow}</Eyebrow>
       <Headline size={44} style={styles.title}>
         {title}
       </Headline>
@@ -264,7 +264,7 @@ function PageCopy({
 function WelcomePage() {
   return (
     <View style={styles.copy}>
-      <Eyebrow>A language for being alive</Eyebrow>
+      <Eyebrow style={styles.centeredText}>A language for being alive</Eyebrow>
       <Wordmark size={64} header style={styles.wordmark} />
       <Body tone="muted" size={type.lead + 2} style={styles.intro}>
         One word a day. Expand your emotional palette, and recognize life&apos;s most fleeting
@@ -347,7 +347,7 @@ function ReminderPage({
       title="Never miss your word."
       body="Once a day, at the time you choose."
     >
-      <Headline accessibilityRole="text" size={64} accessibilityLabel={`Reminder at ${formatTime(notifTime)}`}>
+      <Headline style={styles.centeredText} accessibilityRole="text" size={64} accessibilityLabel={`Reminder at ${formatTime(notifTime)}`}>
         {formatTime(notifTime).toLowerCase()}
       </Headline>
       <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel="Quick times">
@@ -415,8 +415,9 @@ function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
   return (
     <View style={styles.copy}>
       <Animated.View entering={reducedMotion ? undefined : FadeInDown.duration(260)}>
-        <Eyebrow>Your first word</Eyebrow>
+        <Eyebrow style={styles.centeredText}>Your first word</Eyebrow>
         <MetaRow
+          centered
           style={styles.firstMeta}
           leading={<PlanetDot wordType="wanderword" />}
           items={[planets.wanderword.label, 'Greek']}
@@ -427,7 +428,7 @@ function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
           <Mono size={14}>V. · /meh-RAH-kee/</Mono>
           <PronunciationButton word="Meraki" />
         </View>
-        <WordTitle word={{ word: 'Meraki', language: 'Greek', level: 1 }} />
+        <WordTitle centered word={{ word: 'Meraki', language: 'Greek', level: 1 }} />
         <Body size={type.definition} style={styles.definition}>
           to do something with soul; leaving a piece of yourself in your work, whether it&apos;s a
           meal, a letter, or a life.
@@ -473,8 +474,8 @@ function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
           accessibilityLabel="Tip: save your favorite words and share them. Opens the share card demo."
         >
           <FloatingCard style={styles.tip}>
-            <Eyebrow>A little tip</Eyebrow>
-            <Body size={17}>Save your favorite words, and tap Share to send them as a card.</Body>
+            <Eyebrow style={styles.centeredText}>A little tip</Eyebrow>
+            <Body style={styles.centeredText} size={17}>Save your favorite words, and tap Share to send them as a card.</Body>
           </FloatingCard>
         </Pressable>
       </Animated.View>
@@ -491,28 +492,29 @@ const styles = StyleSheet.create({
     paddingVertical: space.l,
   },
   page: { width: '100%', maxWidth: layout.maxWidth, alignSelf: 'center' },
-  copy: { width: '100%' },
-  title: { marginTop: space.s },
+  copy: { width: '100%', alignItems: 'center' },
+  centeredText: { textAlign: 'center' },
+  title: { marginTop: space.s, textAlign: 'center' },
   rule: { marginTop: space.m },
-  body: { marginTop: space.m, maxWidth: 340 },
-  pageContent: { marginTop: space.l },
-  wordmark: { marginTop: space.m, marginLeft: -2 },
-  intro: { marginTop: space.l, maxWidth: 320 },
+  body: { marginTop: space.m, maxWidth: 340, textAlign: 'center' },
+  pageContent: { marginTop: space.l, width: '100%' },
+  wordmark: { marginTop: space.m, textAlign: 'center' },
+  intro: { marginTop: space.l, maxWidth: 320, textAlign: 'center' },
   notification: { padding: space.m },
   notificationTitle: { marginTop: space.s },
   options: { gap: space.s },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s, marginTop: space.m },
-  picker: { marginTop: space.m },
-  widgets: { flexDirection: 'row', gap: space.m },
-  skip: { alignSelf: 'flex-start', marginTop: space.m },
+  chips: { justifyContent: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: space.s, marginTop: space.m },
+  picker: { marginTop: space.m, alignItems: 'center' },
+  widgets: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.m },
+  skip: { alignSelf: 'center', marginTop: space.m },
   pressed: { opacity: 0.72 },
   firstMeta: { marginTop: space.l },
   firstRule: { marginTop: space.s },
   levelDot: { width: 7, height: 7, borderRadius: 3.5 },
-  pronunciation: { flexDirection: 'row', alignItems: 'center', marginTop: space.l },
-  definition: { lineHeight: 30, marginTop: space.s },
-  wisdom: { marginTop: space.m },
-  actions: { flexDirection: 'row', gap: space.xl, marginTop: space.m },
+  pronunciation: { justifyContent: 'center', flexDirection: 'row', alignItems: 'center', marginTop: space.l },
+  definition: { textAlign: 'center', lineHeight: 30, marginTop: space.s },
+  wisdom: { marginTop: space.m, textAlign: 'center' },
+  actions: { justifyContent: 'center', flexDirection: 'row', gap: space.xl, marginTop: space.m },
   action: { minHeight: layout.touch, flexDirection: 'row', alignItems: 'center', gap: space.s },
   tip: { marginTop: space.l },
   footer: {

@@ -29,6 +29,7 @@ interface UserState {
   toggleFavorite: (slug: string) => void;
   /** Idempotent favorite — used by the widget's like action. */
   addFavorite: (slug: string) => void;
+  removeFavorite: (slug: string) => void;
   markRead: (slug: string) => void;
   recordOpen: (localDate: string) => void;
   /** Returns true if the share was counted (at most once per word per local date). */
@@ -65,6 +66,8 @@ export const useUserStore = create<UserState>()(
             : [...s.favorites, slug],
         })),
 
+      removeFavorite: (slug) =>
+        set((s) => ({ favorites: s.favorites.filter((favorite) => favorite !== slug) })),
       addFavorite: (slug) =>
         set((s) => (s.favorites.includes(slug) ? s : { favorites: [...s.favorites, slug] })),
 

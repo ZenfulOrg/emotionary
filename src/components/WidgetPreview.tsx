@@ -1,5 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { Glyph } from '@/components/brand/Glyph';
+
 import { brand, font, grounds, tracking } from '@/theme/tokens';
 
 const SAMPLE = {
@@ -33,7 +35,6 @@ export function WidgetPreview({ variant, size = 132 }: { variant: 'home' | 'lock
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
-      <Text style={[styles.mono, styles.homeMono, { fontSize: 7 * s }]}>TODAY · LATIN</Text>
       <Text style={[styles.homeWord, { fontSize: 24 * s, letterSpacing: tracking(24 * s, -0.04) }]}>
         {SAMPLE.word}
         <Text style={styles.period}>.</Text>
@@ -41,6 +42,10 @@ export function WidgetPreview({ variant, size = 132 }: { variant: 'home' | 'lock
       <Text style={[styles.homeDefinition, { fontSize: 11 * s, lineHeight: 14 * s }]} numberOfLines={3}>
         {SAMPLE.definition}
       </Text>
+      <View style={[styles.actions, { gap: 22 * s, marginTop: 8 * s }]}>
+        <Glyph name="heart" size={15 * s} color={brand.ink} />
+        <Glyph name="leaves" size={15 * s} color={brand.ink} />
+      </View>
     </View>
   );
 }
@@ -49,7 +54,7 @@ const styles = StyleSheet.create({
   tile: { overflow: 'hidden' },
   home: {
     backgroundColor: brand.cream,
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
     boxShadow: '0 10px 26px rgba(24, 51, 77, 0.18)',
   },
   lock: {
@@ -60,7 +65,7 @@ const styles = StyleSheet.create({
     borderColor: grounds.ink.hairline,
   },
   mono: { fontFamily: font.mono, letterSpacing: 1 },
-  homeMono: { color: brand.blue, marginBottom: 'auto' },
+  actions: { flexDirection: 'row', alignItems: 'center' },
   homeWord: { fontFamily: font.display, color: brand.ink },
   period: { color: brand.acid },
   homeDefinition: { fontFamily: font.text, color: grounds.cream.textMuted, marginTop: 2 },

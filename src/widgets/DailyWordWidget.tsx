@@ -1,5 +1,6 @@
-import { HStack, Image, Link, Text, VStack, ZStack } from '@expo/ui/swift-ui';
+import { HStack, Image, Link, Spacer, Text, VStack, ZStack } from '@expo/ui/swift-ui';
 import {
+  accessibilityLabel,
   aspectRatio,
   background,
   clipped,
@@ -8,9 +9,11 @@ import {
   foregroundStyle,
   frame,
   lineLimit,
+  minimumScaleFactor,
   multilineTextAlignment,
   padding,
   resizable,
+  widgetURL,
 } from '@expo/ui/swift-ui/modifiers';
 import { createWidget, type WidgetEnvironment } from 'expo-widgets';
 
@@ -46,7 +49,6 @@ const DailyWordWidgetView = (
   const ACID = '#F5C400';
   const PINK = '#E9828C';
   const VOICE = 'CormorantGaramond-Medium';
-  const WHISPER = 'DMMono-Regular';
 
   const family = environment.widgetFamily;
   const isInline = family === 'accessoryInline';
@@ -57,7 +59,6 @@ const DailyWordWidgetView = (
   const onDark = theme === 'nightSky' || theme === 'moodyNature';
   const text = onDark ? CREAM : INK;
   const muted = onDark ? 'rgba(245, 240, 230, 0.72)' : 'rgba(24, 51, 77, 0.78)';
-  const eyebrow = onDark ? ACID : theme === 'duskyRose' ? INK : '#1F6B9E';
   const fill =
     theme === 'nightSky'
       ? INK
@@ -73,9 +74,9 @@ const DailyWordWidgetView = (
 
   if (isCircular) {
     return (
-      <VStack alignment="center" spacing={0}>
-        <Text modifiers={[font({ family: VOICE, size: 15 }), lineLimit(1)]}>{props.word}</Text>
-        <Text modifiers={[font({ family: WHISPER, size: 7 }), lineLimit(1)]}>TODAY</Text>
+      <VStack alignment="center" spacing={0} modifiers={[widgetURL(`emotionary://word/${props.slug}`)]}>
+        <Text modifiers={[font({ family: VOICE, size: 15 }), lineLimit(1), minimumScaleFactor(0.5)]}>{props.word}</Text>
+        <Text modifiers={[font({ design: 'serif', size: 9 }), lineLimit(2)]}>{props.definition}</Text>
       </VStack>
     );
   }
@@ -84,9 +85,6 @@ const DailyWordWidgetView = (
     return (
       <Link destination={`emotionary://word/${props.slug}`}>
         <VStack alignment="leading" spacing={1} modifiers={[frame({ maxWidth: 400, alignment: 'leading' })]}>
-          <Text modifiers={[font({ family: WHISPER, size: 9 }), lineLimit(1)]}>
-            /{props.pronunciation}/
-          </Text>
           <Text modifiers={[font({ family: VOICE, size: 22 }), lineLimit(1)]}>{props.word}</Text>
           <Text modifiers={[font({ design: 'serif', size: 11 }), lineLimit(1)]}>{props.definition}</Text>
         </VStack>
@@ -109,47 +107,40 @@ const DailyWordWidgetView = (
       )}
       <VStack
         alignment="leading"
-        spacing={4}
+        spacing={6}
         modifiers={[
+          padding({ all: isMedium ? 18 : 14 }),
           containerRelativeFrame({ axes: 'both' }),
           background(fill),
-          padding({ all: isMedium ? 20 : 16 }),
         ]}
       >
-        <HStack spacing={5}>
-          <Text modifiers={[font({ family: WHISPER, size: 8 }), foregroundStyle(eyebrow), lineLimit(1)]}>
-            {props.category}
-          </Text>
-        </HStack>
         <Link destination={`emotionary://word/${props.slug}`}>
-          <VStack alignment="leading" spacing={2} modifiers={[frame({ maxWidth: 400, maxHeight: 400, alignment: 'bottomLeading' })]}>
-            <Text modifiers={[font({ family: WHISPER, size: 8 }), foregroundStyle(muted), lineLimit(1)]}>
-              /{props.pronunciation}/
+          <VStack alignment="leading" spacing={4}>
+            <Text modifiers={[
+              font({ family: VOICE, size: isMedium ? 34 : 28 }),
+              foregroundStyle(text), lineLimit(1), minimumScaleFactor(0.5),
+            ]}>
+              {props.word}<Text modifiers={[foregroundStyle(ACID)]}>.</Text>
             </Text>
-            <HStack spacing={0}>
-              <Text modifiers={[font({ family: VOICE, size: isMedium ? 34 : 28 }), foregroundStyle(text), lineLimit(1)]}>
-                {props.word}
-              </Text>
-              <Text modifiers={[font({ family: VOICE, size: isMedium ? 34 : 28 }), foregroundStyle(ACID)]}>.</Text>
-            </HStack>
-            <Text
-              modifiers={[
-                font({ design: 'serif', size: 11 }),
-                foregroundStyle(muted),
-                multilineTextAlignment('leading'),
-                lineLimit(isMedium ? 2 : 3),
-              ]}
-            >
+            <Text modifiers={[
+              font({ design: 'serif', size: 12 }), foregroundStyle(muted),
+              multilineTextAlignment('leading'), lineLimit(3), minimumScaleFactor(0.85),
+            ]}>
               {props.definition}
             </Text>
           </VStack>
         </Link>
-        <HStack spacing={20} modifiers={[padding({ top: 4 })]}>
-          <Link destination={`emotionary://widget/like/${props.slug}`}>
-            <Image systemName={props.liked ? 'heart.fill' : 'heart'} size={13} color={text} />
+        <Spacer minLength={0} />
+        <HStack spacing={16}>
+          <Link destination={`emotionary://widget/${props.liked ? 'unlike' : 'like'}/${props.slug}`}
+            modifiers={[accessibilityLabel(props.liked ? 'Remove saved word' : 'Save word')]}>
+            <Image systemName={props.liked ? 'heart.fill' : 'heart'} size={17} color={text}
+              modifiers={[frame({ width: 44, height: 32 })]} />
           </Link>
-          <Link destination={`emotionary://widget/share/${props.slug}`}>
-            <Image systemName="arrow.up.right" size={13} color={text} />
+          <Link destination={`emotionary://widget/share/${props.slug}`}
+            modifiers={[accessibilityLabel('Share word')]}>
+            <Image systemName="square.and.arrow.up" size={17} color={text}
+              modifiers={[frame({ width: 44, height: 32 })]} />
           </Link>
         </HStack>
       </VStack>
