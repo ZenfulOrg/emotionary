@@ -46,7 +46,6 @@ const DailyWordWidgetView = (
 
   const CREAM = '#F5F0E6';
   const INK = '#18334D';
-  const ACID = '#F5C400';
   const PINK = '#E9828C';
   const VOICE = 'CormorantGaramond-Medium';
 
@@ -120,7 +119,7 @@ const DailyWordWidgetView = (
               font({ family: VOICE, size: isMedium ? 34 : 28 }),
               foregroundStyle(text), lineLimit(1), minimumScaleFactor(0.5),
             ]}>
-              {props.word}<Text modifiers={[foregroundStyle(ACID)]}>.</Text>
+              {`${props.word}.`}
             </Text>
             <Text modifiers={[
               font({ design: 'serif', size: 12 }), foregroundStyle(muted),
