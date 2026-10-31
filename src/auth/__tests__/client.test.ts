@@ -172,6 +172,7 @@ describe('auth client', () => {
       'https://example.supabase.co/auth/v1/authorize?provider=google' +
         '&redirect_to=emotionary%3A%2F%2Fauth-callback',
       'emotionary://auth-callback',
+      { preferEphemeralSession: true },
     );
     expect(mockSetItem).toHaveBeenCalledWith(
       'emotionary.auth.session.v1',

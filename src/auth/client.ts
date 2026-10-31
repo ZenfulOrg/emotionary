@@ -247,7 +247,10 @@ export async function signInWithGoogle(): Promise<{ email: string | null } | nul
   const authUrl =
     `${SUPABASE_URL}/auth/v1/authorize?provider=google` +
     `&redirect_to=${encodeURIComponent(OAUTH_REDIRECT)}`;
-  const result = await WebBrowser.openAuthSessionAsync(authUrl, OAUTH_REDIRECT);
+  // Ephemeral sessions skip iOS's "wants to use <project>.supabase.co to sign in" alert.
+  const result = await WebBrowser.openAuthSessionAsync(authUrl, OAUTH_REDIRECT, {
+    preferEphemeralSession: true,
+  });
   if (result.type !== 'success') return null;
 
   const params = parseFragmentParams(result.url);
