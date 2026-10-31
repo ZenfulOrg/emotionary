@@ -109,7 +109,11 @@ export function useAuthForm({
         onComplete();
       }
     } catch (error) {
-      if (error instanceof AuthError && error.code === 'email_not_confirmed' && !verificationEmail) {
+      if (error instanceof AuthError && ['signup_not_created', 'user_already_exists'].includes(error.code ?? '') && !verificationEmail) {
+        setModeState('sign-in');
+        setPassword('');
+        setMessage('No new verification code was sent. If you already have an account, sign in with your password or the Apple or Google option you used before.');
+      } else if (error instanceof AuthError && error.code === 'email_not_confirmed' && !verificationEmail) {
         beginVerification(email, 'Your email still needs confirmation. Enter the code from your email, or request a new code.', false);
       } else {
         setMessage(errorMessage(error));

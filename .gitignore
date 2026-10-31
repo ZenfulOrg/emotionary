@@ -44,3 +44,7 @@ example
 # local
 .claude/scheduled_tasks.lock
 .env
+
+# Android module build outputs
+modules/*/android/build/
+modules/*/android/.gradle/

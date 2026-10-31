@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   cancelAnimation,
@@ -50,7 +50,11 @@ export function WidgetGuideModal({
   visible: boolean;
   onClose: () => void;
 }) {
-  const guide = GUIDES[variant];
+  const guide = Platform.OS === 'android' ? {
+    title: 'Home Screen widget.',
+    blurb: "Today's word, waiting for you on your Home Screen.",
+    steps: ['Touch and hold an empty spot on your Home Screen.', 'Tap Widgets.', 'Find Emotionary.', 'Touch and hold the daily word widget, then place it on your Home Screen.', 'Drag its edges to resize it. Tap the word to open Emotionary.'],
+  } : GUIDES[variant];
   const reducedMotion = useReducedMotion();
   const [activeStep, setActiveStep] = useState(0);
 

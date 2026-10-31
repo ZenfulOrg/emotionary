@@ -37,6 +37,7 @@ function withWidgetAssetFiles(config) {
       if (fs.existsSync(infoPlistPath)) {
         const plist = require('@expo/plist').default;
         const info = plist.parse(fs.readFileSync(infoPlistPath, 'utf8'));
+        info.CFBundleDisplayName = 'Emotionary';
         info.UIAppFonts = WIDGET_FONTS.map(fontName);
         fs.writeFileSync(infoPlistPath, plist.build(info));
       }
@@ -81,6 +82,10 @@ function withWidgetAssetBuildPhase(config) {
     }
 
     const target = project.pbxNativeTargetSection()[extensionTarget.uuid];
+    const configs = project.pbxXCConfigurationList()[target.buildConfigurationList];
+    for (const { value } of configs.buildConfigurations) {
+      project.pbxXCBuildConfigurationSection()[value].buildSettings.INFOPLIST_KEY_CFBundleDisplayName = 'Emotionary';
+    }
     const existingResourcesPhase = target.buildPhases?.find(
       (phase) => phase.comment === 'Resources',
     );

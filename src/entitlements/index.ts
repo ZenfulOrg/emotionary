@@ -1,7 +1,7 @@
 import type { Word } from '@/content/types';
 
 /**
- * Full access is supplied by verified StoreKit entitlements.
+ * Full access is supplied by store entitlements or a server-managed account grant.
  *
  * Locked product rule: today's word is ALWAYS free (freemium must never
  * break the daily loop).

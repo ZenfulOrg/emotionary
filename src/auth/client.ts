@@ -3,9 +3,12 @@ import * as WebBrowser from 'expo-web-browser';
 import { fetch } from 'expo/fetch';
 
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, syncEnabled } from '@/config';
+import { useUserStore } from '@/store/userStore';
 
 const SESSION_KEY = 'emotionary.auth.session.v1';
 const APPLE_USER_KEY = 'emotionary.auth.apple-user.v1';
+let sessionRevision = 0;
+let signingOut = false;
 
 /** Must be allow-listed in the Supabase Auth redirect URLs. */
 const OAUTH_REDIRECT = 'emotionary://auth-callback';
@@ -23,7 +26,8 @@ export interface AuthAccount {
 interface SupabaseAuthResponse {
   access_token?: string;
   refresh_token?: string;
-  user?: { email?: string };
+  user?: { email?: string; identities?: unknown[]; app_metadata?: Record<string, unknown> };
+  identities?: unknown[];
   error?: string;
   error_description?: string;
   error_code?: string;
@@ -79,6 +83,8 @@ async function requestAuth(path: string, email: string, password: string) {
 
 async function saveSessionTokens(accessToken: string, refreshToken: string, email: string) {
   if (process.env.EXPO_OS === 'web') return false;
+  sessionRevision += 1;
+  useUserStore.getState().setComplimentaryAccess(false);
   const session: AuthSession = { accessToken, refreshToken, email };
   await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session));
   return true;
@@ -86,11 +92,15 @@ async function saveSessionTokens(accessToken: string, refreshToken: string, emai
 
 async function saveSession(payload: SupabaseAuthResponse, fallbackEmail: string) {
   if (!payload.access_token || !payload.refresh_token) return false;
-  return saveSessionTokens(
+  const saved = await saveSessionTokens(
     payload.access_token,
     payload.refresh_token,
     payload.user?.email ?? fallbackEmail.trim().toLowerCase(),
   );
+  if (saved) useUserStore.getState().setComplimentaryAccess(
+    payload.user?.app_metadata?.emotionary_full_access === true,
+  );
+  return saved;
 }
 
 async function readSession(): Promise<AuthSession | null> {
@@ -111,12 +121,15 @@ async function readSession(): Promise<AuthSession | null> {
 }
 
 async function clearSession() {
+  sessionRevision += 1;
+  useUserStore.getState().setComplimentaryAccess(false);
   if (process.env.EXPO_OS !== 'web') await Promise.all([
     SecureStore.deleteItemAsync(SESSION_KEY), SecureStore.deleteItemAsync(APPLE_USER_KEY),
   ]);
 }
 
 async function freshSession(): Promise<AuthSession> {
+  const revision = sessionRevision;
   const current = await readSession();
   if (!current) throw new AuthError('Sign in again to manage your account.');
 
@@ -130,6 +143,7 @@ async function freshSession(): Promise<AuthSession> {
     throw new AuthError('Your session expired. Sign in again to continue.');
   }
   const email = payload.user?.email ?? current.email;
+  if (revision !== sessionRevision || signingOut) throw new AuthError('Sign in again to continue.');
   await saveSessionTokens(payload.access_token, payload.refresh_token, email);
   return {
     accessToken: payload.access_token,
@@ -144,6 +158,15 @@ export async function createAccount(email: string, password: string) {
     email,
     password,
   );
+  // GoTrue can return an obfuscated user (at the response root) for an
+  // already-confirmed account. No confirmation email is sent in this case.
+  const identities = payload.user?.identities ?? payload.identities;
+  if (!payload.access_token && Array.isArray(identities) && identities.length === 0) {
+    throw new AuthError(
+      'No new verification code was sent. If you already have an account, sign in with your password or the Apple or Google option you used before.',
+      'signup_not_created',
+    );
+  }
   const signedIn = await saveSession(payload, email);
   return { requiresEmailConfirmation: !signedIn };
 }
@@ -240,6 +263,7 @@ export async function signInWithGoogle(): Promise<{ email: string | null } | nul
   const signedIn = await saveSessionTokens(accessToken, refreshToken, email ?? '');
   if (!signedIn) throw new AuthError('Your session could not be saved securely. Please try again.');
   await SecureStore.deleteItemAsync(APPLE_USER_KEY);
+  await refreshComplimentaryAccess();
   return { email };
 }
 
@@ -272,11 +296,14 @@ export async function completeAuthCallback(url: string): Promise<AuthAccount> {
   } catch {
     throw new AuthError('Could not confirm the link. Check your connection and try again.');
   }
-  const user = (await response.json().catch(() => ({}))) as { id?: string; email?: string };
+  const user = (await response.json().catch(() => ({}))) as {
+    id?: string; email?: string; app_metadata?: Record<string, unknown>;
+  };
   if (!response.ok || !user.id) throw new AuthError('This confirmation link is invalid or expired.');
   const email = user.email ?? '';
   const saved = await saveSessionTokens(accessToken, refreshToken, email);
   if (!saved) throw new AuthError('Your account was confirmed, but the session could not be saved.');
+  useUserStore.getState().setComplimentaryAccess(user.app_metadata?.emotionary_full_access === true);
   await SecureStore.deleteItemAsync(APPLE_USER_KEY);
   return { email };
 }
@@ -286,10 +313,42 @@ export async function getAuthAccount(): Promise<AuthAccount | null> {
   return session ? { email: session.email || emailFromJwt(session.accessToken) || 'Signed in' } : null;
 }
 
+/** Only server-managed metadata returned by Auth can grant complimentary access.
+ * Never trust an email allowlist, incoming JWT claims, or user-editable metadata.
+ * Grants are memory-only and revalidated on launch/foreground; failures fail closed.
+ */
+export async function refreshComplimentaryAccess(): Promise<void> {
+  if (signingOut || !syncEnabled || !(await readSession())) {
+    useUserStore.getState().setComplimentaryAccess(false);
+    return;
+  }
+  let revision = sessionRevision;
+  try {
+    const session = await freshSession();
+    revision = sessionRevision;
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${session.accessToken}` },
+      signal: AbortSignal.timeout(10_000),
+    });
+    const user = (await response.json().catch(() => ({}))) as {
+      id?: string; app_metadata?: Record<string, unknown>;
+    };
+    if (revision !== sessionRevision || signingOut) return;
+    useUserStore.getState().setComplimentaryAccess(
+      response.ok && !!user.id && user.app_metadata?.emotionary_full_access === true,
+    );
+  } catch {
+    if (revision === sessionRevision) useUserStore.getState().setComplimentaryAccess(false);
+  }
+}
+
 /** Revokes the current session when possible and always removes it from this device. */
 export async function signOut() {
-  const session = await readSession();
+  signingOut = true;
+  sessionRevision += 1;
+  useUserStore.getState().setComplimentaryAccess(false);
   try {
+    const session = await readSession();
     if (session) {
       await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
         method: 'POST',
@@ -300,7 +359,7 @@ export async function signOut() {
       });
     }
   } finally {
-    await clearSession();
+    try { await clearSession(); } finally { signingOut = false; }
   }
 }
 

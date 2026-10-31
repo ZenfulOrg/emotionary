@@ -4,6 +4,7 @@ import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { AuthError, createAccount, resendSignupCode, signIn, verifySignupCode } from '@/auth/client';
 import { useAuthForm, type AuthFormState, type AuthMode } from '@/auth/useAuthForm';
 
+jest.mock('@react-native-async-storage/async-storage', () => jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 jest.mock('@/auth/client', () => ({
   ...jest.requireActual('@/auth/client'),
   createAccount: jest.fn(), resendSignupCode: jest.fn(), signIn: jest.fn(), verifySignupCode: jest.fn(),
@@ -48,6 +49,19 @@ describe('email confirmation flow', () => {
     await act(async () => { await form.submit(); });
     expect(verifySignupCode).toHaveBeenCalledWith('new@example.com', '12345678');
     expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['signup_not_created', 'user_already_exists'])('routes repeated signup to sign-in (%s)', async (code) => {
+    await start();
+    jest.mocked(createAccount).mockRejectedValue(new AuthError('No code sent', code));
+    await act(async () => { await form.submit(); });
+    expect(form.mode).toBe('sign-in');
+    expect(form.verificationEmail).toBeNull();
+    expect(form.password).toBe('');
+    expect(form.message).toContain('No new verification code was sent');
+    expect(form.message).toContain('Apple or Google');
+    expect(resendSignupCode).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
   });
 
   it('keeps the user on confirmation after an expired code', async () => {

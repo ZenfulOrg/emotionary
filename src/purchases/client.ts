@@ -16,7 +16,7 @@ export function applyEntitlements(value: Entitlements) {
 }
 
 function nativePurchases() {
-  if (!Purchases) throw new Error('Purchases are available in the Emotionary iPhone app.');
+  if (!Purchases) throw new Error('Purchases are unavailable in this build.');
   return Purchases;
 }
 

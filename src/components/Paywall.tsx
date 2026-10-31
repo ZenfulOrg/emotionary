@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
 
 import { Body, Button, Eyebrow, Headline, OptionRow, Planets, RoundCta } from '@/components/brand';
 import { lightImpactHaptic, successHaptic } from '@/feedback/haptics';
@@ -23,6 +23,7 @@ export function Paywall({
 }) {
   const [plan, setPlan] = useState<Plan>('lifetime');
   const [prices, setPrices] = useState<Record<string, string>>({});
+  const [yearlyTrial, setYearlyTrial] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const operation = useRef(false);
@@ -30,9 +31,10 @@ export function Paywall({
 
   const reload = () => loadProducts().then((products) => {
     setPrices(Object.fromEntries(products.map((product) => [product.id, product.displayPrice])));
+    setYearlyTrial(Platform.OS === 'android' && products.some((product) => product.id === PRODUCT_IDS.yearly && product.freeTrialDays === 7));
     if (!products.length) setError('Purchases are temporarily unavailable. You can continue free and try again later.');
   }).catch(() => {
-    setError('Unable to reach the App Store. Check your connection or continue free.');
+    setError('Unable to reach the store. Check your connection or continue free.');
   }).finally(() => setLoading(false));
   useEffect(() => { void reload(); }, []);
 
@@ -47,9 +49,9 @@ export function Paywall({
         successHaptic();
         onContinue();
       } else if (result.status === 'pending') {
-        Alert.alert('Purchase pending', 'Apple is waiting for approval. Full access will appear automatically when the purchase completes.');
+        Alert.alert('Purchase pending', 'Your store is waiting for approval. Full access will appear automatically when the purchase completes.');
       } else if (result.status === 'purchased') {
-        Alert.alert('Checking your purchase', 'Open Settings and use Restore purchases to refresh your Apple purchases.');
+        Alert.alert('Checking your purchase', 'Open Settings and use Restore purchases to refresh your purchases.');
       }
     } catch (cause) {
       Alert.alert('Purchase could not be completed', cause instanceof Error ? cause.message : 'Please try again.');
@@ -64,13 +66,18 @@ export function Paywall({
         Every word,{'\n'}every month.
       </Headline>
       <Body tone="muted" style={styles.subtitle}>
-        The full emotional vocabulary dictionary, every widget theme, and future word updates.
+        {Platform.OS === 'android'
+          ? 'The full emotional vocabulary dictionary and future word updates.'
+          : 'The full emotional vocabulary dictionary, every widget theme, and future word updates.'}
       </Body>
 
       <View style={styles.options} accessibilityRole="radiogroup">
         {(Object.keys(PLANS) as Plan[]).map((key) => {
           const option = PLANS[key];
           const price = prices[PRODUCT_IDS[key]] ?? (loading ? '…' : '—');
+          const body = key === 'yearly' && Platform.OS === 'android'
+            ? yearlyTrial ? `7 days free, then ${price}/year. Auto-renews; cancel anytime.` : `${price}/year. Auto-renews; cancel anytime.`
+            : option.body;
           return (
             <GroundProvider key={key} ground={plan === key ? 'ink' : 'cream'}>
               <View style={plan === key ? styles.selectedPlan : undefined}>
@@ -80,8 +87,8 @@ export function Paywall({
                   onPress={() => { if (!busy) setPlan(key); }}
                   eyebrow={option.eyebrow}
                   title={option.title}
-                  body={option.body}
-                  accessibilityLabel={`${option.title}, ${price}. ${option.body}`}
+                  body={body}
+                  accessibilityLabel={`${option.title}, ${price}. ${body}`}
                   aside={<Headline accessibilityRole="text" size={30}>{price}</Headline>}
                 />
               </View>
@@ -92,10 +99,15 @@ export function Paywall({
 
       {error && <Body size={14} tone="muted" style={styles.notice}>{error}</Body>}
       {!loading && !prices[PRODUCT_IDS[plan]] && <Button label="Try again" variant="link" disabled={busy} onPress={() => { setLoading(true); setError(null); void reload(); }} />}
+      {Platform.OS === 'android' && plan === 'yearly' && <Body size={14} tone="muted" style={styles.notice}>
+        {yearlyTrial
+          ? 'Cancel in Google Play before the 7-day trial ends to avoid the yearly charge. Subscription renews yearly until canceled.'
+          : 'Subscription renews yearly until canceled. Manage or cancel anytime in Google Play.'}
+      </Body>}
       <View style={styles.actions}>
         <Button label="Continue free" variant="link" disabled={busy} onPress={onContinueFree} />
         <RoundCta
-          label={busy ? 'Working…' : plan === 'yearly' ? 'Subscribe' : 'Buy lifetime'}
+          label={busy ? 'Working…' : plan === 'yearly' ? yearlyTrial ? 'Start free trial' : 'Subscribe' : 'Buy lifetime'}
           disabled={busy || loading || !prices[PRODUCT_IDS[plan]]}
           onPress={() => void unlock()}
           size={120}

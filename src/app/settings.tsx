@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { deleteAccount, getAuthAccount, signOut, type AuthAccount } from '@/auth/client';
 import { Body, Eyebrow, Glyph, Headline, Mono, Panel, Screen, ScreenHeader, Wordmark } from '@/components/brand';
@@ -50,10 +50,10 @@ export default function SettingsScreen() {
       const active = await restorePurchases();
       if (active) successHaptic();
       Alert.alert(active ? 'Full access restored' : 'No purchases found', active
-        ? 'Your Apple purchase is active on this device.'
-        : 'No active Emotionary purchase was found for this Apple Account.');
+        ? 'Your purchase is active on this device.'
+        : 'No active Emotionary purchase was found for this store account.');
     } catch {
-      Alert.alert('Could not restore', 'Check your connection and App Store account, then try again.');
+      Alert.alert('Could not restore', 'Check your connection and store account, then try again.');
     } finally { setRestoring(false); }
   };
 
@@ -80,7 +80,7 @@ export default function SettingsScreen() {
     warningHaptic();
     Alert.alert(
       'Delete your account?',
-      'This permanently deletes your Emotionary account. Favorites and progress saved on this device will remain. Deleting your account does not cancel an Apple subscription. Cancel it first using Manage subscription.',
+      'This permanently deletes your Emotionary account. Favorites and progress saved on this device will remain. Deleting your account does not cancel your store subscription. Cancel it first using Manage subscription.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -134,7 +134,7 @@ export default function SettingsScreen() {
             onPress={hasFullAccess ? undefined : () => router.push('/paywall' as Href)}
           />
           <SettingsRow label={restoring ? 'Restoring…' : 'Restore purchases'} onPress={restoring ? undefined : () => void restore()} />
-          <SettingsRow label="Manage subscription" onPress={() => void Linking.openURL('https://apps.apple.com/account/subscriptions')} leaves />
+          <SettingsRow label="Manage subscription" onPress={() => void Linking.openURL(Platform.OS === 'android' ? 'https://play.google.com/store/account/subscriptions' : 'https://apps.apple.com/account/subscriptions')} leaves />
           {account && (
             <>
               <SettingsRow label="Sign out" onPress={accountBusy ? undefined : confirmSignOut} />

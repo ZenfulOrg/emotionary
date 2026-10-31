@@ -8,7 +8,7 @@ jest.mock('../../../modules/emotionary-purchases/src/EmotionaryPurchasesModule',
 }));
 jest.mock('@react-native-async-storage/async-storage', () => jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 const native = Purchases!;
-beforeEach(() => { jest.clearAllMocks(); useUserStore.setState({ accessLevel: 'free' }); });
+beforeEach(() => { jest.clearAllMocks(); useUserStore.setState({ accessLevel: 'free', storeAccess: false, complimentaryAccess: false }); });
 
 test('only recognized verified store entitlements grant access, empty results revoke it', () => {
   expect(applyEntitlements({ productIDs: ['unknown.product'] })).toBe(false);
@@ -38,6 +38,19 @@ test('hydrating the beta flag cannot grant paid access or overwrite StoreKit sta
   const merge = useUserStore.persist.getOptions().merge!;
   const current = useUserStore.getState();
   expect(merge({ accessLevel: 'full', favorites: ['joy'] }, current).accessLevel).toBe('free');
-  expect(merge({ accessLevel: 'free' }, { ...current, accessLevel: 'full' }).accessLevel).toBe('full');
+  expect(merge({ accessLevel: 'free', storeAccess: false, complimentaryAccess: false }, { ...current, accessLevel: 'full' }).accessLevel).toBe('full');
   expect(useUserStore.persist.getOptions().partialize!(current)).not.toHaveProperty('accessLevel');
+});
+
+
+test('persisted account/store grants cannot unlock access after hydration', () => {
+  const current = useUserStore.getState();
+  const merge = useUserStore.persist.getOptions().merge!;
+  const merged = merge({ accessLevel: 'full', complimentaryAccess: true, storeAccess: true }, current);
+  expect(merged.accessLevel).toBe('free');
+  expect(merged.complimentaryAccess).toBe(false);
+  expect(merged.storeAccess).toBe(false);
+  const persisted = useUserStore.persist.getOptions().partialize!(current);
+  expect(persisted).not.toHaveProperty('complimentaryAccess');
+  expect(persisted).not.toHaveProperty('storeAccess');
 });

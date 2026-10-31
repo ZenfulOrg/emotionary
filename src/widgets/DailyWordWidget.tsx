@@ -44,6 +44,14 @@ const DailyWordWidgetView = (
 ) => {
   'widget';
 
+  // WidgetKit requests gallery previews with empty props before a timeline exists.
+  props = {
+    word: 'meraki', pronunciation: '',
+    definition: 'to do something with soul, creativity, or love.',
+    category: 'WANDERWORD · GREEK', tint: '#E9828C', slug: 'meraki', liked: false,
+    ...(props as Partial<DailyWordWidgetProps>),
+  };
+
   const CREAM = '#F5F0E6';
   const INK = '#18334D';
   const PINK = '#E9828C';

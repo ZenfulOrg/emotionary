@@ -14,7 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 
-import { checkAppleCredential } from '@/auth/client';
+import { checkAppleCredential, refreshComplimentaryAccess } from '@/auth/client';
 import { useContentStore } from '@/content/store';
 import { configureNotificationHandler, rebuildQueue } from '@/notifications/scheduler';
 import { observePurchases, refreshPurchases } from '@/purchases/client';
@@ -52,7 +52,10 @@ export default function RootLayout() {
 
   useEffect(() => {
     const stop = observePurchases();
-    const refresh = () => { void refreshPurchases().catch(() => {}); };
+    const refresh = () => {
+      void refreshPurchases().catch(() => {});
+      void refreshComplimentaryAccess();
+    };
     refresh();
     const foreground = AppState.addEventListener('change', (state) => {
       if (state === 'active') refresh();
@@ -109,14 +112,15 @@ export default function RootLayout() {
 
   // Keep the widget timeline current — including the like state on today's
   // word, so the widget heart fills as soon as a word is favorited.
+  // Seed it during onboarding too: the widget guide appears before signup.
   useEffect(() => {
-    if (!userHydrated || !contentHydrated || !onboarded) return;
+    if (!userHydrated || !contentHydrated) return;
     refreshDailyWordWidget(words, favorites);
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') refreshDailyWordWidget(words, favorites);
     });
     return () => sub.remove();
-  }, [userHydrated, contentHydrated, onboarded, words, favorites]);
+  }, [userHydrated, contentHydrated, words, favorites]);
 
   // Notification tap → Today (also covers cold starts via the last response).
   useEffect(() => {

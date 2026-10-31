@@ -12,8 +12,13 @@ import {
   signInWithGoogle,
   signOut,
   resendSignupCode,
+  refreshComplimentaryAccess,
   verifySignupCode,
 } from '@/auth/client';
+
+import { useUserStore } from '@/store/userStore';
+
+jest.mock('@react-native-async-storage/async-storage', () => jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 
 jest.mock('expo/fetch', () => ({ fetch: jest.fn() }));
 jest.mock('expo-secure-store', () => ({
@@ -53,6 +58,7 @@ function response(body: object, ok = true): Awaited<ReturnType<typeof fetch>> {
 describe('auth client', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useUserStore.setState({ accessLevel: 'free', storeAccess: false, complimentaryAccess: false });
     mockGetItem.mockResolvedValue(null);
   });
 
@@ -77,6 +83,26 @@ describe('auth client', () => {
     mockFetch.mockResolvedValue(response({ user: { email: 'me@example.com' } }));
 
     await expect(createAccount('me@example.com', 'password123')).resolves.toEqual({
+      requiresEmailConfirmation: true,
+    });
+    expect(mockSetItem).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    { identities: [] },
+    { user: { email: 'me@example.com', identities: [] } },
+  ])('does not promise an email for an obfuscated repeated signup: %j', async (payload) => {
+    mockFetch.mockResolvedValue(response(payload));
+    await expect(createAccount('me@example.com', 'password123')).rejects.toMatchObject({
+      code: 'signup_not_created',
+    });
+    expect(mockSetItem).not.toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  test('accepts a new signup with a root-level email identity', async () => {
+    mockFetch.mockResolvedValue(response({ identities: [{ provider: 'email' }] }));
+    await expect(createAccount('new@example.com', 'password123')).resolves.toEqual({
       requiresEmailConfirmation: true,
     });
     expect(mockSetItem).not.toHaveBeenCalled();
@@ -259,5 +285,62 @@ describe('auth client', () => {
       }),
     );
     expect(mockDeleteItem).toHaveBeenCalledWith('emotionary.auth.session.v1');
+  });
+});
+
+
+describe('complimentary account access', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    useUserStore.setState({ accessLevel: 'free', storeAccess: false, complimentaryAccess: false });
+    mockGetItem.mockResolvedValue(JSON.stringify({ accessToken: 'access', refreshToken: 'refresh', email: 'review@example.com' }));
+  });
+
+  test('only server-managed boolean grants unlock the dictionary', async () => {
+    mockFetch.mockResolvedValue(response({ id: 'review', user_metadata: { emotionary_full_access: true } }));
+    await refreshComplimentaryAccess();
+    expect(useUserStore.getState().accessLevel).toBe('free');
+    mockFetch.mockResolvedValue(response({ id: 'review', app_metadata: { emotionary_full_access: 'true' } }));
+    await refreshComplimentaryAccess();
+    expect(useUserStore.getState().accessLevel).toBe('free');
+    mockFetch.mockResolvedValue(response({ id: 'review', app_metadata: { emotionary_full_access: true } }));
+    await refreshComplimentaryAccess();
+    expect(useUserStore.getState().accessLevel).toBe('full');
+    useUserStore.getState().setStoreAccess(false);
+    expect(useUserStore.getState().accessLevel).toBe('full');
+  });
+
+  test('failed verification revokes the grant without revoking a store purchase', async () => {
+    useUserStore.getState().setComplimentaryAccess(true);
+    mockFetch.mockResolvedValue(response({ id: 'review', app_metadata: { emotionary_full_access: true } }, false));
+    await refreshComplimentaryAccess();
+    expect(useUserStore.getState().accessLevel).toBe('free');
+    useUserStore.getState().setStoreAccess(true);
+    mockFetch.mockRejectedValue(new Error('offline'));
+    await refreshComplimentaryAccess();
+    expect(useUserStore.getState().accessLevel).toBe('full');
+  });
+
+  test('sign out prevents a pending response from restoring account access', async () => {
+    let finish!: (value: Awaited<ReturnType<typeof fetch>>) => void;
+    mockFetch.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const pending = refreshComplimentaryAccess();
+    // Let the asynchronous secure-session reads finish.
+    for (let i = 0; i < 10 && !finish; i++) await Promise.resolve();
+    expect(finish).toBeDefined();
+    mockFetch.mockResolvedValue(response({}));
+    await signOut();
+    finish(response({ id: 'review', app_metadata: { emotionary_full_access: true } }));
+    await pending;
+    expect(useUserStore.getState().accessLevel).toBe('free');
+  });
+
+  test('sign in grants access immediately from the authenticated response', async () => {
+    mockFetch.mockResolvedValue(response({ access_token: 'access', refresh_token: 'refresh', user: { email: 'review@example.com', app_metadata: { emotionary_full_access: true } } }));
+    await signIn('review@example.com', 'test-only');
+    expect(useUserStore.getState().accessLevel).toBe('full');
+    mockFetch.mockResolvedValue(response({ access_token: 'other', refresh_token: 'other-refresh', user: { email: 'other@example.com' } }));
+    await signIn('other@example.com', 'test-only');
+    expect(useUserStore.getState().accessLevel).toBe('free');
   });
 });

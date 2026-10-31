@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -382,10 +383,10 @@ function WidgetPage({
     <PageCopy
       eyebrow="Widgets"
       title="Add the daily widget."
-      body="Keep today's word nearby on your Home or Lock Screen. Tap a widget to see how."
+      body={Platform.OS === 'android' ? "Keep today's word nearby on your Home Screen. Tap the widget to see how." : "Keep today's word nearby on your Home or Lock Screen. Tap a widget to see how."}
     >
       <View style={styles.widgets}>
-        {(['home', 'lock'] as const).map((variant) => (
+        {(Platform.OS === 'android' ? ['home'] as const : ['home', 'lock'] as const).map((variant) => (
           <Pressable
             key={variant}
             onPress={() => {
