@@ -23,7 +23,9 @@ export function Paywall({
 }) {
   const [plan, setPlan] = useState<Plan>('lifetime');
   const [prices, setPrices] = useState<Record<string, string>>({});
-  const [yearlyTrial, setYearlyTrial] = useState(false);
+  const [trialDays, setTrialDays] = useState(0);
+  const yearlyTrial = trialDays > 0;
+  const store = Platform.OS === 'android' ? 'Google Play' : 'your Apple account settings';
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const operation = useRef(false);
@@ -31,7 +33,7 @@ export function Paywall({
 
   const reload = () => loadProducts().then((products) => {
     setPrices(Object.fromEntries(products.map((product) => [product.id, product.displayPrice])));
-    setYearlyTrial(Platform.OS === 'android' && products.some((product) => product.id === PRODUCT_IDS.yearly && product.freeTrialDays === 7));
+    setTrialDays(products.find((product) => product.id === PRODUCT_IDS.yearly)?.freeTrialDays ?? 0);
     if (!products.length) setError('Purchases are temporarily unavailable. You can continue free and try again later.');
   }).catch(() => {
     setError('Unable to reach the store. Check your connection or continue free.');
@@ -45,7 +47,7 @@ export function Paywall({
     lightImpactHaptic();
     try {
       const result = await purchasePlan(plan);
-      if (result.status === 'purchased' && result.entitlements.productIDs.includes(PRODUCT_IDS[plan])) {
+      if (result.status === 'purchased' && result.active) {
         successHaptic();
         onContinue();
       } else if (result.status === 'pending') {
@@ -75,8 +77,8 @@ export function Paywall({
         {(Object.keys(PLANS) as Plan[]).map((key) => {
           const option = PLANS[key];
           const price = prices[PRODUCT_IDS[key]] ?? (loading ? '…' : '—');
-          const body = key === 'yearly' && Platform.OS === 'android'
-            ? yearlyTrial ? `7 days free, then ${price}/year. Auto-renews; cancel anytime.` : `${price}/year. Auto-renews; cancel anytime.`
+          const body = key === 'yearly' && (Platform.OS === 'android' || yearlyTrial)
+            ? yearlyTrial ? `${trialDays} days free, then ${price}/year. Auto-renews; cancel anytime.` : `${price}/year. Auto-renews; cancel anytime.`
             : option.body;
           return (
             <GroundProvider key={key} ground={plan === key ? 'ink' : 'cream'}>
@@ -99,10 +101,10 @@ export function Paywall({
 
       {error && <Body size={14} tone="muted" style={styles.notice}>{error}</Body>}
       {!loading && !prices[PRODUCT_IDS[plan]] && <Button label="Try again" variant="link" disabled={busy} onPress={() => { setLoading(true); setError(null); void reload(); }} />}
-      {Platform.OS === 'android' && plan === 'yearly' && <Body size={14} tone="muted" style={styles.notice}>
+      {(Platform.OS === 'android' || yearlyTrial) && plan === 'yearly' && <Body size={14} tone="muted" style={styles.notice}>
         {yearlyTrial
-          ? 'Cancel in Google Play before the 7-day trial ends to avoid the yearly charge. Subscription renews yearly until canceled.'
-          : 'Subscription renews yearly until canceled. Manage or cancel anytime in Google Play.'}
+          ? `Cancel in ${store} before the ${trialDays}-day trial ends to avoid the yearly charge. Subscription renews yearly until canceled.`
+          : `Subscription renews yearly until canceled. Manage or cancel anytime in ${store}.`}
       </Body>}
       <View style={styles.actions}>
         <Button label="Continue free" variant="link" disabled={busy} onPress={onContinueFree} />
