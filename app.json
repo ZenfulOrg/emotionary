@@ -2,7 +2,7 @@
   "expo": {
     "name": "Emotionary",
     "slug": "emotionary",
-    "version": "1.6.3",
+    "version": "1.7.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "emotionary",
@@ -10,7 +10,7 @@
     "ios": {
       "appleTeamId": "GRM466YG9B",
       "bundleIdentifier": "com.nowdrops.emotionary",
-      "buildNumber": "2026103102",
+      "buildNumber": "2026110301",
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "privacyManifests": {
@@ -88,7 +88,7 @@
         "android.permission.READ_MEDIA_AUDIO"
       ],
       "predictiveBackGestureEnabled": false,
-      "versionCode": 3
+      "versionCode": 4
     },
     "web": {
       "output": "static",
