@@ -5,9 +5,9 @@
 	<key>CFBundleDisplayName</key>
 	<string>Emotionary</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.6.3</string>
+	<string>1.7.0</string>
 	<key>CFBundleVersion</key>
-	<string>2026103102</string>
+	<string>2026110301</string>
 	<key>ExpoWidgetsAppGroupIdentifier</key>
 	<string>group.com.nowdrops.emotionary</string>
 	<key>NSExtension</key>
