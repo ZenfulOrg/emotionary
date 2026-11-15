@@ -1,8 +1,9 @@
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
 import { fetch } from 'expo/fetch';
+import { Platform } from 'react-native';
 
-import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, syncEnabled } from '@/config';
+import { GOOGLE_IOS_CLIENT_ID, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, syncEnabled } from '@/config';
 import { useUserStore } from '@/store/userStore';
 
 const SESSION_KEY = 'emotionary.auth.session.v1';
@@ -191,6 +192,57 @@ export async function verifySignupCode(email: string, code: string): Promise<Aut
   return { email: payload.user?.email ?? normalizedEmail };
 }
 
+/**
+ * Starts a password reset: Supabase emails a 6-digit code. Succeeds whether or
+ * not an account exists for the address, so it can't be used to probe emails.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  await authPost('recover', { email: email.trim().toLowerCase() });
+}
+
+/**
+ * Finishes a password reset in one step: the emailed code proves the address,
+ * the new password is saved, and the person is signed in.
+ */
+export async function resetPasswordWithCode(
+  email: string,
+  code: string,
+  newPassword: string,
+): Promise<AuthAccount> {
+  const token = code.replace(/\s/g, '');
+  if (!/^\d{6,10}$/.test(token)) throw new AuthError('Enter the code from your email.');
+  if (newPassword.length < 8) throw new AuthError('Use at least 8 characters for your password.');
+  const normalizedEmail = email.trim().toLowerCase();
+  const payload = await authPost('verify', { email: normalizedEmail, token, type: 'recovery' });
+  if (!payload.access_token) throw new AuthError('That code is invalid or has expired. Request a new code.');
+
+  let response: Response;
+  try {
+    response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      method: 'PUT',
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${payload.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password: newPassword }),
+    });
+  } catch {
+    throw new AuthError('Could not connect. Check your internet connection and request a new code.');
+  }
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as SupabaseAuthResponse;
+    const reason = body.msg ?? body.message ?? body.error_description ?? 'Your new password could not be saved.';
+    throw new AuthError(`${reason} Request a new code and try again.`, body.error_code, response.status);
+  }
+
+  if (!(await saveSession(payload, normalizedEmail))) {
+    throw new AuthError('Your password was changed, but your session could not be saved. Sign in with your new password.');
+  }
+  await SecureStore.deleteItemAsync(APPLE_USER_KEY);
+  return { email: payload.user?.email ?? normalizedEmail };
+}
+
 export async function resendSignupCode(email: string): Promise<void> {
   await authPost(`resend?redirect_to=${encodeURIComponent(OAUTH_REDIRECT)}`, {
     email: email.trim().toLowerCase(),
@@ -238,11 +290,58 @@ export async function signInWithApple(): Promise<{ email: string | null } | null
 }
 
 /**
- * Google sign-in via the Supabase OAuth flow in an in-app browser session.
- * Resolves null when the person closes the browser without finishing.
+ * Google sign-in. iOS uses Google's native sheet, which names the app
+ * ("Emotionary") instead of the Supabase address, then trades Google's ID
+ * token for a Supabase session (like Apple). Android still uses the browser
+ * flow until its own Google client is set up.
+ * Resolves null when the person cancels.
  */
 export async function signInWithGoogle(): Promise<{ email: string | null } | null> {
   assertSyncEnabled();
+  if (Platform.OS === 'ios') return signInWithGoogleNative();
+  return signInWithGoogleBrowser();
+}
+
+async function signInWithGoogleNative(): Promise<{ email: string | null } | null> {
+  // Lazy require: the native module only exists in native builds.
+  const { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } =
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('@react-native-google-signin/google-signin') as typeof import('@react-native-google-signin/google-signin');
+  GoogleSignin.configure({ iosClientId: GOOGLE_IOS_CLIENT_ID });
+
+  let idToken: string | null = null;
+  let accessToken: string | null = null;
+  let googleEmail: string | null = null;
+  try {
+    // Always show the account picker, even after a previous Google sign-in.
+    await GoogleSignin.signOut().catch(() => {});
+    const response = await GoogleSignin.signIn();
+    if (!isSuccessResponse(response)) return null;
+    idToken = response.data.idToken;
+    googleEmail = response.data.user.email ?? null;
+    // Supabase checks the ID token's at_hash against this (soon required).
+    accessToken = (await GoogleSignin.getTokens().catch(() => null))?.accessToken ?? null;
+  } catch (error) {
+    if (isErrorWithCode(error) && error.code === statusCodes.SIGN_IN_CANCELLED) return null;
+    if (isErrorWithCode(error) && error.code === statusCodes.IN_PROGRESS) return null;
+    throw new AuthError('Google sign-in is unavailable right now. Try again.');
+  }
+  if (!idToken) throw new AuthError('Google did not return a sign-in token. Try again.');
+
+  const payload = await authPost('token?grant_type=id_token', {
+    provider: 'google',
+    id_token: idToken,
+    ...(accessToken ? { access_token: accessToken } : {}),
+  });
+  const email = payload.user?.email ?? googleEmail ?? '';
+  const signedIn = await saveSession(payload, email);
+  if (!signedIn) throw new AuthError('Your session could not be saved securely. Please try again.');
+  await SecureStore.deleteItemAsync(APPLE_USER_KEY);
+  return { email: email || null };
+}
+
+/** Google via the Supabase OAuth flow in an in-app browser session. */
+async function signInWithGoogleBrowser(): Promise<{ email: string | null } | null> {
 
   const authUrl =
     `${SUPABASE_URL}/auth/v1/authorize?provider=google` +
@@ -311,9 +410,49 @@ export async function completeAuthCallback(url: string): Promise<AuthAccount> {
   return { email };
 }
 
+/** Wording version of the marketing opt-in, stored with each choice. */
+export const MARKETING_CONSENT_VERSION = 'marketing-email-2026-11-13';
+
+/**
+ * Save the user's marketing-email choice on their own account (Supabase
+ * user metadata), with when it was made and which wording they saw. Returns
+ * false when signed out or offline; the caller retries later.
+ */
+export async function saveMarketingConsent(optedIn: boolean): Promise<boolean> {
+  if (!syncEnabled || !(await readSession())) return false;
+  try {
+    const session = await freshSession();
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      method: 'PUT',
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${session.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: {
+          marketing_opt_in: optedIn,
+          marketing_opt_in_changed_at: new Date().toISOString(),
+          marketing_consent_version: MARKETING_CONSENT_VERSION,
+        },
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function getAuthAccount(): Promise<AuthAccount | null> {
   const session = await readSession();
   return session ? { email: session.email || emailFromJwt(session.accessToken) || 'Signed in' } : null;
+}
+
+/** The signed-in account's id (the session's subject), or null when signed out. */
+export async function getAuthUserId(): Promise<string | null> {
+  const session = await readSession().catch(() => null);
+  return session ? jwtClaims(session.accessToken)?.sub ?? null : null;
 }
 
 /** Only server-managed metadata returned by Auth can grant complimentary access.
@@ -411,12 +550,12 @@ function emailFromJwt(token: string): string | null {
   return jwtClaims(token)?.email ?? null;
 }
 
-function jwtClaims(token: string): { email?: string; exp?: number } | null {
+function jwtClaims(token: string): { email?: string; exp?: number; sub?: string } | null {
   try {
     const payload = token.split('.')[1];
     const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
-    return JSON.parse(atob(padded)) as { email?: string; exp?: number };
+    return JSON.parse(atob(padded)) as { email?: string; exp?: number; sub?: string };
   } catch {
     return null;
   }

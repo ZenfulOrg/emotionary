@@ -14,6 +14,94 @@ export function AuthForm({ form, showSubmit = true }: { form: AuthFormState; sho
   const [passwordVisible, setPasswordVisible] = useState(false);
   const creating = form.mode === 'create';
 
+  if (form.resetStage) {
+    const sent = form.resetStage === 'code';
+    return (
+      <View style={styles.wrap}>
+        <Eyebrow>Reset your password</Eyebrow>
+        <Body tone="muted" style={styles.message}>
+          {sent
+            ? 'Enter the 6-digit code from your email and choose a new password.'
+            : "Enter your account's email and we'll send you a 6-digit code."}
+        </Body>
+        <View style={styles.fields}>
+          {sent ? (
+            <>
+              <TextField
+                value={form.code}
+                onChangeText={(value) => form.setCode(value.replace(/\s/g, ''))}
+                placeholder="6-digit code"
+                accessibilityLabel="Password reset code"
+                keyboardType="number-pad"
+                textContentType="oneTimeCode"
+                autoComplete="one-time-code"
+                autoCorrect={false}
+                autoCapitalize="none"
+                maxLength={10}
+                editable={!form.busy}
+              />
+              <TextField
+                value={form.password}
+                onChangeText={form.setPassword}
+                placeholder="New password (8+ characters)"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="new-password"
+                textContentType="newPassword"
+                secureTextEntry={!passwordVisible}
+                returnKeyType="done"
+                onSubmitEditing={() => void form.submit()}
+                editable={!form.busy}
+                accessibilityLabel="New password"
+                trailing={
+                  <IconButton
+                    glyph={passwordVisible ? 'eyeOff' : 'eye'}
+                    accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'}
+                    onPress={() => setPasswordVisible((visible) => !visible)}
+                    color={ground.textMuted}
+                    size={20}
+                  />
+                }
+              />
+            </>
+          ) : (
+            <TextField
+              value={form.email}
+              onChangeText={form.setEmail}
+              placeholder="Email address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              returnKeyType="send"
+              onSubmitEditing={() => void form.submit()}
+              editable={!form.busy}
+              accessibilityLabel="Email address"
+            />
+          )}
+        </View>
+        {form.message.length > 0 && (
+          <Body tone="muted" size={type.small} style={styles.message} accessibilityLiveRegion="polite">
+            {form.message}
+          </Body>
+        )}
+        {showSubmit && (
+          <Button label={form.submitLabel} onPress={() => void form.submit()} busy={form.busy} style={styles.submit} />
+        )}
+        {sent && (
+          <Button
+            label={form.resendSeconds > 0 ? `Resend code in ${form.resendSeconds}s` : 'Resend code'}
+            variant="link"
+            disabled={form.busy || form.resendSeconds > 0}
+            onPress={() => void form.resend()}
+          />
+        )}
+        <Button label="Back to sign in" variant="link" disabled={form.busy} onPress={form.cancelReset} />
+      </View>
+    );
+  }
+
   if (form.verificationEmail) {
     return (
       <View style={styles.wrap}>
@@ -128,14 +216,21 @@ export function AuthForm({ form, showSubmit = true }: { form: AuthFormState; sho
         />
       </View>
 
+      {!creating && (
+        <View style={styles.forgot}>
+          <Button label="Forgot password?" variant="link" disabled={form.busy} onPress={form.startReset} />
+        </View>
+      )}
+
       {creating && (
         <View style={styles.termsRow}>
           <TermsCheckbox
             value={form.termsAccepted}
             onValueChange={form.setTermsAccepted}
             testID="terms-checkbox"
+            size={16}
           />
-          <Body size={type.small} tone="muted" style={styles.terms}>
+          <Body size={14} tone="muted" style={styles.terms}>
             By continuing you agree to Emotionary&apos;s{' '}
             <Text
               style={[styles.link, { color: ground.text }]}
@@ -201,9 +296,10 @@ const styles = StyleSheet.create({
   modes: { flexDirection: 'row', gap: space.s },
   mode: { flex: 1 },
   fields: { gap: space.s, marginTop: space.m },
-  termsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.m, marginTop: space.m },
-  terms: { flex: 1, lineHeight: 22 },
+  termsRow: { flexDirection: 'row', alignItems: 'center', gap: space.s, marginTop: space.m },
+  terms: { flex: 1, lineHeight: 19 },
   link: { fontFamily: font.text, textDecorationLine: 'underline' },
   message: { marginTop: space.m, textAlign: 'center' },
   submit: { marginTop: space.l },
+  forgot: { alignItems: 'flex-end', marginTop: space.s },
 });

@@ -4,21 +4,37 @@ import { Body, Dialog, Eyebrow, Headline, PlanetDot, Rule } from '@/components/b
 import { LEVELS, levelPalettes, PLANET_ORDER, planets, space } from '@/theme/tokens';
 
 /** The key: the planets are the categories; the mood colors are the depths. */
-export function WordKey({ depths = true }: { depths?: boolean }) {
+export function WordKey({
+  depths = true,
+  sectionLabels = true,
+  large = false,
+}: {
+  depths?: boolean;
+  /** Show the "01 / The categories" heading and its rule. */
+  sectionLabels?: boolean;
+  /** Bigger category names and descriptions (onboarding). */
+  large?: boolean;
+}) {
   return (
     <View>
-      <Eyebrow tone="muted" style={styles.section}>
-        01 / The categories
-      </Eyebrow>
-      <Rule />
+      {sectionLabels && (
+        <>
+          <Eyebrow tone="muted" style={styles.section}>
+            01 / The categories
+          </Eyebrow>
+          <Rule />
+        </>
+      )}
       {PLANET_ORDER.map((key) => (
         <View key={key} style={styles.line} accessible>
           <View style={styles.mark}>
-            <PlanetDot wordType={key} scale={1.3} glow />
+            <PlanetDot wordType={key} scale={large ? 1.6 : 1.3} glow />
           </View>
           <View style={styles.copy}>
-            <Eyebrow tone="default">{planets[key].label}</Eyebrow>
-            <Body size={16} tone="muted">
+            <Eyebrow tone="default" size={large ? 14 : undefined}>
+              {planets[key].label}
+            </Eyebrow>
+            <Body size={large ? 19 : 16} tone="muted">
               {planets[key].body}
             </Body>
           </View>

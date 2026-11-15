@@ -4,10 +4,12 @@ import { useCallback, useState, type ReactNode } from 'react';
 import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { deleteAccount, getAuthAccount, signOut, type AuthAccount } from '@/auth/client';
+import { syncMarketingConsent } from '@/auth/marketing';
 import { Body, Eyebrow, Glyph, Headline, Mono, Panel, Screen, ScreenHeader, Wordmark } from '@/components/brand';
 import { selectionHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
 import { requestPermission } from '@/notifications/scheduler';
-import { restorePurchases } from '@/purchases/client';
+import { forgetPurchaser, restorePurchases } from '@/purchases/client';
+import { isSimulator } from '@/dev/simulator';
 import { useUserStore } from '@/store/userStore';
 import { useGround } from '@/theme/ground';
 import { brand, grounds, layout, space } from '@/theme/tokens';
@@ -17,7 +19,11 @@ export default function SettingsScreen() {
   const setNotifEnabled = useUserStore((state) => state.setNotifEnabled);
   const hapticsEnabled = useUserStore((state) => state.hapticsEnabled);
   const setHapticsEnabled = useUserStore((state) => state.setHapticsEnabled);
+  const simulatorProPreview = useUserStore((state) => state.simulatorProPreview);
+  const setSimulatorProPreview = useUserStore((state) => state.setSimulatorProPreview);
   const hasFullAccess = useUserStore((state) => state.accessLevel === 'full');
+  const marketingOptIn = useUserStore((state) => state.marketingOptIn);
+  const setMarketingOptIn = useUserStore((state) => state.setMarketingOptIn);
   const [restoring, setRestoring] = useState(false);
   const [account, setAccount] = useState<AuthAccount | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
@@ -57,6 +63,17 @@ export default function SettingsScreen() {
     } finally { setRestoring(false); }
   };
 
+  // Signed out (or deleted): end store and account access on this device and
+  // show sign-in. Saved words and progress stay on the device.
+  const leaveToSignIn = async () => {
+    setAccount(null);
+    useUserStore.getState().setSignedOut(true);
+    await forgetPurchaser();
+    successHaptic();
+    router.dismissAll();
+    router.replace('/sign-in' as Href);
+  };
+
   const confirmSignOut = () => {
     Alert.alert('Sign out?', 'Your favorites and progress will stay on this device.', [
       { text: 'Cancel', style: 'cancel' },
@@ -65,10 +82,7 @@ export default function SettingsScreen() {
         onPress: () => {
           setAccountBusy(true);
           void signOut()
-            .then(() => {
-              setAccount(null);
-              successHaptic();
-            })
+            .then(() => leaveToSignIn())
             .catch((error) => Alert.alert('Could not sign out', error instanceof Error ? error.message : 'Try again.'))
             .finally(() => setAccountBusy(false));
         },
@@ -90,8 +104,7 @@ export default function SettingsScreen() {
             setAccountBusy(true);
             void deleteAccount()
               .then(() => {
-                setAccount(null);
-                successHaptic();
+                void leaveToSignIn();
                 Alert.alert('Account deleted', 'Your Emotionary account has been permanently deleted. If you used Sign in with Apple, also remove Emotionary from your Apple Account using Apple’s instructions.', [
                   { text: 'Done', style: 'cancel' },
                   { text: 'Apple access instructions', onPress: () => void Linking.openURL('https://support.apple.com/en-us/102571') },
@@ -161,6 +174,25 @@ export default function SettingsScreen() {
               />
             }
           />
+          {account && (
+            <SettingsRow
+              label="Marketing emails"
+              control={
+                <Switch
+                  value={marketingOptIn === true}
+                  onValueChange={(value) => {
+                    setMarketingOptIn(value);
+                    void syncMarketingConsent();
+                  }}
+                  trackColor={{ false: grounds.cream.hairline, true: brand.ink }}
+                  thumbColor={brand.cream}
+                  ios_backgroundColor={grounds.cream.hairline}
+                  accessibilityLabel="Marketing emails"
+                  accessibilityHint="Occasional emails about new words and offers"
+                />
+              }
+            />
+          )}
           <SettingsRow
             label="Haptics"
             control={
@@ -195,6 +227,26 @@ export default function SettingsScreen() {
           <SettingsRow label="Privacy policy" onPress={() => router.push('/legal/privacy' as Href)} />
           <SettingsRow label="Terms of use" onPress={() => router.push('/legal/terms' as Href)} />
         </SettingsGroup>
+
+        {isSimulator && (
+          // Simulator/emulator builds only: review the paid app without a purchase.
+          <SettingsGroup index="04" title="Simulator">
+            <SettingsRow
+              label="Preview Pro"
+              control={
+                <Switch
+                  value={simulatorProPreview}
+                  onValueChange={setSimulatorProPreview}
+                  trackColor={{ false: grounds.cream.hairline, true: brand.ink }}
+                  thumbColor={brand.cream}
+                  ios_backgroundColor={grounds.cream.hairline}
+                  accessibilityLabel="Preview Pro"
+                  accessibilityHint="Simulator only. Shows the paid app without a purchase."
+                />
+              }
+            />
+          </SettingsGroup>
+        )}
 
         <View style={styles.footer}>
           <Wordmark size={28} />

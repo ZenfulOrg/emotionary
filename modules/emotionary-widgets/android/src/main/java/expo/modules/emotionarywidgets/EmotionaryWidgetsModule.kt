@@ -14,5 +14,12 @@ class EmotionaryWidgetsModule : Module() {
       val manager = AppWidgetManager.getInstance(context)
       DailyWordProvider().onUpdate(context, manager, manager.getAppWidgetIds(ComponentName(context, DailyWordProvider::class.java)))
     }
+
+    // How many Emotionary widgets are on the home screen (adoption stats only).
+    Function("installedWidgetCount") {
+      val context = requireNotNull(appContext.reactContext)
+      AppWidgetManager.getInstance(context)
+        .getAppWidgetIds(ComponentName(context, DailyWordProvider::class.java)).size
+    }
   }
 }

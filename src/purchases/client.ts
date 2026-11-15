@@ -69,6 +69,8 @@ export async function loadProducts(): Promise<StoreProduct[]> {
 }
 
 export async function refreshPurchases() {
+  // Signed out: no store access until an account signs in again.
+  if (useUserStore.getState().signedOut) return applyEntitlements({ entitlements: { active: {}, all: {}, verification: undefined } as never });
   if (!ready) return applyEntitlements({ entitlements: { active: {}, all: {}, verification: undefined } as never });
   configure();
   return applyEntitlements(await Purchases.getCustomerInfo());
@@ -87,6 +89,27 @@ export async function purchasePlan(plan: Plan): Promise<PurchaseResult> {
     if (code === PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR) return { status: 'pending' };
     throw error;
   }
+}
+
+/** Ties store purchases to this account, so access follows the account. */
+export async function identifyPurchaser(userId: string) {
+  if (!ready) return;
+  configure();
+  const { customerInfo } = await Purchases.logIn(userId);
+  applyEntitlements(customerInfo);
+}
+
+/** Disconnects the account's purchases from this device and ends store access. */
+export async function forgetPurchaser() {
+  if (ready) {
+    configure();
+    try {
+      if (!(await Purchases.isAnonymous())) await Purchases.logOut();
+    } catch {
+      // Already anonymous or offline: access is still turned off below.
+    }
+  }
+  useUserStore.getState().setStoreAccess(false);
 }
 
 export async function restorePurchases() {

@@ -4,7 +4,7 @@ export default function TermsScreen() {
   return (
     <LegalDocument
       title="Terms of Use"
-      effectiveDate="October 15, 2026"
+      effectiveDate="November 13, 2026"
       intro="These terms govern your use of the Emotionary app and its word, definition, and reflection content. By creating an account or using the app, you agree to these terms."
       sections={[
         {
@@ -33,6 +33,12 @@ export default function TermsScreen() {
             'A yearly subscription renews automatically unless canceled before renewal. Manage or cancel it through your Google Play account subscriptions. Deleting your Emotionary account does not cancel a subscription. Use Restore purchases to restore eligible purchases with the same Google Play account.',
           ],
           link: { label: 'Manage Google Play subscriptions', url: 'https://play.google.com/store/account/subscriptions' },
+        },
+        {
+          heading: 'Emails from Emotionary',
+          paragraphs: [
+            'If you create an account, Emotionary may send you occasional emails about new words, features, and offers. You can unsubscribe at any time using the link in any email or the Marketing emails switch in Settings. Unsubscribing does not affect your account, purchases, or service messages such as sign-in codes.',
+          ],
         },
         {
           heading: 'Wellness notice',

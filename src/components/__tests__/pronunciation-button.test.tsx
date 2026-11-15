@@ -5,7 +5,13 @@ import * as Speech from 'expo-speech';
 
 import { PronunciationButton } from '@/components/pronunciation-button';
 
+jest.mock('expo-audio', () => ({
+  createAudioPlayer: jest.fn(),
+  setAudioModeAsync: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock('expo-speech', () => ({
+  getAvailableVoicesAsync: jest.fn(() => Promise.resolve([])),
   pause: jest.fn(() => Promise.resolve()),
   resume: jest.fn(() => Promise.resolve()),
   speak: jest.fn(),
@@ -119,5 +125,49 @@ describe('PronunciationButton', () => {
     expect(renderer.root.findByProps({ accessibilityRole: 'button' }).props.accessibilityLabel).toBe(
       'Play pronunciation of rumination',
     );
+  });
+});
+
+describe('PronunciationButton audio', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Audio = require('expo-audio') as { setAudioModeAsync: jest.Mock; createAudioPlayer: jest.Mock };
+
+  it('sets the session to play in silent mode', async () => {
+    // The mode is set once per app session, so load a fresh module copy.
+    let Fresh!: typeof PronunciationButton;
+    let FreshAudio!: { setAudioModeAsync: jest.Mock };
+    jest.isolateModules(() => {
+      jest.doMock('react', () => React);
+      /* eslint-disable @typescript-eslint/no-require-imports */
+      Fresh = require('@/components/pronunciation-button').PronunciationButton;
+      FreshAudio = require('expo-audio');
+      /* eslint-enable @typescript-eslint/no-require-imports */
+    });
+    let renderer!: ReactTestRenderer;
+    await act(async () => {
+      renderer = create(<Fresh word="saudade" language="Portuguese" />);
+    });
+    expect(FreshAudio.setAudioModeAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ playsInSilentMode: true, interruptionMode: 'duckOthers' }),
+    );
+    act(() => renderer.unmount());
+  });
+
+  it('prefers a recording over speech', async () => {
+    const player = { addListener: jest.fn(), play: jest.fn(), pause: jest.fn(), remove: jest.fn() };
+    Audio.createAudioPlayer.mockReturnValue(player);
+    jest.mocked(Speech.speak).mockClear();
+    let renderer!: ReactTestRenderer;
+    await act(async () => {
+      renderer = create(<PronunciationButton word="saudade" audioUrl="https://example.com/s.mp3" />);
+    });
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityRole: 'button' }).props.onPress();
+      await Promise.resolve();
+    });
+    expect(Audio.createAudioPlayer).toHaveBeenCalledWith({ uri: 'https://example.com/s.mp3' });
+    expect(player.play).toHaveBeenCalled();
+    expect(Speech.speak).not.toHaveBeenCalled();
+    act(() => renderer.unmount());
   });
 });

@@ -25,9 +25,9 @@ export default function AccountScreen() {
         behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Headline size={44}>{form.verificationEmail ? 'Confirm your email.' : form.mode === 'create' ? 'Make it yours.' : 'Welcome back.'}</Headline>
+          <Headline size={44}>{form.resetStage ? 'A fresh start.' : form.verificationEmail ? 'Confirm your email.' : form.mode === 'create' ? 'Make it yours.' : 'Welcome back.'}</Headline>
           <Body tone="muted" style={styles.subtitle}>
-            Sign in to manage your Emotionary account. Saved words and reading progress stay on this device.
+            Sign in to manage your Emotionary account.
           </Body>
           <AuthForm form={form} />
         </ScrollView>

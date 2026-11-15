@@ -19,7 +19,9 @@ function TabGlyph({ name, color, focused }: { name: GlyphName; color: string; fo
 
 export default function TabsLayout() {
   const onboarded = useUserStore((s) => s.onboarded);
+  const signedOut = useUserStore((s) => s.signedOut);
   if (!onboarded) return <Redirect href="/onboarding" />;
+  if (signedOut) return <Redirect href="/sign-in" />;
 
   return (
     <Tabs

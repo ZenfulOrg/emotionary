@@ -1,18 +1,30 @@
 import React from 'react';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 
-import { AuthError, createAccount, resendSignupCode, signIn, verifySignupCode } from '@/auth/client';
+import {
+  AuthError,
+  createAccount,
+  requestPasswordReset,
+  resendSignupCode,
+  resetPasswordWithCode,
+  signIn,
+  verifySignupCode,
+} from '@/auth/client';
 import { useAuthForm, type AuthFormState, type AuthMode } from '@/auth/useAuthForm';
+import { linkPurchasesToAccount } from '@/purchases/account';
+import { useUserStore } from '@/store/userStore';
 
 jest.mock('@react-native-async-storage/async-storage', () => jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 jest.mock('@/auth/client', () => ({
   ...jest.requireActual('@/auth/client'),
   createAccount: jest.fn(), resendSignupCode: jest.fn(), signIn: jest.fn(), verifySignupCode: jest.fn(),
+  requestPasswordReset: jest.fn(), resetPasswordWithCode: jest.fn(),
 }));
 jest.mock('expo-secure-store', () => ({}));
 jest.mock('expo-web-browser', () => ({}));
 jest.mock('expo/fetch', () => ({ fetch: jest.fn() }));
-jest.mock('@/feedback/haptics', () => ({ lightImpactHaptic: jest.fn(), successHaptic: jest.fn() }));
+jest.mock('@/feedback/haptics', () => ({ lightImpactHaptic: jest.fn(), successHaptic: jest.fn(), warningHaptic: jest.fn() }));
+jest.mock('@/purchases/account', () => ({ linkPurchasesToAccount: jest.fn(async () => undefined) }));
 
 describe('email confirmation flow', () => {
   let form: AuthFormState;
@@ -49,6 +61,60 @@ describe('email confirmation flow', () => {
     await act(async () => { await form.submit(); });
     expect(verifySignupCode).toHaveBeenCalledWith('new@example.com', '12345678');
     expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('opts a new account into marketing email, and links purchases', async () => {
+    act(() => { useUserStore.setState({ marketingOptIn: null, signedOut: true }); });
+    await start();
+    await act(async () => { await form.submit(); });
+    act(() => form.setCode('123456'));
+    await act(async () => { await form.submit(); });
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(useUserStore.getState().marketingOptIn).toBe(true);
+    expect(useUserStore.getState().signedOut).toBe(false);
+    expect(linkPurchasesToAccount).toHaveBeenCalledTimes(1);
+  });
+
+  it('resets a forgotten password with an emailed code and signs in', async () => {
+    jest.mocked(requestPasswordReset).mockResolvedValue();
+    jest.mocked(resetPasswordWithCode).mockResolvedValue({ email: 'new@example.com' });
+    await start('sign-in');
+    act(() => { form.startReset(); });
+    expect(form.resetStage).toBe('request');
+    expect(form.submitLabel).toBe('Send code');
+    await act(async () => { await form.submit(); });
+    expect(requestPasswordReset).toHaveBeenCalledWith(' NEW@example.com ');
+    expect(form.resetStage).toBe('code');
+    expect(form.submitLabel).toBe('Set new password');
+    act(() => { form.setCode('123456'); form.setPassword('short'); });
+    await act(async () => { await form.submit(); });
+    expect(resetPasswordWithCode).not.toHaveBeenCalled();
+    act(() => { form.setPassword('brand-new-password'); });
+    await act(async () => { await form.submit(); });
+    expect(resetPasswordWithCode).toHaveBeenCalledWith(' NEW@example.com ', '123456', 'brand-new-password');
+    expect(form.resetStage).toBeNull();
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the reset open with a message when the code is wrong', async () => {
+    jest.mocked(requestPasswordReset).mockResolvedValue();
+    jest.mocked(resetPasswordWithCode).mockRejectedValue(new AuthError('expired', 'otp_expired'));
+    await start('sign-in');
+    act(() => { form.startReset(); });
+    await act(async () => { await form.submit(); });
+    act(() => { form.setCode('000000'); form.setPassword('brand-new-password'); });
+    await act(async () => { await form.submit(); });
+    expect(form.resetStage).toBe('code');
+    expect(form.message).toMatch(/invalid or has expired/);
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it('shows no message and sends nothing for an invalid email', async () => {
+    await start();
+    act(() => { form.setEmail('not-an-email'); });
+    await act(async () => { await form.submit(); });
+    expect(form.message).toBe('');
+    expect(createAccount).not.toHaveBeenCalled();
   });
 
   it.each(['signup_not_created', 'user_already_exists'])('routes repeated signup to sign-in (%s)', async (code) => {

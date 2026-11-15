@@ -14,20 +14,28 @@ import seedJson from '../../assets/seed/words.json';
  * tombstones, no merge logic.
  */
 
-const STORAGE_KEY = 'emotionary.content.v1';
+// v2: adds free_order. Bumping the key makes updated apps refetch instead of
+// trusting a v1 cache that has no free_order (its stamp could still match).
+const STORAGE_KEY = 'emotionary.content.v2';
 const rawBundledSeed = seedJson as unknown as ContentSnapshot;
 const bundledSeed: ContentSnapshot = {
   ...rawBundledSeed,
   words: normalizeWordList(rawBundledSeed.words),
 };
 
-const WORD_COLUMNS =
-  'id,slug,word,pronunciation,language,type,level,definition,wisdom,is_free,published_at,updated_at';
+const BASE_COLUMNS =
+  'id,slug,word,pronunciation,language,type,level,definition,wisdom,is_free,audio_url,published_at,updated_at';
+const WORD_COLUMNS = `${BASE_COLUMNS},free_order`;
 
 interface ContentState {
   words: Word[];
   stamp: ContentStamp;
   hydrated: boolean;
+  /**
+   * True once `words` is known to match the server (loaded from a synced cache,
+   * or confirmed/replaced by sync). The bundled seed alone is not verified.
+   */
+  verified: boolean;
   hydrate: () => Promise<void>;
   sync: () => Promise<void>;
 }
@@ -52,8 +60,15 @@ async function fetchStamp(): Promise<ContentStamp | null> {
 }
 
 async function fetchSnapshot(stamp: ContentStamp): Promise<ContentSnapshot | null> {
-  const url = `${SUPABASE_URL}/rest/v1/words?select=${WORD_COLUMNS}&order=slug.asc`;
-  const res = await fetch(url, { headers: restHeaders() });
+  const query = (columns: string) =>
+    fetch(`${SUPABASE_URL}/rest/v1/words?select=${columns}&order=slug.asc`, {
+      headers: restHeaders(),
+    });
+  let res = await query(WORD_COLUMNS);
+  // A database without the free_order column rejects the whole request (400).
+  // Retry without it so is_free still comes from Supabase instead of leaving
+  // the device on the bundled seed. Free words then sort alphabetically.
+  if (res.status === 400) res = await query(BASE_COLUMNS);
   if (!res.ok) return null;
   const words = normalizeWordList((await res.json()) as Word[]);
   // Guard: never replace the store with an empty result — a misconfigured
@@ -68,6 +83,7 @@ export const useContentStore = create<ContentState>()((set, get) => ({
   words: bundledSeed.words,
   stamp: bundledSeed.stamp,
   hydrated: false,
+  verified: false,
 
   hydrate: async () => {
     try {
@@ -75,7 +91,7 @@ export const useContentStore = create<ContentState>()((set, get) => ({
       if (raw) {
         const cached = JSON.parse(raw) as ContentSnapshot;
         if (Array.isArray(cached.words) && cached.words.length > 0) {
-          set({ words: normalizeWordList(cached.words), stamp: cached.stamp });
+          set({ words: normalizeWordList(cached.words), stamp: cached.stamp, verified: true });
         }
       }
     } catch {
@@ -93,10 +109,13 @@ export const useContentStore = create<ContentState>()((set, get) => ({
         const remote = await fetchStamp();
         if (!remote) return;
         const local = get().stamp;
-        if (remote.maxUpdatedAt === local.maxUpdatedAt && remote.count === local.count) return;
+        if (remote.maxUpdatedAt === local.maxUpdatedAt && remote.count === local.count) {
+          set({ verified: true });
+          return;
+        }
         const snapshot = await fetchSnapshot(remote);
         if (!snapshot) return;
-        set({ words: snapshot.words, stamp: snapshot.stamp });
+        set({ words: snapshot.words, stamp: snapshot.stamp, verified: true });
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
       } catch {
         // offline or transient failure — the cached/bundled content stands

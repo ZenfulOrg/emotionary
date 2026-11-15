@@ -2,7 +2,8 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import type { Word } from '@/content/types';
-import { addDays, localDateString, monthKey, wordOfDay } from '@/daily/engine';
+import { addDays, daysSinceEpoch, localDateString, monthKey, wordOfDay } from '@/daily/engine';
+import { canBrowseWord } from '@/entitlements';
 import type { NotifTime } from '@/store/userStore';
 import type { StreakState } from '@/store/streak';
 
@@ -15,7 +16,12 @@ import type { StreakState } from '@/store/streak';
  * foreground / settings change — one code path self-heals everything.
  */
 
-export const CHANNEL_ID = 'daily-word';
+// Android fixes a channel's sound when it's created, so the chime needs a new
+// channel id; the old one is deleted so Settings doesn't show two.
+export const CHANNEL_ID = 'daily-word-chime';
+const LEGACY_CHANNEL_IDS = ['daily-word'] as const;
+/** Bundled via the expo-notifications config plugin (app.json). */
+export const NOTIFICATION_SOUND = 'emotionary_chime.wav';
 const MAX_SLOTS = 38;
 const STREAK_RESCUE_TIME: NotifTime = { hour: 20, minute: 0 };
 
@@ -33,9 +39,13 @@ export function configureNotificationHandler(): void {
 
 export async function ensureChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
+  for (const id of LEGACY_CHANNEL_IDS) {
+    await Notifications.deleteNotificationChannelAsync(id).catch(() => {});
+  }
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
     name: 'Daily word',
     importance: Notifications.AndroidImportance.DEFAULT,
+    sound: NOTIFICATION_SOUND,
     // No exact-alarm permissions by design — delivery is "around" the chosen
     // time (Android 14+ denies SCHEDULE_EXACT_ALARM to this app category).
   });
@@ -74,6 +84,41 @@ interface RebuildArgs {
   time: NotifTime;
   enabled: boolean;
   streakState: StreakState;
+  hasFullAccess: boolean;
+  /** Words this free user keeps (read or saved while free). */
+  kept: readonly string[];
+}
+
+/** Teaser lines for a paid daily word on the free plan, rotated by date. */
+const TEASERS = [
+  'Tap to discover what it means.',
+  'A feeling you know, finally named. Tap to see it.',
+  'Do you know what it means? Tap to find out.',
+  "Today's word is waiting to be understood.",
+] as const;
+
+/**
+ * The daily notification. Everyone gets today's word; when the word is paid
+ * and the user is on the free plan, the meaning stays inside the app (the
+ * tap opens the unlock page) and the body is a teaser instead.
+ */
+export function dailyNotificationContent(
+  word: Word,
+  localDate: string,
+  unlocked: boolean,
+): { title: string; body: string; data: Record<string, string> } {
+  if (unlocked) {
+    return {
+      title: `Today's word: ${word.word}`,
+      body: notificationBody(word.definition),
+      data: { url: '/', slug: word.slug },
+    };
+  }
+  return {
+    title: `Today's word: ${word.word}`,
+    body: TEASERS[daysSinceEpoch(localDate) % TEASERS.length],
+    data: { url: `/unlock/${word.slug}`, slug: word.slug, teaser: '1' },
+  };
 }
 
 export function streakRescueDate(streakState: StreakState): Date | null {
@@ -81,7 +126,15 @@ export function streakRescueDate(streakState: StreakState): Date | null {
   return fireDate(addDays(streakState.lastOpenDate, 1), STREAK_RESCUE_TIME);
 }
 
-async function doRebuild({ words, time, enabled, streakState }: RebuildArgs): Promise<void> {
+async function doRebuild({
+  words,
+  time,
+  enabled,
+  streakState,
+  hasFullAccess,
+  kept,
+}: RebuildArgs): Promise<void> {
+  const keptSet = new Set(kept);
   if (Platform.OS === 'web') return;
   const granted = await getPermissionGranted();
   await Notifications.cancelAllScheduledNotificationsAsync();
@@ -97,6 +150,7 @@ async function doRebuild({ words, time, enabled, streakState }: RebuildArgs): Pr
         title: 'Last chance!',
         body: 'If you skip today, your learning streak will be gone. Open the app to keep your streak!',
         data: { url: '/', reason: 'streak-rescue' },
+        sound: NOTIFICATION_SOUND,
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -118,17 +172,16 @@ async function doRebuild({ words, time, enabled, streakState }: RebuildArgs): Pr
     const worded = monthKey(date) === monthKey(today);
     const word = worded ? wordOfDay(words, date, cache) : null;
     await Notifications.scheduleNotificationAsync({
-      content: word
-        ? {
-            title: `Today's word: ${word.word}`,
-            body: notificationBody(word.definition),
-            data: { url: '/', slug: word.slug },
-          }
-        : {
-            title: 'Your word of the day is waiting ✳',
-            body: 'Open Emotionary to reveal it.',
-            data: { url: '/' },
-          },
+      content: {
+        ...(word
+          ? dailyNotificationContent(word, date, canBrowseWord(word, hasFullAccess, keptSet))
+          : {
+              title: 'Your word of the day is waiting ✳',
+              body: 'Open Emotionary to reveal it.',
+              data: { url: '/' },
+            }),
+        sound: NOTIFICATION_SOUND,
+      },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
         date: fireDate(date, time),

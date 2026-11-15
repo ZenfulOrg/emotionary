@@ -6,7 +6,8 @@ import { Body, Button, Eyebrow, Headline, Screen, ScreenHeader } from '@/compone
 import { WordFull, WordTitle } from '@/components/WordFull';
 import { findWord, useContentStore } from '@/content/store';
 import { localDateString, wordOfDay } from '@/daily/engine';
-import { canViewWord } from '@/entitlements';
+import { wordAccess } from '@/entitlements';
+import { useKeptSlugs } from '@/store/useKeptSlugs';
 import { useUserStore } from '@/store/userStore';
 import { layout, levelPalettes, space } from '@/theme/tokens';
 
@@ -16,10 +17,12 @@ export default function WordDetailScreen() {
   const sync = useContentStore((s) => s.sync);
   const markRead = useUserStore((s) => s.markRead);
   const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
+  const kept = useKeptSlugs();
 
   const word = slug ? findWord(words, slug) : undefined;
   const todaysSlug = wordOfDay(words, localDateString())?.slug ?? null;
-  const locked = word ? !canViewWord(word, todaysSlug, hasFullAccess) : false;
+  const access = word ? wordAccess(word, todaysSlug, hasFullAccess, kept) : 'full';
+  const locked = access === 'locked';
 
   useFocusEffect(
     useCallback(() => {
@@ -73,7 +76,7 @@ export default function WordDetailScreen() {
   return (
     <Screen background={levelPalettes[word.level].tint}>
       {header}
-      <WordFull word={word} />
+      <WordFull word={word} meaningLocked={access === 'teaser'} />
     </Screen>
   );
 }

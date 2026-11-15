@@ -18,6 +18,14 @@ export const SUPABASE_URL =
 export const SUPABASE_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? PRODUCTION_SUPABASE_PUBLISHABLE_KEY;
 
+/**
+ * Native Google sign-in (iOS client in the Emotionary Google Cloud project,
+ * emotionarybook.com). Safe to ship: it identifies the app, it is not a secret.
+ * Supabase's Google provider lists it under Client IDs.
+ */
+export const GOOGLE_IOS_CLIENT_ID =
+  '474338681804-q7omaadp5tjlpde416ch9ip7ad6ek52v.apps.googleusercontent.com';
+
 export const syncEnabled = SUPABASE_URL.length > 0 && SUPABASE_PUBLISHABLE_KEY.length > 0;
 
 /**

@@ -3,6 +3,17 @@
     "name": "Emotionary",
     "slug": "emotionary",
     "version": "1.7.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "emotionary",
@@ -104,7 +115,14 @@
           "imageWidth": 240
         }
       ],
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/sounds/emotionary_chime.wav"
+          ]
+        }
+      ],
       "expo-apple-authentication",
       [
         "expo-media-library",
@@ -176,7 +194,21 @@
         }
       ],
       "expo-font",
-      "./plugins/with-android-release-signing"
+      "./plugins/with-android-release-signing",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
+      ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.474338681804-q7omaadp5tjlpde416ch9ip7ad6ek52v"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

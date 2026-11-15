@@ -8,10 +8,12 @@ export function TermsCheckbox({
   value,
   onValueChange,
   testID,
+  size = 22,
 }: {
   value: boolean;
   onValueChange: (value: boolean) => void;
   testID?: string;
+  size?: number;
 }) {
   const ground = useGround();
   return (
@@ -22,24 +24,23 @@ export function TermsCheckbox({
       }}
       style={[
         styles.box,
-        { borderColor: ground.text },
-        value && { backgroundColor: ground.text },
+        { width: size, height: size, borderColor: ground.textMuted },
+        value && { backgroundColor: ground.text, borderColor: ground.text },
       ]}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: value }}
       accessibilityLabel="Agree to the Terms of Use and Privacy Policy"
-      hitSlop={11}
+      // Keep a full 44pt target however small the box is drawn.
+      hitSlop={Math.max(11, Math.ceil((44 - size) / 2))}
       testID={testID}
     >
-      {value && <Glyph name="check" size={16} strokeWidth={2} color={ground.background} />}
+      {value && <Glyph name="check" size={Math.round(size * 0.72)} strokeWidth={2} color={ground.background} />}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   box: {
-    width: 22,
-    height: 22,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',

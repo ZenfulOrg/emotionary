@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, type Href, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, PixelRatio, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,9 +6,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { findWord, useContentStore } from '@/content/store';
 import { Button, Eyebrow, IconButton, Mono, Separator, useGroundStatusBar } from '@/components/brand';
 import { localDateString, wordOfDay } from '@/daily/engine';
-import { canViewWord } from '@/entitlements';
+import { wordAccess } from '@/entitlements';
 import { lightImpactHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
 import { CARD_BASE_HEIGHT, CARD_BASE_WIDTH, ShareCard, SHARE_THEMES } from '@/share/ShareCard';
+import { useKeptSlugs } from '@/store/useKeptSlugs';
 import { useUserStore } from '@/store/userStore';
 import { GroundProvider } from '@/theme/ground';
 import { grounds, layout, scrim, space } from '@/theme/tokens';
@@ -21,6 +22,7 @@ export default function ShareModal() {
   const words = useContentStore((s) => s.words);
   const recordShare = useUserStore((s) => s.recordShare);
   const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
+  const kept = useKeptSlugs();
   const { width: winW, height: winH } = useWindowDimensions();
   useGroundStatusBar('ink');
   const insets = useSafeAreaInsets();
@@ -35,11 +37,13 @@ export default function ShareModal() {
 
   const word = slug ? findWord(words, slug) : undefined;
   const todaysSlug = wordOfDay(words, localDateString())?.slug ?? null;
-  const locked = word ? demo !== '1' && !canViewWord(word, todaysSlug, hasFullAccess) : false;
+  // Share cards show the meaning, so they need full access to the word.
+  const access = word ? wordAccess(word, todaysSlug, hasFullAccess, kept) : 'full';
+  const locked = demo !== '1' && access !== 'full';
 
   useEffect(() => {
-    if (locked) router.replace('/paywall');
-  }, [locked]);
+    if (locked) router.replace((access === 'teaser' && slug ? `/unlock/${slug}` : '/paywall') as Href);
+  }, [locked, access, slug]);
 
   if (!word) {
     router.back();

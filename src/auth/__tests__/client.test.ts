@@ -13,6 +13,8 @@ import {
   signOut,
   resendSignupCode,
   refreshComplimentaryAccess,
+  requestPasswordReset,
+  resetPasswordWithCode,
   verifySignupCode,
 } from '@/auth/client';
 
@@ -31,7 +33,19 @@ jest.mock('expo-apple-authentication', () => ({
   AppleAuthenticationScope: { FULL_NAME: 0, EMAIL: 1 },
   signInAsync: jest.fn(),
 }));
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: {
+    configure: jest.fn(),
+    signOut: jest.fn(async () => null),
+    signIn: jest.fn(),
+    getTokens: jest.fn(async () => ({ idToken: 'google-id-token', accessToken: 'google-access-token' })),
+  },
+  isSuccessResponse: (r: { type: string }) => r.type === 'success',
+  isErrorWithCode: (e: unknown) => typeof (e as { code?: unknown })?.code === 'string',
+  statusCodes: { SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED', IN_PROGRESS: 'IN_PROGRESS' },
+}));
 jest.mock('@/config', () => ({
+  GOOGLE_IOS_CLIENT_ID: 'ios-client.apps.googleusercontent.com',
   SUPABASE_URL: 'https://example.supabase.co',
   SUPABASE_PUBLISHABLE_KEY: 'publishable-test-key',
   syncEnabled: true,
@@ -123,6 +137,56 @@ describe('auth client', () => {
     );
   });
 
+  test('resets a password: recovery code, new password, then a saved session', async () => {
+    mockFetch
+      .mockResolvedValueOnce(response({}))
+      .mockResolvedValueOnce(
+        response({ access_token: 'reset-access', refresh_token: 'reset-refresh', user: { email: 'me@example.com' } }),
+      )
+      .mockResolvedValueOnce(response({ id: 'user' }));
+
+    await requestPasswordReset(' Me@Example.com ');
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      1,
+      'https://example.supabase.co/auth/v1/recover',
+      expect.objectContaining({ body: JSON.stringify({ email: 'me@example.com' }) }),
+    );
+
+    await expect(resetPasswordWithCode('me@example.com', '123 456', 'new-password-1')).resolves.toEqual({
+      email: 'me@example.com',
+    });
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      2,
+      'https://example.supabase.co/auth/v1/verify',
+      expect.objectContaining({
+        body: JSON.stringify({ email: 'me@example.com', token: '123456', type: 'recovery' }),
+      }),
+    );
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      3,
+      'https://example.supabase.co/auth/v1/user',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ password: 'new-password-1' }),
+        headers: expect.objectContaining({ Authorization: 'Bearer reset-access' }),
+      }),
+    );
+    expect(mockSetItem).toHaveBeenCalledWith(
+      'emotionary.auth.session.v1',
+      JSON.stringify({ accessToken: 'reset-access', refreshToken: 'reset-refresh', email: 'me@example.com' }),
+    );
+  });
+
+  test('does not sign in when the new password is rejected', async () => {
+    mockFetch
+      .mockResolvedValueOnce(response({ access_token: 'reset-access', refresh_token: 'reset-refresh' }))
+      .mockResolvedValueOnce(response({ msg: 'Password is too weak.', error_code: 'weak_password' }, false));
+    await expect(resetPasswordWithCode('me@example.com', '123456', 'new-password-1')).rejects.toThrow(
+      'Password is too weak. Request a new code and try again.',
+    );
+    expect(mockSetItem).not.toHaveBeenCalled();
+  });
+
   test('exchanges an Apple identity token and saves the Supabase session', async () => {
     const AppleAuthentication = jest.requireMock('expo-apple-authentication') as typeof import('expo-apple-authentication');
     const mockAppleSignIn = AppleAuthentication.signInAsync as jest.MockedFunction<
@@ -157,7 +221,51 @@ describe('auth client', () => {
     );
   });
 
-  test('completes Google OAuth from the native callback fragment', async () => {
+  test('iOS: exchanges a native Google ID token and saves the Supabase session', async () => {
+    const { GoogleSignin } = jest.requireMock('@react-native-google-signin/google-signin') as {
+      GoogleSignin: { configure: jest.Mock; signIn: jest.Mock };
+    };
+    GoogleSignin.signIn.mockResolvedValue({
+      type: 'success',
+      data: { idToken: 'google-id-token', user: { email: 'google@example.com' } },
+    });
+    mockFetch.mockResolvedValue(
+      response({
+        access_token: 'google-access',
+        refresh_token: 'google-refresh',
+        user: { email: 'google@example.com' },
+      }),
+    );
+
+    await expect(signInWithGoogle()).resolves.toEqual({ email: 'google@example.com' });
+    expect(GoogleSignin.configure).toHaveBeenCalledWith({
+      iosClientId: 'ios-client.apps.googleusercontent.com',
+    });
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://example.supabase.co/auth/v1/token?grant_type=id_token',
+      expect.objectContaining({
+        body: JSON.stringify({
+          provider: 'google',
+          id_token: 'google-id-token',
+          access_token: 'google-access-token',
+        }),
+      }),
+    );
+    expect(mockOpenAuthSession).not.toHaveBeenCalled();
+  });
+
+  test('iOS: a cancelled Google sheet resolves null without contacting Supabase', async () => {
+    const { GoogleSignin } = jest.requireMock('@react-native-google-signin/google-signin') as {
+      GoogleSignin: { signIn: jest.Mock };
+    };
+    GoogleSignin.signIn.mockResolvedValue({ type: 'cancelled', data: null });
+    await expect(signInWithGoogle()).resolves.toBeNull();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test('Android: completes Google OAuth from the native callback fragment', async () => {
+    const { Platform } = jest.requireActual('react-native') as typeof import('react-native');
+    const restoreOs = jest.replaceProperty(Platform, 'OS', 'android');
     const jwtPayload = 'eyJlbWFpbCI6Imdvb2dsZUBleGFtcGxlLmNvbSJ9';
     const accessToken = `header.${jwtPayload}.signature`;
     mockOpenAuthSession.mockResolvedValue({
@@ -182,6 +290,7 @@ describe('auth client', () => {
         email: 'google@example.com',
       }),
     );
+    restoreOs.restore();
   });
 
   test('completes an email confirmation deep link and exposes the signed-in account', async () => {

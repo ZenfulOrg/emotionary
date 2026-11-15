@@ -1,4 +1,5 @@
 import type { Word } from '@/content/types';
+import type { WidgetAccess } from '@/widgets/access';
 
 /**
  * Web variant: widgets are iOS-only, and the widget module pulls
@@ -8,6 +9,7 @@ import type { Word } from '@/content/types';
 export function refreshDailyWordWidget(
   _words: readonly Word[],
   _favorites: readonly string[] = [],
+  _access?: WidgetAccess,
 ): void {
   // no-op off iOS
 }

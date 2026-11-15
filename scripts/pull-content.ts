@@ -29,7 +29,7 @@ const BACKDATED_PUBLISHED_AT = '2026-01-01T00:00:00.000Z';
 const LOCAL_UPDATED_AT = '2026-07-01T00:00:00.000Z';
 
 const WORD_COLUMNS =
-  'id,slug,word,pronunciation,language,type,level,definition,wisdom,is_free,published_at,updated_at';
+  'id,slug,word,pronunciation,language,type,level,definition,wisdom,is_free,free_order,audio_url,published_at,updated_at';
 
 interface SeedWord {
   id: string;
@@ -42,6 +42,8 @@ interface SeedWord {
   definition: string;
   wisdom: string;
   is_free: boolean;
+  free_order?: number | null;
+  audio_url?: string | null;
   published_at: string;
   updated_at: string;
 }

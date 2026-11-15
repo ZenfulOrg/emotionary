@@ -4,7 +4,7 @@ export default function PrivacyPolicyScreen() {
   return (
     <LegalDocument
       title="Privacy Policy"
-      effectiveDate="October 15, 2026"
+      effectiveDate="November 13, 2026"
       intro="Emotionary is designed as a quiet, private daily ritual. This policy explains the limited information the app handles and the choices available to you."
       sections={[
         {
@@ -12,12 +12,14 @@ export default function PrivacyPolicyScreen() {
           paragraphs: [
             'If you create an account, we process your name when supplied by your sign-in provider, your email address, and the account identifier supplied by Apple, Google, or email sign-in. Our authentication provider may also process routine technical information, such as IP address and device or browser details, to operate and protect sign-in.',
             'Your favorite words, streak, reminder time, app preferences, and reading activity are stored on your device. Emotionary does not currently use advertising, third-party analytics, or cross-app tracking.',
+            'To understand how features are used, the app sends an anonymous status to our Supabase database about once a day: device platform, app version, whether you are on the free or paid plan, whether notifications and the daily reminder are on, and how many Emotionary widgets are installed. It uses a random identifier created on your device, is not linked to your account, name, or email, and is not used for advertising or tracking.',
           ],
         },
         {
           heading: 'How information is used',
           paragraphs: [
-            'Account information is used only to create, secure, and manage your Emotionary account. Local app data is used to provide favorites, progress, reminders, and your daily-word experience.',
+            'Account information is used to create, secure, and manage your Emotionary account, and to send you occasional emails about Emotionary, such as new words, features, and offers. Local app data is used to provide favorites, progress, reminders, and your daily-word experience.',
+            'You can stop marketing emails at any time with the unsubscribe link in any email or the Marketing emails switch in Settings. We will still send messages needed to operate your account, such as sign-in codes. We do not sell or share your email address for others to market to you.',
             'When you choose to download a word card, the app requests write-only photo-library access to save that image. Notifications are scheduled on your device after you grant permission. You can change either permission in Android Settings.',
           ],
         },

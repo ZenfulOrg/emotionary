@@ -13,14 +13,11 @@ const PLANS: Record<Plan, { title: string; body: string; eyebrow?: string }> = {
   lifetime: { title: 'Lifetime', body: 'One time, yours to keep.', eyebrow: 'Best value' },
 };
 
-/** Full access, on cream: two square plans and the round CTA, last. */
-export function Paywall({
-  onContinue,
-  onContinueFree,
-}: {
-  onContinue: () => void;
-  onContinueFree: () => void;
-}) {
+/**
+ * Store prices, plan choice and the purchase itself, shared by the full
+ * paywall and the unlock sheet so both behave the same.
+ */
+export function usePlanPurchase(onPurchased: () => void) {
   const [plan, setPlan] = useState<Plan>('lifetime');
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [trialDays, setTrialDays] = useState(0);
@@ -31,14 +28,20 @@ export function Paywall({
   const operation = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
-  const reload = () => loadProducts().then((products) => {
+  const load = () => loadProducts().then((products) => {
     setPrices(Object.fromEntries(products.map((product) => [product.id, product.displayPrice])));
     setTrialDays(products.find((product) => product.id === PRODUCT_IDS.yearly)?.freeTrialDays ?? 0);
     if (!products.length) setError('Purchases are temporarily unavailable. You can continue free and try again later.');
   }).catch(() => {
     setError('Unable to reach the store. Check your connection or continue free.');
   }).finally(() => setLoading(false));
-  useEffect(() => { void reload(); }, []);
+  useEffect(() => { void load(); }, []);
+
+  const reload = () => {
+    setLoading(true);
+    setError(null);
+    void load();
+  };
 
   const unlock = async () => {
     if (operation.current || !prices[PRODUCT_IDS[plan]]) return;
@@ -49,7 +52,7 @@ export function Paywall({
       const result = await purchasePlan(plan);
       if (result.status === 'purchased' && result.active) {
         successHaptic();
-        onContinue();
+        onPurchased();
       } else if (result.status === 'pending') {
         Alert.alert('Purchase pending', 'Your store is waiting for approval. Full access will appear automatically when the purchase completes.');
       } else if (result.status === 'purchased') {
@@ -60,17 +63,41 @@ export function Paywall({
     } finally { operation.current = false; setBusy(false); }
   };
 
+  return { plan, setPlan, prices, trialDays, yearlyTrial, store, loading, busy, error, reload, unlock };
+}
+
+/** Full access, on cream: two square plans and the round CTA, last. */
+export function Paywall({
+  onContinue,
+  onContinueFree,
+  eyebrow = 'Full access',
+  title = 'Every word,\nevery month.',
+  subtitle,
+  freeLabel = 'Continue free',
+  showPlanets = true,
+}: {
+  onContinue: () => void;
+  onContinueFree: () => void;
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  freeLabel?: string;
+  showPlanets?: boolean;
+}) {
+  const { plan, setPlan, prices, trialDays, yearlyTrial, store, loading, busy, error, reload, unlock } =
+    usePlanPurchase(onContinue);
+
   return (
     <View style={styles.wrap}>
-      <View style={styles.planets}><Planets /></View>
-      <Eyebrow style={styles.centeredText}>Full access</Eyebrow>
+      {showPlanets && <View style={styles.planets}><Planets /></View>}
+      <Eyebrow style={styles.centeredText}>{eyebrow}</Eyebrow>
       <Headline size={48} style={styles.title}>
-        Every word,{'\n'}every month.
+        {title}
       </Headline>
       <Body tone="muted" style={styles.subtitle}>
-        {Platform.OS === 'android'
+        {subtitle ?? (Platform.OS === 'android'
           ? 'The full emotional vocabulary dictionary and future word updates.'
-          : 'The full emotional vocabulary dictionary, every widget theme, and future word updates.'}
+          : 'The full emotional vocabulary dictionary, every widget theme, and future word updates.')}
       </Body>
 
       <View style={styles.options} accessibilityRole="radiogroup">
@@ -100,14 +127,14 @@ export function Paywall({
       </View>
 
       {error && <Body size={14} tone="muted" style={styles.notice}>{error}</Body>}
-      {!loading && !prices[PRODUCT_IDS[plan]] && <Button label="Try again" variant="link" disabled={busy} onPress={() => { setLoading(true); setError(null); void reload(); }} />}
+      {!loading && !prices[PRODUCT_IDS[plan]] && <Button label="Try again" variant="link" disabled={busy} onPress={reload} />}
       {(Platform.OS === 'android' || yearlyTrial) && plan === 'yearly' && <Body size={14} tone="muted" style={styles.notice}>
         {yearlyTrial
           ? `Cancel in ${store} before the ${trialDays}-day trial ends to avoid the yearly charge. Subscription renews yearly until canceled.`
           : `Subscription renews yearly until canceled. Manage or cancel anytime in ${store}.`}
       </Body>}
       <View style={styles.actions}>
-        <Button label="Continue free" variant="link" disabled={busy} onPress={onContinueFree} />
+        <Button label={freeLabel} variant="link" disabled={busy} onPress={onContinueFree} />
         <RoundCta
           label={busy ? 'Working…' : plan === 'yearly' ? yearlyTrial ? 'Start free trial' : 'Subscribe' : 'Buy lifetime'}
           disabled={busy || loading || !prices[PRODUCT_IDS[plan]]}

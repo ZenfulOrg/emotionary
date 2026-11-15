@@ -20,23 +20,26 @@ export function StreakPopup({
   streak,
   wilted,
   onDismiss,
+  enterDelay = 0,
 }: {
   streak: number;
   wilted: boolean;
   onDismiss: () => void;
+  /** Wait for the daily word reveal to land before dropping in. */
+  enterDelay?: number;
 }) {
   const reducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   const today = new Date().getDay();
 
   useEffect(() => {
-    const timer = setTimeout(onDismiss, AUTO_DISMISS_MS);
+    const timer = setTimeout(onDismiss, AUTO_DISMISS_MS + enterDelay);
     return () => clearTimeout(timer);
-  }, [onDismiss]);
+  }, [onDismiss, enterDelay]);
 
   return (
     <Animated.View
-      entering={reducedMotion ? undefined : FadeInDown.duration(420)}
+      entering={reducedMotion ? undefined : FadeInDown.delay(enterDelay).duration(420).springify().damping(16)}
       exiting={reducedMotion ? undefined : FadeOutUp.duration(340)}
       style={[styles.layer, { top: insets.top + space.s }]}
       pointerEvents="box-none"

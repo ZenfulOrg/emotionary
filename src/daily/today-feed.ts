@@ -1,5 +1,5 @@
 import { dailyFeed } from '@/daily/feed';
-import { canViewWord, FREE_WORD_LIMIT } from '@/entitlements';
+import { freeWords } from '@/entitlements';
 import type { Word } from '@/content/types';
 
 export type TodayFeedItem =
@@ -16,12 +16,11 @@ export function buildTodayFeed(
   if (all.length === 0) return [];
 
   if (!hasFullAccess) {
-    const todaysSlug = all[0]?.slug ?? null;
-    const freeWords = all
-      .filter((word) => canViewWord(word, todaysSlug, false))
-      .slice(0, FREE_WORD_LIMIT);
+    // Today's word (always free) leads, then the free shelf in curated order.
+    const todays = all[0];
+    const shelf = freeWords(words).filter((word) => word.id !== todays.id);
     return [
-      ...freeWords.map((word) => ({ kind: 'word' as const, key: word.slug, word })),
+      ...[todays, ...shelf].map((word) => ({ kind: 'word' as const, key: word.slug, word })),
       { kind: 'upgrade' as const, key: 'upgrade' as const },
     ];
   }

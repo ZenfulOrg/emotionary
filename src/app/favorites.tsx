@@ -6,6 +6,7 @@ import { WordCard } from '@/components/WordCard';
 import { findWord, useContentStore } from '@/content/store';
 import { localDateString, wordOfDay } from '@/daily/engine';
 import { canViewWord } from '@/entitlements';
+import { useKeptSlugs } from '@/store/useKeptSlugs';
 import { useUserStore } from '@/store/userStore';
 import { layout, space } from '@/theme/tokens';
 
@@ -14,6 +15,7 @@ export default function FavoritesScreen() {
   const words = useContentStore((s) => s.words);
   const favorites = useUserStore((s) => s.favorites);
   const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
+  const kept = useKeptSlugs();
   const todaysSlug = wordOfDay(words, localDateString())?.slug ?? null;
 
   const favoriteWords = favorites
@@ -33,7 +35,7 @@ export default function FavoritesScreen() {
         data={favoriteWords}
         keyExtractor={(w) => w.slug}
         renderItem={({ item }) => (
-          <WordCard word={item} locked={!canViewWord(item, todaysSlug, hasFullAccess)} />
+          <WordCard word={item} locked={!canViewWord(item, todaysSlug, hasFullAccess, kept)} />
         )}
         ListHeaderComponent={
           <PageTitle

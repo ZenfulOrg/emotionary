@@ -14,6 +14,10 @@ export interface Word {
   definition: string;
   wisdom: string;
   is_free: boolean;
+  /** Position on the free shelf (1 = first); null/absent sorts last. */
+  free_order?: number | null;
+  /** Recorded pronunciation; preferred over on-device speech when present. */
+  audio_url?: string | null;
   published_at: string; // ISO timestamp; drives the monthly rotation freeze
   updated_at: string;
 }

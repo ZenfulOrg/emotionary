@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -8,7 +8,19 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import Animated, { Easing, FadeInDown, FadeOutUp, useReducedMotion } from 'react-native-reanimated';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  FadeInDown,
+  FadeOutUp,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { useAuthForm } from '@/auth/useAuthForm';
 import { AuthForm } from '@/components/AuthForm';
@@ -92,7 +104,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
 export default function OnboardingScreen() {
   const [step, setStep] = useState(0);
-  const [selectedDrawnTo, setSelectedDrawnTo] = useState<string[]>(['Sensations']);
+  const [selectedDrawnTo, setSelectedDrawnTo] = useState<string[]>([]);
   const [accountComplete, setAccountComplete] = useState(false);
   const [widgetGuide, setWidgetGuide] = useState<WidgetGuideVariant | null>(null);
   const notifTime = useUserStore((state) => state.notifTime);
@@ -162,11 +174,7 @@ export default function OnboardingScreen() {
             {page === 'reminder' && <ReminderPage notifTime={notifTime} setNotifTime={setNotifTime} />}
             {page === 'widget' && <WidgetPage onNext={goNext} onOpenGuide={setWidgetGuide} />}
             {page === 'account' && (
-              <PageCopy
-                eyebrow="Your account"
-                title="Keep your words close."
-                body="Create your Emotionary account. Saved words and reading progress stay on this device."
-              >
+              <PageCopy title="Keep your words close.">
                 <AuthForm form={authForm} showSubmit={false} />
               </PageCopy>
             )}
@@ -240,14 +248,14 @@ function PageCopy({
   body,
   children,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   body?: string;
   children?: ReactNode;
 }) {
   return (
     <View style={styles.copy}>
-      <Eyebrow style={styles.centeredText}>{eyebrow}</Eyebrow>
+      {eyebrow ? <Eyebrow style={styles.centeredText}>{eyebrow}</Eyebrow> : null}
       <Headline size={44} style={styles.title}>
         {title}
       </Headline>
@@ -268,8 +276,8 @@ function WelcomePage() {
       <Eyebrow style={styles.centeredText}>A language for being alive</Eyebrow>
       <Wordmark size={64} header style={styles.wordmark} />
       <Body tone="muted" size={type.lead + 2} style={styles.intro}>
-        One word a day. Expand your emotional palette, and recognize life&apos;s most fleeting
-        gifts.
+        One word a day.{'\n'}Expand your emotional palette, and recognize life&apos;s most
+        fleeting gifts.
       </Body>
     </View>
   );
@@ -278,9 +286,8 @@ function WelcomePage() {
 function DailyPage() {
   return (
     <PageCopy
-      eyebrow="The daily word"
       title={'One word.\nEvery day.'}
-      body="A single word arrives each day. Then keep scrolling through a fresh, random mix whenever you want to discover more."
+      body={"A single word arrives each day.\nThen keep scrolling through a fresh, random mix whenever you want to discover more."}
     >
       <Panel style={styles.notification}>
         <View
@@ -303,11 +310,10 @@ function DailyPage() {
 function KeyPage() {
   return (
     <PageCopy
-      eyebrow="The mark"
       title={'Three planets,\nalways in this order.'}
       body="A small planet always tells you where a word came from."
     >
-      <WordKey depths={false} />
+      <WordKey depths={false} sectionLabels={false} large />
     </PageCopy>
   );
 }
@@ -317,7 +323,7 @@ function DrawnPage({ selected, onToggle }: { selected: string[]; onToggle: (labe
     <PageCopy
       eyebrow="Your palette"
       title="What are you drawn to?"
-      body="Pick as many as you like. You can change this later."
+      body="Pick as many as you like."
     >
       <View style={styles.options}>
         {DRAWN_TO.map(([label, description]) => (
@@ -403,8 +409,39 @@ function WidgetPage({
           </Pressable>
         ))}
       </View>
-      <Button label="Next" glyph="forward" onPress={onNext} style={styles.skip} />
+      <ShakingNext onPress={onNext} />
     </PageCopy>
+  );
+}
+
+/**
+ * The widget slide's Next button gives a small sideways shake after a pause,
+ * then every few seconds, so people notice they can move on. Still under
+ * Reduce Motion.
+ */
+function ShakingNext({ onPress }: { onPress: () => void }) {
+  const reducedMotion = useReducedMotion();
+  const offset = useSharedValue(0);
+
+  useEffect(() => {
+    if (reducedMotion) return;
+    const step = (to: number) => withTiming(to, { duration: 60, easing: Easing.inOut(Easing.quad) });
+    offset.value = withDelay(
+      1200,
+      withRepeat(
+        withSequence(step(-7), step(7), step(-5), step(5), step(-2), step(0), withDelay(2600, step(0))),
+        -1,
+      ),
+    );
+    return () => cancelAnimation(offset);
+  }, [reducedMotion, offset]);
+
+  const shake = useAnimatedStyle(() => ({ transform: [{ translateX: offset.value }] }));
+
+  return (
+    <Animated.View style={[styles.skip, shake]}>
+      <Button label="Next" glyph="forward" onPress={onPress} />
+    </Animated.View>
   );
 }
 
@@ -427,7 +464,7 @@ function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
         <Rule style={styles.firstRule} />
         <View style={styles.pronunciation}>
           <Mono size={14}>V. · /meh-RAH-kee/</Mono>
-          <PronunciationButton word="Meraki" />
+          <PronunciationButton word="Meraki" language="Greek" />
         </View>
         <WordTitle centered word={{ word: 'Meraki', language: 'Greek', level: 1 }} />
         <Body size={type.definition} style={styles.definition}>

@@ -12,10 +12,13 @@ const STROKES = {
   scrolls: 'M7 7l10 10M17 9v8H9',
   back: 'M19 12H5M11 6l-6 6 6 6',
   forward: 'M5 12h14M13 6l6 6-6 6',
+  up: 'M12 19V5M6 11l6-6 6 6',
   spark: 'M4 13c2.5-4 5-4 8-1s5.5 3 8-1',
   menu: 'M4 9h16M4 15h16',
   close: 'M6 6l12 12M18 6 6 18',
   check: 'M5 12.5l5 4.5 9-10',
+  // An open padlock: the shackle lifted, ready to reveal.
+  unlock: 'M8 11V7.5a4 4 0 0 1 7.6-1.8M5.5 11h13v9.5h-13zM12 14.5v2.5',
   plus: 'M12 5v14M5 12h14',
   minus: 'M5 12h14',
   pause: 'M9 6v12M15 6v12',
@@ -58,7 +61,12 @@ export function Glyph({
       ) : name === 'heartFilled' ? (
         <Path d={HEART} {...stroke} fill={tint} />
       ) : name === 'listen' ? (
-        <Path d="M14.5 4a8 8 0 0 0 0 16Z" fill={tint} />
+        <>
+          {/* The half-moon "speaker", with two sound waves so it reads as a play-sound button. */}
+          <Path d="M9 5a7 7 0 0 0 0 14Z" fill={tint} />
+          <Path d="M11.9 8.6a4.5 4.5 0 0 1 0 6.8" {...stroke} />
+          <Path d="M14.5 5.6a8.5 8.5 0 0 1 0 12.8" {...stroke} />
+        </>
       ) : (
         <>
           <Path d={STROKES[name]} {...stroke} />
