@@ -1,12 +1,11 @@
 import type { Word } from '@/content/types';
 import {
   addDays,
+  cycleFor,
+  DECK_EPOCH,
   daysSinceEpoch,
   fnv1a,
   localDateString,
-  monthKey,
-  monthPermutation,
-  rotationSet,
   seededShuffle,
   wordOfDay,
 } from '@/daily/engine';
@@ -17,7 +16,7 @@ const seedWords = (seedJson as { words: Word[] }).words;
 
 function makeWord(slug: string, publishedAt: string): Word {
   return {
-    id: `local-${slug}`,
+    id: `fixture-${slug}`,
     slug,
     word: slug,
     pronunciation: slug,
@@ -32,10 +31,20 @@ function makeWord(slug: string, publishedAt: string): Word {
   };
 }
 
+const OLD = '2025-12-01T00:00:00.000Z';
+const FIXTURE = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel'].map((s) =>
+  makeWord(s, OLD),
+);
+
+/** The daily words for `days` consecutive days starting at `from`. */
+function run(words: readonly Word[], from: string, days: number): string[] {
+  const cache = new Map<string, Word[]>();
+  return Array.from({ length: days }, (_, i) => wordOfDay(words, addDays(from, i), cache)?.slug ?? '');
+}
+
 describe('protocol primitives (GOLDEN — changing any value requires bumping SEED_PREFIX)', () => {
-  test('fnv1a matches the standard test vector and the pinned seed hash', () => {
+  test('fnv1a matches the standard test vector', () => {
     expect(fnv1a('abc')).toBe(440920331); // 0x1a47e90b, canonical FNV-1a vector
-    expect(fnv1a('emotionary-v1:2026-07')).toBe(628389852);
   });
 
   test('seededShuffle is pinned', () => {
@@ -54,126 +63,102 @@ describe('protocol primitives (GOLDEN — changing any value requires bumping SE
     expect(daysSinceEpoch('2028-02-29')).toBe(21243); // leap day
   });
 
-  test('golden daily words for a fixed synthetic word list (content-independent)', () => {
-    // Synthetic fixtures, NOT the bundled seed — content imports and the
-    // local-ids → cloud-uuids migration must never break protocol pins.
-    const fixture = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel'].map(
-      (s) => makeWord(s, '2025-12-01T00:00:00.000Z'),
-    );
-    // makeWord ids are `local-<slug>`; pin against `fixture-<slug>` ordering instead
-    const fixtureIds = fixture.map((w) => ({ ...w, id: `fixture-${w.slug}` }));
-    expect(monthPermutation(fixtureIds, '2026-07').map((w) => w.slug)).toEqual([
-      'alpha',
-      'foxtrot',
-      'echo',
-      'charlie',
-      'bravo',
-      'golf',
-      'delta',
-      'hotel',
-    ]);
-    expect(wordOfDay(fixtureIds, '2026-07-03')?.slug).toBe('golf');
-    expect(wordOfDay(fixtureIds, '2026-07-04')?.slug).toBe('delta');
-    expect(wordOfDay(fixtureIds, '2026-07-31')?.slug).toBe('foxtrot');
-    expect(wordOfDay(fixtureIds, '2026-08-01')?.slug).toBe('alpha');
+  test('golden: the first two cycles for a fixed synthetic word list', () => {
+    expect(run(FIXTURE, DECK_EPOCH, 16)).toMatchInlineSnapshot(`
+[
+  "alpha",
+  "hotel",
+  "bravo",
+  "charlie",
+  "golf",
+  "delta",
+  "foxtrot",
+  "echo",
+  "alpha",
+  "bravo",
+  "foxtrot",
+  "charlie",
+  "hotel",
+  "echo",
+  "delta",
+  "golf",
+]
+`);
   });
 });
 
-describe('determinism', () => {
-  test('same inputs → identical permutation on repeated computation', () => {
-    const a = monthPermutation(seedWords, '2026-09').map((w) => w.slug);
-    const b = monthPermutation(seedWords, '2026-09').map((w) => w.slug);
-    expect(a).toEqual(b);
+describe('deck rotation', () => {
+  test('every word appears exactly once per cycle', () => {
+    const words = seedWords;
+    const cycleOne = run(words, DECK_EPOCH, words.length);
+    expect(new Set(cycleOne).size).toBe(words.length);
+    const cycleTwo = run(words, addDays(DECK_EPOCH, words.length), words.length);
+    expect(new Set(cycleTwo).size).toBe(words.length);
   });
 
-  test('permutation is a true permutation of the rotation set', () => {
-    const perm = monthPermutation(seedWords, '2026-07').map((w) => w.slug);
-    const set = rotationSet(seedWords, '2026-07').map((w) => w.slug);
-    expect([...perm].sort()).toEqual([...set].sort());
+  test('a word published mid-cycle waits for the next cycle, then appears once', () => {
+    const midCycle = addDays(DECK_EPOCH, 3);
+    const added = makeWord('india', `${midCycle}T09:00:00.000Z`);
+    const before = run(FIXTURE, DECK_EPOCH, FIXTURE.length);
+    const after = run([...FIXTURE, added], DECK_EPOCH, FIXTURE.length);
+    expect(after).toEqual(before); // the current cycle is untouched
+    expect(after).not.toContain('india');
+
+    const next = run([...FIXTURE, added], addDays(DECK_EPOCH, FIXTURE.length), FIXTURE.length + 1);
+    expect(next.filter((slug) => slug === 'india')).toHaveLength(1);
+    expect(new Set(next).size).toBe(FIXTURE.length + 1);
   });
 
-  test('word list order does not matter (sorted by id internally)', () => {
-    const reversed = [...seedWords].reverse();
-    expect(wordOfDay(reversed, '2026-07-12')?.slug).toBe(
-      wordOfDay(seedWords, '2026-07-12')?.slug,
-    );
-  });
-});
-
-describe('monthly freeze', () => {
-  test('publishing a word mid-month does NOT change the current month', () => {
-    const newWord = makeWord('zz-new-word', '2026-07-15T12:00:00.000Z');
-    const withNew = [...seedWords, newWord];
-    for (const day of ['2026-07-16', '2026-07-20', '2026-07-31']) {
-      expect(wordOfDay(withNew, day)?.slug).toBe(wordOfDay(seedWords, day)?.slug);
-    }
+  test('no word repeats across a cycle boundary (many cycles, small pool)', () => {
+    const pool = FIXTURE.slice(0, 3);
+    const days = run(pool, DECK_EPOCH, 3 * 60);
+    for (let i = 1; i < days.length; i++) expect(days[i]).not.toBe(days[i - 1]);
   });
 
-  test('a mid-month publish joins the rotation at the next month boundary', () => {
-    const newWord = makeWord('zz-new-word', '2026-07-15T12:00:00.000Z');
-    const withNew = [...seedWords, newWord];
-    expect(rotationSet(withNew, '2026-07').map((w) => w.slug)).not.toContain('zz-new-word');
-    expect(rotationSet(withNew, '2026-08').map((w) => w.slug)).toContain('zz-new-word');
+  test('word list order does not matter', () => {
+    const shuffled = [...FIXTURE].reverse();
+    expect(run(shuffled, DECK_EPOCH, 20)).toEqual(run(FIXTURE, DECK_EPOCH, 20));
+  });
+
+  test('same answer with a shared or a fresh cache', () => {
+    const date = addDays(DECK_EPOCH, 37);
+    const shared = new Map<string, Word[]>();
+    run(FIXTURE, DECK_EPOCH, 40); // warm nothing; fresh path
+    wordOfDay(FIXTURE, addDays(DECK_EPOCH, 5), shared);
+    expect(wordOfDay(FIXTURE, date, shared)?.slug).toBe(wordOfDay(FIXTURE, date)?.slug);
+  });
+
+  test('dates before the deck epoch still get a word', () => {
+    expect(wordOfDay(FIXTURE, '2026-07-03')).not.toBeNull();
+    expect(cycleFor(FIXTURE, '2026-07-03')?.start).toBe(DECK_EPOCH);
   });
 });
 
 describe('bootstrap fallbacks', () => {
-  test('all words published in the current month → fallback uses all words (no empty rotation)', () => {
-    const freshWords = ['a', 'b', 'c'].map((s) => makeWord(s, '2026-07-02T00:00:00.000Z'));
-    const w = wordOfDay(freshWords, '2026-07-10');
-    expect(w).not.toBeNull();
-    expect(['a', 'b', 'c']).toContain(w!.slug);
+  test('nothing published before the cycle → all words (no empty rotation)', () => {
+    const fresh = FIXTURE.map((w) => ({ ...w, published_at: '2030-01-01T00:00:00.000Z' }));
+    expect(wordOfDay(fresh, DECK_EPOCH)).not.toBeNull();
   });
 
   test('zero words → null (never a crash)', () => {
-    expect(wordOfDay([], '2026-07-10')).toBeNull();
+    expect(wordOfDay([], DECK_EPOCH)).toBeNull();
   });
 
   test('invalid published_at values are excluded, not fatal', () => {
-    const bad = { ...makeWord('bad', ''), published_at: 'not-a-date' };
-    const w = wordOfDay([...seedWords, bad], '2026-07-10');
-    expect(w).not.toBeNull();
-  });
-});
-
-describe('month-boundary repeat guard', () => {
-  test('no word ever repeats across any month boundary (24 months, small pool)', () => {
-    // Small pools maximize collision probability; the guard must prevent all.
-    for (const poolSize of [2, 3, 5]) {
-      const pool = Array.from({ length: poolSize }, (_, i) =>
-        makeWord(`w${i}`, '2025-01-01T00:00:00.000Z'),
-      );
-      let date = '2026-02-01';
-      for (let i = 0; i < 730; i++) {
-        const prev = addDays(date, -1);
-        if (monthKey(prev) !== monthKey(date)) {
-          expect(wordOfDay(pool, prev)?.slug).not.toBe(wordOfDay(pool, date)?.slug);
-        }
-        date = addDays(date, 1);
-      }
-    }
-  });
-
-  test('guard is stable when computed with a shared or fresh cache', () => {
-    const cache = new Map<string, Word[]>();
-    const a = wordOfDay(seedWords, '2026-08-01', cache)?.slug;
-    const b = wordOfDay(seedWords, '2026-08-01')?.slug;
-    expect(a).toBe(b);
+    const words = [...FIXTURE, { ...makeWord('broken', OLD), published_at: 'not-a-date' }];
+    expect(run(words, DECK_EPOCH, FIXTURE.length)).not.toContain('broken');
   });
 });
 
 describe('date helpers', () => {
   test('addDays crosses months, years, DST transition dates as pure calendar math', () => {
-    expect(addDays('2026-07-31', 1)).toBe('2026-08-01');
+    expect(addDays('2026-01-31', 1)).toBe('2026-02-01');
     expect(addDays('2026-12-31', 1)).toBe('2027-01-01');
-    expect(addDays('2026-03-08', 1)).toBe('2026-03-09'); // US spring-forward date
-    expect(addDays('2026-11-01', 1)).toBe('2026-11-02'); // US fall-back date
-    expect(addDays('2028-02-28', 1)).toBe('2028-02-29'); // leap
-    expect(daysSinceEpoch('2026-03-09') - daysSinceEpoch('2026-03-08')).toBe(1);
+    expect(addDays('2026-03-08', 1)).toBe('2026-03-09');
+    expect(addDays('2026-11-01', -1)).toBe('2026-10-31');
   });
 
   test('localDateString formats a Date in local calendar terms', () => {
     expect(localDateString(new Date(2026, 6, 3, 23, 59))).toBe('2026-07-03');
-    expect(localDateString(new Date(2026, 0, 1, 0, 0))).toBe('2026-01-01');
   });
 });

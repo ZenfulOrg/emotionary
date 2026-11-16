@@ -1,5 +1,10 @@
 import { notificationBody, streakRescueDate } from '@/notifications/scheduler';
 
+jest.mock('@react-native-async-storage/async-storage', () =>
+  jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+jest.mock('@/notifications/push', () => ({ registerForPush: jest.fn(async () => false) }));
+
 describe('notificationBody (first clause, ≤ ~100 chars)', () => {
   test('cuts at a legacy em-dash clause boundary', () => {
     expect(

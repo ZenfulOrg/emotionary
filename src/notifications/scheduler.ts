@@ -2,10 +2,14 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import type { Word } from '@/content/types';
-import { addDays, daysSinceEpoch, localDateString, monthKey, wordOfDay } from '@/daily/engine';
+import { addDays, localDateString, monthKey, wordOfDay } from '@/daily/engine';
 import { canBrowseWord } from '@/entitlements';
-import type { NotifTime } from '@/store/userStore';
+import { dailyNotificationContent } from '@/notifications/content';
+import { registerForPush } from '@/notifications/push';
 import type { StreakState } from '@/store/streak';
+import type { NotifTime } from '@/store/userStore';
+
+export { dailyNotificationContent, notificationBody } from '@/notifications/content';
 
 /**
  * Notification queue — DESIGN.md §8.
@@ -67,13 +71,6 @@ export async function requestPermission(): Promise<boolean> {
   return res.granted;
 }
 
-/** First clause of the definition, ≤ ~100 chars, for the notification body. */
-export function notificationBody(definition: string): string {
-  const clause = definition.split(/\s+[—–]\s+|;\s+|\. /)[0].trim();
-  const body = clause.length > 100 ? `${clause.slice(0, 97)}…` : clause;
-  return body.endsWith('.') || body.endsWith('…') ? body : `${body}.`;
-}
-
 function fireDate(localDate: string, time: NotifTime): Date {
   const [y, m, d] = localDate.split('-').map(Number);
   return new Date(y, m - 1, d, time.hour, time.minute, 0, 0);
@@ -87,38 +84,6 @@ interface RebuildArgs {
   hasFullAccess: boolean;
   /** Words this free user keeps (read or saved while free). */
   kept: readonly string[];
-}
-
-/** Teaser lines for a paid daily word on the free plan, rotated by date. */
-const TEASERS = [
-  'Tap to discover what it means.',
-  'A feeling you know, finally named. Tap to see it.',
-  'Do you know what it means? Tap to find out.',
-  "Today's word is waiting to be understood.",
-] as const;
-
-/**
- * The daily notification. Everyone gets today's word; when the word is paid
- * and the user is on the free plan, the meaning stays inside the app (the
- * tap opens the unlock page) and the body is a teaser instead.
- */
-export function dailyNotificationContent(
-  word: Word,
-  localDate: string,
-  unlocked: boolean,
-): { title: string; body: string; data: Record<string, string> } {
-  if (unlocked) {
-    return {
-      title: `Today's word: ${word.word}`,
-      body: notificationBody(word.definition),
-      data: { url: '/', slug: word.slug },
-    };
-  }
-  return {
-    title: `Today's word: ${word.word}`,
-    body: TEASERS[daysSinceEpoch(localDate) % TEASERS.length],
-    data: { url: `/unlock/${word.slug}`, slug: word.slug, teaser: '1' },
-  };
 }
 
 export function streakRescueDate(streakState: StreakState): Date | null {
@@ -137,8 +102,12 @@ async function doRebuild({
   const keptSet = new Set(kept);
   if (Platform.OS === 'web') return;
   const granted = await getPermissionGranted();
+  // Hand the token and settings to the server; once server push is live the
+  // server sends everything and the device keeps no local queue (no limit on
+  // days, and admin one-offs/triggers work without an app update).
+  const serverPush = await registerForPush({ enabled, time, hasFullAccess, kept, streakState });
   await Notifications.cancelAllScheduledNotificationsAsync();
-  if (!enabled || !granted || words.length === 0) return;
+  if (serverPush || !enabled || !granted || words.length === 0) return;
 
   await ensureChannel();
 

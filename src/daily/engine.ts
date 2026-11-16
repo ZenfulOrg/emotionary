@@ -10,10 +10,8 @@ import type { Word } from '@/content/types';
  * Golden fixtures in __tests__ pin exact outputs.
  */
 
-export const SEED_PREFIX = 'emotionary-v1:';
-
-/** No daily words are defined for months before the first content existed. */
-export const EPOCH_MONTH = '2026-01';
+// v2: deck rotation (every word once per cycle) replaced monthly reshuffles.
+export const SEED_PREFIX = 'emotionary-v2:';
 
 /** FNV-1a 32-bit hash of a string. */
 export function fnv1a(str: string): number {
@@ -84,90 +82,90 @@ export function addDays(localDate: string, n: number): string {
   return dateStringFromEpochDays(daysSinceEpoch(localDate) + n);
 }
 
-function monthStartUtcMs(mKey: string): number {
-  const [y, m] = mKey.split('-').map(Number);
-  return Date.UTC(y, m - 1, 1);
+/**
+ * Deck rotation (v2). The words are dealt like a shuffled deck: every word
+ * published before a cycle begins appears exactly once in that cycle, then a
+ * new cycle reshuffles everything published by then, so words added later join
+ * the next cycle and no word repeats until every word has been seen.
+ *
+ * Cycle 0 starts on DECK_EPOCH. Cycle n+1 starts the day after cycle n's last
+ * card. A cycle's deck is the words published before its start (sorted by id,
+ * so input order never matters), shuffled with a per-cycle seed. Dates before
+ * DECK_EPOCH wrap backwards through cycle 0.
+ */
+export const DECK_EPOCH = '2026-11-16';
+
+function dayStartUtcMs(localDate: string): number {
+  return daysSinceEpoch(localDate) * 86_400_000;
 }
 
-function prevMonthKey(mKey: string): string {
-  const [y, m] = mKey.split('-').map(Number);
-  const d = new Date(Date.UTC(y, m - 2, 1));
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
-}
-
-function lastDateOfMonth(mKey: string): string {
-  const [y, m] = mKey.split('-').map(Number);
-  const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
-  return `${mKey}-${String(lastDay).padStart(2, '0')}`;
+function byId(a: Word, b: Word): number {
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
 /**
- * Rotation set for a month: words published strictly before the month began
- * (the monthly freeze — publishing mid-month never disturbs the current month).
- * Fallback for bootstrap/misconfiguration: if empty, all words qualify.
- * Sorted by id so the input order to the shuffle is stable everywhere.
+ * Words dealt in the cycle that starts on `cycleStart`: published strictly
+ * before that day. Fallback for bootstrap/misconfiguration: if none qualify,
+ * every word does (never an empty rotation).
  */
-export function rotationSet(words: readonly Word[], mKey: string): Word[] {
-  const start = monthStartUtcMs(mKey);
+export function deckPool(words: readonly Word[], cycleStart: string): Word[] {
+  const start = dayStartUtcMs(cycleStart);
   const eligible = words.filter((w) => {
     const t = Date.parse(w.published_at);
     return Number.isFinite(t) && t < start;
   });
-  const pool = eligible.length > 0 ? eligible : words.slice();
-  return pool.slice().sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return (eligible.length > 0 ? eligible : words.slice()).sort(byId);
 }
 
-function rawPermutation(words: readonly Word[], mKey: string): Word[] {
-  return seededShuffle(rotationSet(words, mKey), SEED_PREFIX + mKey);
-}
+type Cycle = { start: string; deck: Word[] };
 
 /**
- * The month's permutation with the month-boundary repeat guard applied:
- * if day 1 of this month would repeat the last word of the previous month,
- * swap it with the next slot (DESIGN.md §7). The guard recurses backward
- * (bounded by EPOCH_MONTH) because "the previous month's word" is itself
- * guard-adjusted; memoize per (words, month) via the cache argument.
+ * The cycle containing `localDate`, with the boundary repeat guard: if a
+ * cycle would open on the word that closed the previous one, its first two
+ * cards swap. Decks are memoized in `cache` (keyed by cycle start).
  */
-export function monthPermutation(
+export function cycleFor(
   words: readonly Word[],
-  mKey: string,
+  localDate: string,
   cache: Map<string, Word[]> = new Map(),
-): Word[] {
-  const cached = cache.get(mKey);
-  if (cached) return cached;
-
-  const perm = rawPermutation(words, mKey);
-  if (perm.length < 2 || mKey <= EPOCH_MONTH) {
-    cache.set(mKey, perm);
-    return perm;
-  }
-
-  const prevKey = prevMonthKey(mKey);
-  const prevPerm = monthPermutation(words, prevKey, cache);
-  if (prevPerm.length > 0) {
-    const prevLast = lastDateOfMonth(prevKey);
-    const prevWord = prevPerm[daysSinceEpoch(prevLast) % prevPerm.length];
-    const i1 = daysSinceEpoch(`${mKey}-01`) % perm.length;
-    if (perm[i1].id === prevWord.id) {
-      const i2 = (i1 + 1) % perm.length;
-      [perm[i1], perm[i2]] = [perm[i2], perm[i1]];
+): Cycle | null {
+  if (words.length === 0) return null;
+  const deal = (start: string, previousLast: Word | null): Word[] => {
+    const hit = cache.get(start);
+    if (hit) return hit;
+    const deck = seededShuffle(deckPool(words, start), SEED_PREFIX + start);
+    if (previousLast && deck.length > 1 && deck[0].id === previousLast.id) {
+      [deck[0], deck[1]] = [deck[1], deck[0]];
     }
+    cache.set(start, deck);
+    return deck;
+  };
+
+  let start = DECK_EPOCH;
+  let deck = deal(start, null);
+  if (localDate < start) return { start, deck };
+  for (;;) {
+    const next = addDays(start, deck.length);
+    if (localDate < next) return { start, deck };
+    const last = deck[deck.length - 1];
+    start = next;
+    deck = deal(start, last);
   }
-  cache.set(mKey, perm);
-  return perm;
 }
 
 /**
  * The word of the day for a local calendar date — deterministic on any device
- * from the same word list. Returns null only when there are no words at all.
- * (V1.5 adds daily_overrides precedence here: `override ?? perm[dayIndex]`.)
+ * (and the push server) from the same published word list. Returns null only
+ * when there are no words at all.
  */
 export function wordOfDay(
   words: readonly Word[],
   localDate: string,
   cache?: Map<string, Word[]>,
 ): Word | null {
-  const perm = monthPermutation(words, monthKey(localDate), cache);
-  if (perm.length === 0) return null;
-  return perm[daysSinceEpoch(localDate) % perm.length];
+  const cycle = cycleFor(words, localDate, cache);
+  if (!cycle || cycle.deck.length === 0) return null;
+  const offset = daysSinceEpoch(localDate) - daysSinceEpoch(cycle.start);
+  const n = cycle.deck.length;
+  return cycle.deck[((offset % n) + n) % n];
 }

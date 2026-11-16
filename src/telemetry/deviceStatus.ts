@@ -47,7 +47,8 @@ export function shouldSend(
   return JSON.stringify(status) !== JSON.stringify(last.status);
 }
 
-async function installId(): Promise<string> {
+/** This install's anonymous id (shared by device status and push). */
+export async function installId(): Promise<string> {
   const existing = await AsyncStorage.getItem(INSTALL_ID_KEY);
   if (existing) return existing;
   const id = randomInstallId();

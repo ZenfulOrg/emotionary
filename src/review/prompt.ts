@@ -1,0 +1,37 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as StoreReview from 'expo-store-review';
+import { Platform } from 'react-native';
+
+/**
+ * Asks for an App Store / Google Play rating at a happy moment: a streak of
+ * a few days, or right after sharing a card. Uses the system's own prompt
+ * (SKStoreReviewController / Play In-App Review), which the OS may choose not
+ * to show; we ask at most once every few months so it never nags.
+ */
+
+const LAST_ASKED_KEY = 'emotionary.review.lastAsked.v1';
+const MIN_GAP_MS = 120 * 24 * 60 * 60 * 1000;
+export const REVIEW_STREAK = 3;
+
+export function isReviewMoment(streak: number): boolean {
+  return streak >= REVIEW_STREAK;
+}
+
+export function canAskAgain(lastAskedMs: number, now: number = Date.now()): boolean {
+  return !Number.isFinite(lastAskedMs) || lastAskedMs <= 0 || now - lastAskedMs >= MIN_GAP_MS;
+}
+
+/** Shows the rating prompt if it's been long enough. Never throws. */
+export async function maybeAskForReview(): Promise<boolean> {
+  if (Platform.OS !== 'ios' && Platform.OS !== 'android') return false;
+  try {
+    const last = Number((await AsyncStorage.getItem(LAST_ASKED_KEY)) ?? 0);
+    if (!canAskAgain(last)) return false;
+    if (!(await StoreReview.isAvailableAsync())) return false;
+    await AsyncStorage.setItem(LAST_ASKED_KEY, String(Date.now()));
+    await StoreReview.requestReview();
+    return true;
+  } catch {
+    return false;
+  }
+}

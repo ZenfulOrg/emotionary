@@ -1,16 +1,33 @@
 import { router, type Href, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, PixelRatio, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import {
+  Alert,
+  PixelRatio,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { findWord, useContentStore } from '@/content/store';
-import { Button, Eyebrow, IconButton, Mono, Separator, useGroundStatusBar } from '@/components/brand';
+import {
+  Button,
+  Eyebrow,
+  IconButton,
+  Mono,
+  Separator,
+  useGroundStatusBar,
+} from '@/components/brand';
 import { localDateString, wordOfDay } from '@/daily/engine';
 import { wordAccess } from '@/entitlements';
 import { lightImpactHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
 import { CARD_BASE_HEIGHT, CARD_BASE_WIDTH, ShareCard, SHARE_THEMES } from '@/share/ShareCard';
 import { useKeptSlugs } from '@/store/useKeptSlugs';
 import { useUserStore } from '@/store/userStore';
+import { maybeAskForReview } from '@/review/prompt';
 import { GroundProvider } from '@/theme/ground';
 import { grounds, layout, scrim, space } from '@/theme/tokens';
 
@@ -42,7 +59,8 @@ export default function ShareModal() {
   const locked = demo !== '1' && access !== 'full';
 
   useEffect(() => {
-    if (locked) router.replace((access === 'teaser' && slug ? `/unlock/${slug}` : '/paywall') as Href);
+    if (locked)
+      router.replace((access === 'teaser' && slug ? `/unlock/${slug}` : '/paywall') as Href);
   }, [locked, access, slug]);
 
   if (!word) {
@@ -114,6 +132,8 @@ export default function ShareModal() {
       await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share this word' });
       recordShare(word.slug, localDateString());
       successHaptic();
+      // Just shared a card: a good moment to ask for a rating.
+      setTimeout(() => void maybeAskForReview(), 800);
     } catch {
       warningHaptic();
       Alert.alert('Something went wrong', 'The card could not be shared. Please try again.');
@@ -159,16 +179,29 @@ export default function ShareModal() {
               onScrollEndDrag={(event) => {
                 const { contentOffset, targetContentOffset, velocity } = event.nativeEvent;
                 // A drag at an outer edge may finish without any momentum event.
-                if (velocity?.x === 0 &&
-                  Math.abs((targetContentOffset?.x ?? contentOffset.x) - contentOffset.x) < 1) {
-                  chooseTheme(Math.max(0, Math.min(SHARE_THEMES.length - 1,
-                    Math.round(contentOffset.x / pageWidth))));
+                if (
+                  velocity?.x === 0 &&
+                  Math.abs((targetContentOffset?.x ?? contentOffset.x) - contentOffset.x) < 1
+                ) {
+                  chooseTheme(
+                    Math.max(
+                      0,
+                      Math.min(SHARE_THEMES.length - 1, Math.round(contentOffset.x / pageWidth)),
+                    ),
+                  );
                   setScrolling(false);
                 }
               }}
               onMomentumScrollEnd={(event) => {
-                chooseTheme(Math.max(0, Math.min(SHARE_THEMES.length - 1,
-                  Math.round(event.nativeEvent.contentOffset.x / pageWidth))));
+                chooseTheme(
+                  Math.max(
+                    0,
+                    Math.min(
+                      SHARE_THEMES.length - 1,
+                      Math.round(event.nativeEvent.contentOffset.x / pageWidth),
+                    ),
+                  ),
+                );
                 setScrolling(false);
               }}
               accessibilityLabel="Swipe to choose a share card color"
@@ -187,7 +220,11 @@ export default function ShareModal() {
               ))}
             </ScrollView>
           </View>
-          <View style={styles.themeChoices} accessibilityRole="radiogroup" accessibilityLabel="Card color">
+          <View
+            style={styles.themeChoices}
+            accessibilityRole="radiogroup"
+            accessibilityLabel="Card color"
+          >
             {SHARE_THEMES.map((option, index) => (
               <Pressable
                 key={option.id}
@@ -202,9 +239,16 @@ export default function ShareModal() {
                 }}
                 style={styles.themeChoice}
               >
-                <View style={[styles.swatch, { backgroundColor: option.background },
-                  index === themeIndex && styles.selectedSwatch]} />
-                <Mono size={10} tone={index === themeIndex ? 'default' : 'muted'}>{option.label}</Mono>
+                <View
+                  style={[
+                    styles.swatch,
+                    { backgroundColor: option.background },
+                    index === themeIndex && styles.selectedSwatch,
+                  ]}
+                />
+                <Mono size={10} tone={index === themeIndex ? 'default' : 'muted'}>
+                  {option.label}
+                </Mono>
               </Pressable>
             ))}
           </View>
@@ -293,7 +337,13 @@ const styles = StyleSheet.create({
   previewPage: { alignItems: 'center', justifyContent: 'center' },
   themeChoices: { flexDirection: 'row', justifyContent: 'center', gap: space.l },
   themeChoice: { minHeight: 44, alignItems: 'center', justifyContent: 'center', gap: 6 },
-  swatch: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: grounds.ink.textFaint },
+  swatch: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: grounds.ink.textFaint,
+  },
   selectedSwatch: { borderWidth: 3, borderColor: grounds.ink.eyebrow },
   cardFrame: {
     borderWidth: 1,

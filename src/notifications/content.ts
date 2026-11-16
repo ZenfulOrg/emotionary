@@ -1,0 +1,48 @@
+import type { Word } from '@/content/types';
+import { daysSinceEpoch } from '@/daily/engine';
+
+/**
+ * Notification wording, shared by the app's local scheduler and the
+ * send-notifications Edge Function (copied to supabase/functions/_shared by
+ * scripts/sync-push-shared.mjs; a test keeps the copies identical). Pure:
+ * no React Native imports.
+ */
+
+/** First clause of the definition, ≤ ~100 chars, for the notification body. */
+export function notificationBody(definition: string): string {
+  const clause = definition.split(/\s+[—–]\s+|;\s+|\. /)[0].trim();
+  const body = clause.length > 100 ? `${clause.slice(0, 97)}…` : clause;
+  return body.endsWith('.') || body.endsWith('…') ? body : `${body}.`;
+}
+
+/** Teaser lines for a paid daily word on the free plan, rotated by date. */
+const TEASERS = [
+  'Tap to discover what it means.',
+  'A feeling you know, finally named. Tap to see it.',
+  'Do you know what it means? Tap to find out.',
+  "Today's word is waiting to be understood.",
+] as const;
+
+/**
+ * The daily notification. Everyone gets today's word; when the word is paid
+ * and the user is on the free plan, the meaning stays inside the app (the
+ * tap opens the unlock page) and the body is a teaser instead.
+ */
+export function dailyNotificationContent(
+  word: Word,
+  localDate: string,
+  unlocked: boolean,
+): { title: string; body: string; data: Record<string, string> } {
+  if (unlocked) {
+    return {
+      title: `Today's word: ${word.word}`,
+      body: notificationBody(word.definition),
+      data: { url: '/', slug: word.slug },
+    };
+  }
+  return {
+    title: `Today's word: ${word.word}`,
+    body: TEASERS[daysSinceEpoch(localDate) % TEASERS.length],
+    data: { url: `/unlock/${word.slug}`, slug: word.slug, teaser: '1' },
+  };
+}

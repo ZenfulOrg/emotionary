@@ -25,6 +25,7 @@ import { linkPurchasesToAccount } from '@/purchases/account';
 import { observePurchases, refreshPurchases } from '@/purchases/client';
 import { useUserStore } from '@/store/userStore';
 import { brand } from '@/theme/tokens';
+import { notificationTarget } from '@/notifications/tap';
 import { reportDeviceStatus } from '@/telemetry/deviceStatus';
 import { refreshDailyWordWidget } from '@/widgets/timeline';
 
@@ -212,9 +213,16 @@ export default function RootLayout() {
       if (handledResponse.current === id) return;
       handledResponse.current = id;
       Notifications.clearLastNotificationResponse();
-      const data = response.notification.request.content.data as { slug?: unknown } | undefined;
-      const slug = typeof data?.slug === 'string' ? data.slug : null;
+      const { slug, url } = notificationTarget(
+        response.notification.request.content,
+        response.notification.request.trigger,
+      );
       router.navigate('/');
+      // One-off and triggered pushes can open any in-app route (e.g. /paywall).
+      if (url && !slug) {
+        router.push(url as Href);
+        return;
+      }
       if (!slug) return;
       const word = findWord(useContentStore.getState().words, slug);
       const user = useUserStore.getState();

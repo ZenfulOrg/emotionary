@@ -27,6 +27,7 @@ import { shouldShowTodayActionCoachmark } from '@/daily/tutorial';
 import { lightImpactHaptic, mediumImpactHaptic, successHaptic } from '@/feedback/haptics';
 import { getPermissionGranted, requestPermission } from '@/notifications/scheduler';
 import { useUserStore } from '@/store/userStore';
+import { isReviewMoment, maybeAskForReview } from '@/review/prompt';
 import { brand, layout, levelPalettes, space } from '@/theme/tokens';
 
 const VIEWABILITY_CONFIG = {
@@ -217,10 +218,18 @@ export default function TodayScreen() {
   useFocusEffect(
     useCallback(() => {
       recordOpen(today);
+      // A few days in a row is a happy moment to ask for a rating; wait until
+      // the reveal and streak popup have played.
+      const reviewTimer = isReviewMoment(useUserStore.getState().streakState.streak)
+        ? setTimeout(() => void maybeAskForReview(), 6000)
+        : null;
       if (feed[0]?.kind === 'word') {
         visibleSlugRef.current = feed[0].word.slug;
         markRead(feed[0].word.slug);
       }
+      return () => {
+        if (reviewTimer) clearTimeout(reviewTimer);
+      };
     }, [recordOpen, markRead, today, feed]),
   );
 
@@ -259,10 +268,15 @@ export default function TodayScreen() {
           data={feed}
           keyExtractor={(item) => item.key}
           renderItem={({ item, index }) => (
-            <View style={[
-              feedHeight > 0 ? { height: feedHeight } : styles.page,
-              { backgroundColor: item.kind === 'word' ? levelPalettes[item.word.level].tint : brand.ink },
-            ]}>
+            <View
+              style={[
+                feedHeight > 0 ? { height: feedHeight } : styles.page,
+                {
+                  backgroundColor:
+                    item.kind === 'word' ? levelPalettes[item.word.level].tint : brand.ink,
+                },
+              ]}
+            >
               {item.kind === 'word' ? (
                 <WordFull
                   word={item.word}
@@ -270,7 +284,9 @@ export default function TodayScreen() {
                   eyebrow={index === 0 ? "Today's word" : undefined}
                   reveal={revealing && index === 0}
                   audioActive={item.word.slug === activeAudioSlug}
-                  meaningLocked={wordAccess(item.word, firstFeedSlug, hasFullAccess, kept) === 'teaser'}
+                  meaningLocked={
+                    wordAccess(item.word, firstFeedSlug, hasFullAccess, kept) === 'teaser'
+                  }
                 />
               ) : (
                 <UpgradeSlide freeCount={freeCount} />
@@ -292,11 +308,7 @@ export default function TodayScreen() {
           initialNumToRender={2}
           maxToRenderPerBatch={3}
           windowSize={3}
-          onEndReached={
-            hasFullAccess
-              ? () => setCycleCount((current) => current + 1)
-              : undefined
-          }
+          onEndReached={hasFullAccess ? () => setCycleCount((current) => current + 1) : undefined}
           onEndReachedThreshold={0.7}
           accessibilityLabel="Daily word feed"
         />
@@ -326,9 +338,12 @@ function UpgradeSlide({ freeCount }: { freeCount: number }) {
               ? `Your free collection · ${freeCount} ${freeCount === 1 ? 'word' : 'words'}`
               : 'Your free collection'}
           </Eyebrow>
-          <Headline size={44} style={{ textAlign: 'center' }}>Keep discovering.</Headline>
+          <Headline size={44} style={{ textAlign: 'center' }}>
+            Keep discovering.
+          </Headline>
           <Body tone="muted" style={styles.upgradeBody}>
-            Unlock the full emotional vocabulary dictionary, every widget theme, and future word updates.
+            Unlock the full emotional vocabulary dictionary, every widget theme, and future word
+            updates.
           </Body>
         </View>
         <RoundCta
