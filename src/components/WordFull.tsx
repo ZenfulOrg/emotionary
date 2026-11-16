@@ -1,7 +1,16 @@
 import { router, type Href } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeOut, useReducedMotion } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  interpolate,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -22,6 +31,8 @@ import { asEntry, displayWord } from '@/content/presentation';
 import type { Word } from '@/content/types';
 import { lightImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
 import { ScrollHint } from '@/components/ScrollHint';
+import { WordStoryBack } from '@/components/WordStoryBack';
+import { liveStory } from '@/content/story';
 import { useUserStore } from '@/store/userStore';
 import { useGround } from '@/theme/ground';
 import { font, layout, levelPalettes, planets, space, tracking, type } from '@/theme/tokens';
@@ -59,6 +70,12 @@ export function WordFull({
 }) {
   const isFavorite = useUserStore((s) => s.favorites.includes(word.slug));
   const toggleFavorite = useUserStore((s) => s.toggleFavorite);
+  const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
+  const story = liveStory(word);
+  // The card flips to its story (Pro). The back mounts on first flip only.
+  const [flipped, setFlipped] = useState(false);
+  const [backMounted, setBackMounted] = useState(false);
+  const flip = useSharedValue(0);
   const level = levelPalettes[word.level];
   const insets = useSafeAreaInsets();
   const [copied, setCopied] = useState<'word' | 'definition' | null>(null);
@@ -91,6 +108,29 @@ export function WordFull({
     },
     [],
   );
+
+  const flipDuration = reducedMotion ? 0 : 520;
+  const setFlip = (next: boolean) => {
+    if (next) setBackMounted(true);
+    setFlipped(next);
+    flip.value = withTiming(next ? 1 : 0, { duration: flipDuration });
+  };
+  const openStory = () => {
+    selectionHaptic();
+    if (!hasFullAccess) {
+      router.push('/paywall' as Href);
+      return;
+    }
+    setFlip(true);
+  };
+  const frontStyle = useAnimatedStyle(() => ({
+    opacity: flip.value < 0.5 ? 1 : 0,
+    transform: [{ perspective: 1200 }, { rotateY: `${interpolate(flip.value, [0, 1], [0, 180])}deg` }],
+  }));
+  const backStyle = useAnimatedStyle(() => ({
+    opacity: flip.value >= 0.5 ? 1 : 0,
+    transform: [{ perspective: 1200 }, { rotateY: `${interpolate(flip.value, [0, 1], [-180, 0])}deg` }],
+  }));
 
   const copyToClipboard = (what: 'word' | 'definition') => {
     // Lazy import — expo-clipboard registers a native paste-button view at
@@ -212,6 +252,16 @@ export function WordFull({
               router.push((meaningLocked ? `/unlock/${word.slug}` : `/share/${word.slug}`) as Href);
             }}
           />
+          {story && !meaningLocked ? (
+            <WordAction
+              glyph="flip"
+              label="Story"
+              accessibilityLabel={
+                hasFullAccess ? `Read the story of ${word.word}` : 'Word stories come with Emotionary Pro'
+              }
+              onPress={openStory}
+            />
+          ) : null}
         </View>
         {scrollHint ? <ScrollHint label={scrollHint.label} onPress={scrollHint.onPress} /> : null}
       </Animated.View>
@@ -233,28 +283,53 @@ export function WordFull({
           </FloatingCard>
         </Animated.View>
       )}
-      {feedPage ? (
-        <View
-          style={[
-            styles.scroll,
-            styles.feedScroll,
-            {
-              paddingTop: insideSafeArea ? space.m : insets.top + space.l,
-              paddingBottom: space.l,
-            },
-          ]}
+      <Animated.View
+        style={[styles.face, frontStyle]}
+        pointerEvents={flipped ? 'none' : 'auto'}
+        accessibilityElementsHidden={flipped}
+        importantForAccessibility={flipped ? 'no-hide-descendants' : 'auto'}
+      >
+        {feedPage ? (
+          <View
+            style={[
+              styles.scroll,
+              styles.feedScroll,
+              {
+                paddingTop: insideSafeArea ? space.m : insets.top + space.l,
+                paddingBottom: space.l,
+              },
+            ]}
+          >
+            {content}
+          </View>
+        ) : (
+          <ScrollView
+            contentInsetAdjustmentBehavior="automatic"
+            contentContainerStyle={styles.scroll}
+            showsVerticalScrollIndicator={false}
+          >
+            {content}
+          </ScrollView>
+        )}
+      </Animated.View>
+      {story && backMounted ? (
+        <Animated.View
+          style={[StyleSheet.absoluteFill, styles.back, { backgroundColor: level.tint }, backStyle]}
+          pointerEvents={flipped ? 'auto' : 'none'}
+          accessibilityElementsHidden={!flipped}
+          importantForAccessibility={flipped ? 'auto' : 'no-hide-descendants'}
         >
-          {content}
-        </View>
-      ) : (
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}
-        >
-          {content}
-        </ScrollView>
-      )}
+          <WordStoryBack
+            word={word}
+            story={story}
+            insideSafeArea={insideSafeArea}
+            onFlipBack={() => {
+              selectionHaptic();
+              setFlip(false);
+            }}
+          />
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
@@ -306,7 +381,7 @@ function WordAction({
   selected,
   onPress,
 }: {
-  glyph: 'heart' | 'heartFilled' | 'leaves';
+  glyph: 'heart' | 'heartFilled' | 'leaves' | 'flip';
   label: string;
   accessibilityLabel: string;
   selected?: boolean;
@@ -330,6 +405,8 @@ function WordAction({
 const styles = StyleSheet.create({
   eyebrow: { marginBottom: space.s },
   screen: { flex: 1 },
+  face: { flex: 1, backfaceVisibility: 'hidden' },
+  back: { backfaceVisibility: 'hidden' },
   scroll: {
     flexGrow: 1,
     paddingHorizontal: layout.gutter,

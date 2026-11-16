@@ -142,8 +142,8 @@ export default function SettingsScreen() {
             onPress={account ? undefined : () => router.push('/account' as Href)}
           />
           <SettingsRow
-            label="Emotionary Pro"
-            value={hasFullAccess ? 'Active' : 'Upgrade'}
+            label="Plan"
+            value={hasFullAccess ? 'Emotionary Pro' : 'Free · Get Pro'}
             onPress={hasFullAccess ? undefined : () => router.push('/paywall' as Href)}
           />
           <SettingsRow label={restoring ? 'Restoring…' : 'Restore purchases'} onPress={restoring ? undefined : () => void restore()} />

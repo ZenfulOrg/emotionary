@@ -26,6 +26,7 @@ const bundledSeed: ContentSnapshot = {
 const BASE_COLUMNS =
   'id,slug,word,pronunciation,language,type,level,definition,wisdom,is_free,audio_url,published_at,updated_at';
 const WORD_COLUMNS = `${BASE_COLUMNS},free_order`;
+const STORY_COLUMNS = `${WORD_COLUMNS},story,story_status`;
 
 interface ContentState {
   words: Word[];
@@ -64,10 +65,12 @@ async function fetchSnapshot(stamp: ContentStamp): Promise<ContentSnapshot | nul
     fetch(`${SUPABASE_URL}/rest/v1/words?select=${columns}&order=slug.asc`, {
       headers: restHeaders(),
     });
-  let res = await query(WORD_COLUMNS);
-  // A database without the free_order column rejects the whole request (400).
-  // Retry without it so is_free still comes from Supabase instead of leaving
-  // the device on the bundled seed. Free words then sort alphabetically.
+  let res = await query(STORY_COLUMNS);
+  // A database missing a newer column rejects the whole request (400). Step
+  // back through older column sets so words still come from Supabase instead
+  // of leaving the device on the bundled seed: first without stories, then
+  // without free_order (free words then sort alphabetically).
+  if (res.status === 400) res = await query(WORD_COLUMNS);
   if (res.status === 400) res = await query(BASE_COLUMNS);
   if (!res.ok) return null;
   const words = normalizeWordList((await res.json()) as Word[]);

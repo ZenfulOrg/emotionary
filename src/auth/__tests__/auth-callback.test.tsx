@@ -10,6 +10,7 @@ import { completeAuthCallback } from '@/auth/client';
 jest.mock('expo-linking', () => ({ useURL: jest.fn(), getInitialURL: jest.fn() }));
 jest.mock('expo-router', () => ({ router: { replace: jest.fn() } }));
 jest.mock('@/auth/client', () => ({ completeAuthCallback: jest.fn() }));
+jest.mock('@/purchases/account', () => ({ linkPurchasesToAccount: jest.fn(async () => undefined) }));
 jest.mock('@/components/brand', () => {
   const React = jest.requireActual<typeof import('react')>('react');
   const { Text, View } = jest.requireActual<typeof import('react-native')>('react-native');

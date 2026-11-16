@@ -1,0 +1,1862 @@
+{
+  "acedia": {
+    "background": "Early Christian monks in the Egyptian desert named acedia the \"noonday demon\": the restless listlessness that struck in the heat of midday, when the hours dragged and prayer felt pointless. It sat on the early lists of the eight evil thoughts before later merging into sloth.",
+    "roots": [
+      {
+        "part": "a-",
+        "meaning": "without (Greek)"
+      },
+      {
+        "part": "kēdos",
+        "meaning": "care, concern"
+      }
+    ],
+    "myth": "The monk Evagrius Ponticus wrote that the noonday demon made the sun seem to stand still and the day feel fifty hours long, tempting a monk to keep staring out the window and leave his cell.",
+    "fun_fact": "Kathleen Norris revived the word for modern readers in her 2008 book Acedia & Me."
+  },
+  "agape": {
+    "background": "The ancient Greeks had several words for love, and agape became the one early Christians chose for selfless, unconditional love: love that gives without asking anything back. Today it names love as a steady way of being rather than a passing feeling.",
+    "roots": [
+      {
+        "part": "agapē",
+        "meaning": "love, goodwill (Greek)"
+      },
+      {
+        "part": "agapan",
+        "meaning": "to welcome, to cherish"
+      }
+    ],
+    "myth": "Early Christian communities held shared meals called agape feasts, where rich and poor ate at one table as an act of love.",
+    "fun_fact": "In English, agape has two pronunciations: ah-GAH-pay for the love, and uh-GAPE for a mouth hanging open."
+  },
+  "akrasia": {
+    "background": "Socrates argued that no one knowingly does wrong, so true akrasia was impossible. Aristotle disagreed and studied it closely, describing people who know what is best yet are carried off by desire or emotion.",
+    "roots": [
+      {
+        "part": "a-",
+        "meaning": "without (Greek)"
+      },
+      {
+        "part": "kratos",
+        "meaning": "power, strength, control"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Philosophers still call it \"weakness of will,\" and it is one of the oldest unsolved puzzles in ethics."
+  },
+  "alexithymia": {
+    "background": "Psychiatrist Peter Sifneos coined the term in 1973 while working with patients who struggled to put feelings into words. It is not a diagnosis but a trait, present to some degree in around one in ten people.",
+    "roots": [
+      {
+        "part": "a-",
+        "meaning": "without (Greek)"
+      },
+      {
+        "part": "lexis",
+        "meaning": "word, speech"
+      },
+      {
+        "part": "thymos",
+        "meaning": "spirit, emotion"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Literally, the word means \"no words for emotions.\""
+  },
+  "amae": {
+    "background": "Japanese psychiatrist Takeo Doi made amae famous in his 1971 book The Anatomy of Dependence. He argued that the wish to be indulged and cared for, like a child by a parent, shapes Japanese relationships and is found everywhere, even where no word exists for it.",
+    "roots": [
+      {
+        "part": "amaeru",
+        "meaning": "to depend on another's kindness (Japanese)"
+      },
+      {
+        "part": "amai",
+        "meaning": "sweet"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Amae shares its root with the Japanese word for \"sweet.\""
+  },
+  "ambivalence": {
+    "background": "Swiss psychiatrist Eugen Bleuler coined Ambivalenz around 1910 to describe holding opposite feelings toward the same person or thing. Freud took up the idea, and it slipped into everyday English within decades.",
+    "roots": [
+      {
+        "part": "ambi-",
+        "meaning": "both (Latin)"
+      },
+      {
+        "part": "valentia",
+        "meaning": "strength, from valere, to be strong"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "The word is barely a century old, younger than the telephone."
+  },
+  "anam-cara": {
+    "background": "In the old Celtic church, an anam cara was a spiritual companion to whom you could reveal your whole self, a confidant who saw you clearly. Irish poet John O'Donohue brought the phrase to a wide audience with his 1997 book Anam Ċara.",
+    "roots": [
+      {
+        "part": "anam",
+        "meaning": "soul (Irish)"
+      },
+      {
+        "part": "cara",
+        "meaning": "friend"
+      }
+    ],
+    "myth": "Irish tradition credits Saint Brigid with saying that anyone without a soul friend is like a body without a head.",
+    "fun_fact": "In Irish, cara is still the everyday word for \"friend.\""
+  },
+  "anhedonia": {
+    "background": "French psychologist Théodule-Armand Ribot coined anhédonie in 1896 as the opposite of analgesia: instead of losing the ability to feel pain, a person loses the ability to feel pleasure. It is now a core sign doctors look for in depression.",
+    "roots": [
+      {
+        "part": "an-",
+        "meaning": "without (Greek)"
+      },
+      {
+        "part": "hēdonē",
+        "meaning": "pleasure, delight"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "It shares its root with hedonism, the pursuit of pleasure."
+  },
+  "anticipatory-anxiety": {
+    "background": "Psychologists use the term for fear that runs ahead of events: the dread before a flight, a speech or a hard conversation. The body reacts as if the threat is already here, even though nothing has happened yet.",
+    "roots": [
+      {
+        "part": "anticipare",
+        "meaning": "to take before, to act in advance (Latin)"
+      },
+      {
+        "part": "anxietas",
+        "meaning": "worry, from angere, to choke"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Anxiety comes from a Latin word for choking, which is why worry can feel tight in the throat."
+  },
+  "apanthropy": {
+    "background": "A rare word from the 1700s for a love of being alone and a turning away from human company. Unlike misanthropy, it carries no hatred of people, only a preference for one's own quiet.",
+    "roots": [
+      {
+        "part": "apo-",
+        "meaning": "away from (Greek)"
+      },
+      {
+        "part": "anthrōpos",
+        "meaning": "human being"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "It sits in the same family as anthropology, the study of humankind."
+  },
+  "apricity": {
+    "background": "Apricity was recorded in English in the 1620s, borrowed from Latin, and then almost vanished. Word lovers have revived it as the perfect name for the sun's warmth on a cold winter day.",
+    "roots": [
+      {
+        "part": "apricus",
+        "meaning": "sunny, warmed by the sun (Latin)"
+      },
+      {
+        "part": "apricari",
+        "meaning": "to bask in the sun"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Henry Cockeram's 1623 English Dictionarie is the first known record of the word."
+  },
+  "attachment": {
+    "background": "Psychiatrist John Bowlby developed attachment theory in the 1950s after studying children separated from their parents. Mary Ainsworth's experiments later showed how early bonds shape the way we love and trust as adults.",
+    "roots": [
+      {
+        "part": "atachier",
+        "meaning": "to fasten, to attach (Old French)"
+      },
+      {
+        "part": "tache",
+        "meaning": "a nail or clasp"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Ainsworth's \"Strange Situation\" test sorted children into secure, anxious and avoidant styles, labels still used for adult relationships."
+  },
+  "attunement": {
+    "background": "Attunement borrows the image of tuning an instrument. Psychologists like Daniel Stern used it for the way a parent mirrors a baby's feelings, and it now names any moment of being deeply in sync with someone.",
+    "roots": [
+      {
+        "part": "at-",
+        "meaning": "toward"
+      },
+      {
+        "part": "tune",
+        "meaning": "a variant of tone, from Greek tonos, tension or pitch"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Tune began as a simple variant spelling of tone."
+  },
+  "balter": {
+    "background": "An old word from northern English and Scottish dialect, balter means to dance without skill but with full joy, or to tangle and clot together. It survived in dictionaries long after it left everyday speech.",
+    "roots": [
+      {
+        "part": "baltre",
+        "meaning": "to roll about, to tumble (Danish dialect)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "It is a close cousin of welter, to roll or tumble about."
+  },
+  "bashert": {
+    "background": "In Yiddish, bashert means destined: what was meant to be. It is used most for a soulmate, but can describe any fated meeting, home or turn of luck.",
+    "roots": [
+      {
+        "part": "bashert",
+        "meaning": "destined (Yiddish)"
+      },
+      {
+        "part": "beschert",
+        "meaning": "bestowed, given as a gift (Middle High German)"
+      }
+    ],
+    "myth": "The Talmud says that forty days before a child is formed, a heavenly voice announces whom they will marry.",
+    "fun_fact": "Its German cousin beschert is still how Germans talk about Christmas presents being given."
+  },
+  "cafune": {
+    "background": "Cafuné is the tender habit, common in Brazil, of running your fingers through a loved one's hair. Brazilians use it for a parent soothing a child, partners resting together, or friends at ease with each other.",
+    "roots": [
+      {
+        "part": "kifune",
+        "meaning": "to twist, to stroke (Kimbundu, as commonly cited)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "The word is thought to have come to Brazil with enslaved people from Angola, through the Kimbundu language."
+  },
+  "catharsis": {
+    "background": "Aristotle used catharsis in his Poetics to describe what tragedy does for its audience: by stirring pity and fear, it purges or cleanses them. Freud later used it for the healing release of buried emotions.",
+    "roots": [
+      {
+        "part": "katharsis",
+        "meaning": "cleansing, purging (Greek)"
+      },
+      {
+        "part": "katharos",
+        "meaning": "pure, clean"
+      }
+    ],
+    "myth": "Greek audiences watched tragedies like Oedipus Rex at great festivals, and Aristotle believed the shared tears left them lighter, as if washed clean.",
+    "fun_fact": "The name Katherine is often linked to the same Greek word for pure."
+  },
+  "chagrin": {
+    "background": "English took chagrin from French in the 1600s, where it meant sadness or grief. Over time it narrowed to the stinging embarrassment of your own mistake.",
+    "roots": [
+      {
+        "part": "chagrin",
+        "meaning": "grief, vexation (French)"
+      },
+      {
+        "part": "grigner",
+        "meaning": "to grimace, possibly linked"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Chagrin is also the name of a rough, grainy leather, and some linguists think the scratchy feeling gave the emotion its name."
+  },
+  "chrysalism": {
+    "background": "Chrysalism comes from John Koenig's The Dictionary of Obscure Sorrows, a project inventing words for feelings that had no name. It describes the calm of being safe indoors while a storm rages outside.",
+    "roots": [
+      {
+        "part": "chrysalis",
+        "meaning": "a cocoon (Greek khrysallis)"
+      },
+      {
+        "part": "khrysos",
+        "meaning": "gold"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Chrysalis comes from the Greek for gold, because some butterfly pupae shine with golden spots."
+  },
+  "cognitive-dissonance": {
+    "background": "Psychologist Leon Festinger introduced the theory in 1957 after studying a doomsday group whose prophecy failed. Instead of giving up, many members believed even more strongly, easing the clash between belief and reality.",
+    "roots": [
+      {
+        "part": "cognoscere",
+        "meaning": "to get to know (Latin)"
+      },
+      {
+        "part": "dissonare",
+        "meaning": "to sound apart, to clash"
+      }
+    ],
+    "myth": "Festinger and his team quietly joined a group that expected a flood to end the world on December 21, 1954, and wrote up what happened in the book When Prophecy Fails.",
+    "fun_fact": "Dissonance is a musical term for notes that clash."
+  },
+  "cwtch": {
+    "background": "A much-loved Welsh word, cwtch means a cuddle that makes you feel safe, and also a cubbyhole or snug little place. Many in Wales say a cwtch is warmer than a hug.",
+    "roots": [
+      {
+        "part": "cwtch",
+        "meaning": "hug; hidey-hole or cupboard (Welsh)"
+      },
+      {
+        "part": "couche",
+        "meaning": "couch, bed (possibly from Old French)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "It is pronounced \"kutch\" and rhymes with \"butch.\""
+  },
+  "depaysement": {
+    "background": "The French word comes from being taken out of your own country. It can mean the disorientation of being somewhere foreign, or the pleasant shake-up of a change of scenery.",
+    "roots": [
+      {
+        "part": "dé-",
+        "meaning": "away from, out of (French)"
+      },
+      {
+        "part": "pays",
+        "meaning": "country, homeland"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "French travel ads often promise dépaysement as something to enjoy, not fear."
+  },
+  "desiderium": {
+    "background": "Romans used desiderium for longing for something lost, especially a person who has died or gone away. Cicero used it in his letters, and English scholars borrowed it in the 1700s.",
+    "roots": [
+      {
+        "part": "desiderare",
+        "meaning": "to long for, to miss (Latin)"
+      },
+      {
+        "part": "de sidere",
+        "meaning": "from the stars (a popular, debated explanation)"
+      }
+    ],
+    "myth": "A popular theory says desire and desiderium come from de sidere, \"from the stars,\" as if longing meant waiting for what the stars would bring.",
+    "fun_fact": "Desire and consider may both share this starry root."
+  },
+  "dissociation": {
+    "background": "French psychologist Pierre Janet described dissociation in the late 1800s, studying how the mind splits off memories and feelings that are too much to hold. It now covers everything from everyday zoning out to responses to trauma.",
+    "roots": [
+      {
+        "part": "dis-",
+        "meaning": "apart (Latin)"
+      },
+      {
+        "part": "sociare",
+        "meaning": "to join, to unite"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Highway hypnosis, arriving with no memory of the drive, is a mild everyday form of dissociation."
+  },
+  "duende": {
+    "background": "In Spanish folklore a duende is a mischievous house spirit. Poet Federico García Lorca turned it into the name for the dark, raw force that seizes great flamenco singers and artists.",
+    "roots": [
+      {
+        "part": "duen de casa",
+        "meaning": "owner of the house (old Spanish)"
+      }
+    ],
+    "myth": "In his 1933 lecture Play and Theory of the Duende, Lorca said the duende rises from the soles of the feet and must be wrestled, not called upon.",
+    "fun_fact": "Lorca said the duende only comes when it senses death is possible."
+  },
+  "dysphoria": {
+    "background": "Greek physicians used dysphoria for restlessness and distress. Modern medicine uses it for a deep unease or dissatisfaction, the opposite of euphoria.",
+    "roots": [
+      {
+        "part": "dys-",
+        "meaning": "bad, difficult (Greek)"
+      },
+      {
+        "part": "pherein",
+        "meaning": "to bear, to carry"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Euphoria and dysphoria are mirror words: \"easy to bear\" and \"hard to bear.\""
+  },
+  "dysthymia": {
+    "background": "Dysthymia was the medical name for a long-lasting, low-grade depression. Today clinicians call it persistent depressive disorder, but the older word captures its quiet, constant weight.",
+    "roots": [
+      {
+        "part": "dys-",
+        "meaning": "bad, ill (Greek)"
+      },
+      {
+        "part": "thymos",
+        "meaning": "spirit, mood"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Thymos also gave its name to the thymus gland, once thought to be a seat of the soul."
+  },
+  "emotional-flooding": {
+    "background": "Relationship researcher John Gottman popularized \"flooding\" for the moment in conflict when the heart rate climbs and clear thinking shuts down. His advice is a real break of at least twenty minutes for the body to calm.",
+    "roots": [
+      {
+        "part": "emovere",
+        "meaning": "to move out, to stir up (Latin)"
+      },
+      {
+        "part": "flod",
+        "meaning": "a flowing of water (Old English)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Gottman found that a heart rate above about 100 beats per minute makes it hard to listen at all."
+  },
+  "enantiodromia": {
+    "background": "Carl Jung used enantiodromia for the way anything pushed to its extreme turns into its opposite. He traced the idea back to the Greek philosopher Heraclitus, who saw life as a constant flow between opposites.",
+    "roots": [
+      {
+        "part": "enantios",
+        "meaning": "opposite (Greek)"
+      },
+      {
+        "part": "dromos",
+        "meaning": "running, a course"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Dromos also gave us hippodrome, a course for horses, and palindrome, a word that runs back again."
+  },
+  "eudaimonia": {
+    "background": "For Aristotle, eudaimonia was the highest human good: not a passing mood of happiness but a life of flourishing, lived well and in line with virtue. It remains central to modern positive psychology.",
+    "roots": [
+      {
+        "part": "eu-",
+        "meaning": "good, well (Greek)"
+      },
+      {
+        "part": "daimōn",
+        "meaning": "spirit, divine guardian"
+      }
+    ],
+    "myth": "Literally it means having a good guardian spirit, as if a kindly daimon were watching over your life.",
+    "fun_fact": "Daimon is also the ancestor of the English word demon, which once meant a neutral spirit."
+  },
+  "eustress": {
+    "background": "Endocrinologist Hans Selye, who first popularized the idea of stress, coined eustress in the 1970s for good stress: the kind that energizes and helps you grow, like excitement before a performance.",
+    "roots": [
+      {
+        "part": "eu-",
+        "meaning": "good (Greek)"
+      },
+      {
+        "part": "stress",
+        "meaning": "from Old French estrece, narrowness, tightness"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Selye borrowed the word stress from engineering, where it meant force on a material."
+  },
+  "fanaa": {
+    "background": "In Sufi mysticism, fanaa is the passing away of the ego in union with the divine. In Urdu poetry and song it also means being utterly lost in love.",
+    "roots": [
+      {
+        "part": "fanāʾ",
+        "meaning": "annihilation, passing away (Arabic)"
+      }
+    ],
+    "myth": "Sufi teachers describe fanaa as a moth drawn into a candle flame, losing itself to become one with the light.",
+    "fun_fact": "Its partner word in Sufism is baqa, the lasting life that follows the self's dissolving."
+  },
+  "fernweh": {
+    "background": "German pairs fernweh with heimweh, homesickness. Fernweh is its mirror: an ache for faraway places you have never seen.",
+    "roots": [
+      {
+        "part": "fern",
+        "meaning": "far, distant (German)"
+      },
+      {
+        "part": "weh",
+        "meaning": "pain, woe"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "German travel writers have used it since at least the 1800s."
+  },
+  "fika": {
+    "background": "Fika is a Swedish ritual: a pause in the day for coffee and something sweet, usually with others. Many Swedish workplaces build fika breaks into the schedule.",
+    "roots": [
+      {
+        "part": "kaffi",
+        "meaning": "coffee (Swedish slang of the 1800s)"
+      },
+      {
+        "part": "fi-ka",
+        "meaning": "the two syllables of kaffi, swapped"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "The word is backslang: flip the syllables of kaffi and you get fika."
+  },
+  "firgun": {
+    "background": "Firgun is modern Israeli Hebrew slang for pure, generous joy in someone else's success, with no envy mixed in. It grew from the Yiddish word farginen, to not begrudge.",
+    "roots": [
+      {
+        "part": "farginen",
+        "meaning": "to not begrudge, to wish someone well (Yiddish)"
+      },
+      {
+        "part": "gönnen",
+        "meaning": "to grant, not to envy (German cousin)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Israelis turned it into a verb too: lefargen, to give someone firgun."
+  },
+  "flow": {
+    "background": "Psychologist Mihaly Csikszentmihalyi named flow after interviewing artists, athletes and climbers who described being swept along, as if by a current, when fully absorbed in a challenge matched to their skill.",
+    "roots": [
+      {
+        "part": "flowan",
+        "meaning": "to flow, to stream (Old English)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Csikszentmihalyi first noticed flow watching painters who lost all track of time, then cared little about the finished canvas."
+  },
+  "forelsket": {
+    "background": "Norwegian and Danish use forelsket for the giddy, early stage of falling in love, before it settles into deeper love, which is a different word: elske.",
+    "roots": [
+      {
+        "part": "for-",
+        "meaning": "a prefix of becoming (Norwegian)"
+      },
+      {
+        "part": "elske",
+        "meaning": "to love"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Norwegians fall forelsket first and only later say jeg elsker deg, I love you."
+  },
+  "forlorn": {
+    "background": "Forlorn is the past participle of an Old English verb forlēosan, to lose completely. It once meant simply lost or ruined, then softened into the lonely, abandoned feeling we use it for now.",
+    "roots": [
+      {
+        "part": "for-",
+        "meaning": "completely (Old English)"
+      },
+      {
+        "part": "lēosan",
+        "meaning": "to lose"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "A \"forlorn hope\" was originally a band of soldiers sent first into battle, from Dutch verloren hoop, lost troop."
+  },
+  "gezelligheid": {
+    "background": "The Dutch value gezelligheid above almost anything: the warm, convivial feeling of being with people you love in a cozy place. A café, a dinner or a crowded kitchen can all be gezellig.",
+    "roots": [
+      {
+        "part": "gezel",
+        "meaning": "companion, friend (Dutch)"
+      },
+      {
+        "part": "-heid",
+        "meaning": "-ness"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "A room, an evening, a person or even a song can be gezellig."
+  },
+  "gigil": {
+    "background": "Filipinos use gigil for the overwhelming urge to squeeze or pinch something unbearably cute, like a baby's cheeks. Scientists now study the feeling as \"cute aggression.\"",
+    "roots": [
+      {
+        "part": "gigil",
+        "meaning": "trembling, gritting of teeth from intense emotion (Tagalog)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Researchers at Yale found people shown cute photos popped more bubble wrap than those shown neutral ones."
+  },
+  "gumusservi": {
+    "background": "Gümüşservi is a poetic Turkish word for the silvery path moonlight makes across water. It became famous online as one of the world's most beautiful untranslatable words.",
+    "roots": [
+      {
+        "part": "gümüş",
+        "meaning": "silver (Turkish)"
+      },
+      {
+        "part": "servi",
+        "meaning": "cypress tree"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "The moonlit trail is named after a cypress because it narrows like the tall, pointed tree."
+  },
+  "gusto": {
+    "background": "Gusto came into English from Italian in the 1600s, first meaning a taste or liking for something. It grew into the word for hearty, wholehearted enjoyment.",
+    "roots": [
+      {
+        "part": "gustus",
+        "meaning": "taste, tasting (Latin)"
+      },
+      {
+        "part": "gustare",
+        "meaning": "to taste"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Disgust shares the root: literally \"bad taste.\""
+  },
+  "habibi": {
+    "background": "Habibi, \"my beloved,\" is used across the Arab world for lovers, friends, children and even strangers in a friendly moment. Its feminine form is habibti.",
+    "roots": [
+      {
+        "part": "ḥabīb",
+        "meaning": "beloved, dear (Arabic)"
+      },
+      {
+        "part": "-ī",
+        "meaning": "my"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "It is one of the most common words in Arabic pop songs."
+  },
+  "halcyon": {
+    "background": "Halcyon days began as a real season: the calm days around the winter solstice when, the Greeks believed, the halcyon bird nested on the sea and the waves fell still.",
+    "roots": [
+      {
+        "part": "halkyōn",
+        "meaning": "kingfisher (Greek)"
+      }
+    ],
+    "myth": "In Greek myth, Alcyone threw herself into the sea when her husband Ceyx drowned. The gods turned them both into kingfishers, and her father Aeolus, god of the winds, calmed the sea each winter so she could nest.",
+    "fun_fact": "Kingfishers still carry the scientific name Halcyon in some species."
+  },
+  "hiraeth": {
+    "background": "Welsh poets and singers have long used hiraeth for a deep, grieving homesickness for a home, a time or a Wales that may never have existed. Many Welsh people call it untranslatable.",
+    "roots": [
+      {
+        "part": "hir",
+        "meaning": "long (Welsh)"
+      },
+      {
+        "part": "aeth",
+        "meaning": "sorrow, grief (as often explained)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "It is often explained as \"long grief,\" though linguists debate the exact roots."
+  },
+  "hosh-rubaa": {
+    "background": "Hosh-rubaa appears in Persian and Urdu poetry for beauty so stunning it robs you of your senses. It is famous from Tilism-e-Hoshruba, a vast Urdu fantasy epic.",
+    "roots": [
+      {
+        "part": "hosh",
+        "meaning": "senses, awareness (Persian)"
+      },
+      {
+        "part": "rubā",
+        "meaning": "stealing, carrying off"
+      }
+    ],
+    "myth": "Tilism-e-Hoshruba, written in nineteenth-century Lucknow, tells of a magical land full of sorcerers, so enchanting it steals the senses of all who enter.",
+    "fun_fact": "The epic ran to thousands of pages, making it one of the longest fantasy works ever written."
+  },
+  "hygge": {
+    "background": "Hygge is the Danish art of coziness: candles, warm drinks, good company and nowhere to be. It became a worldwide trend around 2016, when Oxford named it a runner-up word of the year.",
+    "roots": [
+      {
+        "part": "hygga",
+        "meaning": "to comfort, to console (Old Norse)"
+      },
+      {
+        "part": "hugr",
+        "meaning": "mind, mood"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Hygge came to Danish from Norwegian, and is related to the English word hug."
+  },
+  "ikigai": {
+    "background": "Ikigai is an everyday Japanese word for what makes life worth living. In Japan it is often small and personal: a morning garden, a grandchild's visit, a craft.",
+    "roots": [
+      {
+        "part": "iki",
+        "meaning": "life, living (Japanese)"
+      },
+      {
+        "part": "gai",
+        "meaning": "worth, value, effect"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "The famous Venn diagram of passion, mission, vocation and profession is a Western addition, not part of the Japanese idea."
+  },
+  "iktsuarpok": {
+    "background": "In Inuktitut, iktsuarpok is the restless anticipation of going outside again and again to see if anyone is coming. In the Arctic, a visitor across the snow was a big event worth watching for.",
+    "roots": [
+      {
+        "part": "iktsuarpok",
+        "meaning": "to go outside to check if someone is coming (Inuktitut)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Inuktitut builds long, sentence-like words from small parts, so one word can carry a whole scene."
+  },
+  "individuation": {
+    "background": "For Carl Jung, individuation was the lifelong process of becoming whole: bringing the conscious and unconscious parts of yourself together into the person you truly are.",
+    "roots": [
+      {
+        "part": "individuus",
+        "meaning": "indivisible (Latin)"
+      },
+      {
+        "part": "in- + dividere",
+        "meaning": "not + to divide"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "An individual is literally someone who cannot be divided."
+  },
+  "interoception": {
+    "background": "Interoception is the sense of what is happening inside your body: heartbeat, hunger, a tight chest. Scientists call it the hidden \"eighth sense\" and link it closely to how we feel emotions.",
+    "roots": [
+      {
+        "part": "inter-",
+        "meaning": "within, between (Latin)"
+      },
+      {
+        "part": "capere",
+        "meaning": "to take, to seize, as in perception"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "British physiologist Charles Sherrington named it in the early 1900s."
+  },
+  "introversion": {
+    "background": "Carl Jung introduced introversion and extraversion in his 1921 book Psychological Types, describing energy turned inward toward thoughts and feelings rather than outward to the world.",
+    "roots": [
+      {
+        "part": "intro-",
+        "meaning": "inward (Latin)"
+      },
+      {
+        "part": "vertere",
+        "meaning": "to turn"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Jung spelled it extraversion with an a; the extrovert spelling came later."
+  },
+  "ipseity": {
+    "background": "Philosophers use ipseity for selfhood: what makes you irreducibly you. It appears in the work of thinkers like Paul Ricœur, who separated it from mere sameness over time.",
+    "roots": [
+      {
+        "part": "ipse",
+        "meaning": "self, himself (Latin)"
+      },
+      {
+        "part": "-ity",
+        "meaning": "the state of"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Ipse also appears in ipso facto, \"by that very fact.\""
+  },
+  "jayus": {
+    "background": "Indonesians call a joke jayus when it is so badly told or so unfunny that you laugh anyway. The word spread through Jakarta slang.",
+    "roots": [
+      {
+        "part": "Jayus",
+        "meaning": "the nickname of a man known for terrible jokes (Indonesian slang)"
+      }
+    ],
+    "myth": "The popular story is that the word comes from Herman Jayus, a Jakarta man whose jokes were so bad his friends turned his name into the word for them.",
+    "fun_fact": "It was one of the words that made the 2005 book The Meaning of Tingo famous."
+  },
+  "kalopsia": {
+    "background": "Kalopsia is a rare, modern word for the delusion that things are more beautiful than they really are, the rose-tinted view of new love or a fond memory.",
+    "roots": [
+      {
+        "part": "kalos",
+        "meaning": "beautiful (Greek)"
+      },
+      {
+        "part": "opsis",
+        "meaning": "sight, appearance"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Kalos also gave us kaleidoscope, \"beautiful form viewer.\""
+  },
+  "kama-muta": {
+    "background": "Researchers in the Kama Muta Lab, led by Alan Fiske, borrowed the Sanskrit phrase in 2015 to name the feeling of being moved: tears, goosebumps and warmth in the chest when closeness suddenly intensifies.",
+    "roots": [
+      {
+        "part": "kāma",
+        "meaning": "love, desire (Sanskrit)"
+      },
+      {
+        "part": "muta",
+        "meaning": "moved"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "The researchers chose Sanskrit so the scientific term would not be tied to any one modern language."
+  },
+  "kilig": {
+    "background": "Filipinos use kilig for the giddy, fluttery rush of a romantic moment, whether it's yours or a couple's on screen. It is one of the most beloved words in Filipino pop culture.",
+    "roots": [
+      {
+        "part": "kilig",
+        "meaning": "to shiver, to tremble (Tagalog)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Kilig was added to the Oxford English Dictionary in 2016."
+  },
+  "kintsugi": {
+    "background": "Kintsugi is the Japanese art of mending broken pottery with lacquer mixed with gold, so the repair becomes part of the object's beauty and history rather than something hidden.",
+    "roots": [
+      {
+        "part": "kin",
+        "meaning": "gold (Japanese)"
+      },
+      {
+        "part": "tsugi",
+        "meaning": "joining, mending"
+      }
+    ],
+    "myth": "A well-known legend tells of the shogun Ashikaga Yoshimasa sending a broken tea bowl to China for repair. It came back stapled with ugly metal, so Japanese craftsmen looked for a more beautiful way to mend.",
+    "fun_fact": "The repairs use urushi, a natural lacquer from tree sap, which can take weeks to cure."
+  },
+  "koi-no-yokan": {
+    "background": "Koi no yokan is a Japanese phrase for the feeling, on first meeting someone, that you will come to love them. It differs from love at first sight: the love hasn't arrived yet, only the certainty that it will.",
+    "roots": [
+      {
+        "part": "koi",
+        "meaning": "romantic love, longing (Japanese)"
+      },
+      {
+        "part": "no",
+        "meaning": "of"
+      },
+      {
+        "part": "yokan",
+        "meaning": "premonition, foreboding"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Koi meaning love is written differently from koi the fish, though they sound the same."
+  },
+  "komorebi": {
+    "background": "Komorebi is the Japanese word for sunlight filtering through the leaves of trees, the shifting dapples of light and shade on a forest floor. It is a small, everyday word that many people find perfect.",
+    "roots": [
+      {
+        "part": "ko",
+        "meaning": "tree (木)"
+      },
+      {
+        "part": "more",
+        "meaning": "leaking through (漏れ)"
+      },
+      {
+        "part": "bi",
+        "meaning": "sunlight (日)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Written 木漏れ日, it is literally \"tree-leaking-sun.\""
+  },
+  "languishing": {
+    "background": "Sociologist Corey Keyes described languishing as the middle ground between depression and flourishing: not ill, but not thriving either. Psychologist Adam Grant's 2021 essay made it the word of the pandemic.",
+    "roots": [
+      {
+        "part": "languir",
+        "meaning": "to languish (Old French)"
+      },
+      {
+        "part": "languere",
+        "meaning": "to be faint, weak (Latin)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Grant's article on languishing became one of the most-read New York Times pieces of 2021."
+  },
+  "languor": {
+    "background": "Languor once meant illness and suffering. By the Romantic era it had turned pleasant: the dreamy, soft heaviness of a lazy warm afternoon.",
+    "roots": [
+      {
+        "part": "languor",
+        "meaning": "faintness, feebleness (Latin)"
+      },
+      {
+        "part": "languere",
+        "meaning": "to be weak, to droop"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Languid and languish come from the same drooping root."
+  },
+  "lassitude": {
+    "background": "Doctors once used lassitude for the deep weariness that comes with illness. It now means any heavy tiredness of body and spirit, deeper than ordinary fatigue.",
+    "roots": [
+      {
+        "part": "lassus",
+        "meaning": "weary, faint (Latin)"
+      },
+      {
+        "part": "-itudo",
+        "meaning": "state of being"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Lassus may be related to the English word late."
+  },
+  "limerence": {
+    "background": "Psychologist Dorothy Tennov coined limerence in her 1979 book Love and Limerence after interviewing hundreds of people about the obsessive, euphoric early stage of infatuation.",
+    "roots": [
+      {
+        "part": "limerence",
+        "meaning": "invented by Tennov; she chose it because it sounded right and had no prior meaning"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Tennov said she made the word up from scratch, with no roots at all."
+  },
+  "liminal": {
+    "background": "Anthropologists Arnold van Gennep and later Victor Turner used liminal for the in-between stage of a rite of passage: no longer who you were, not yet who you will be.",
+    "roots": [
+      {
+        "part": "limen",
+        "meaning": "threshold (Latin)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Subliminal shares the root: \"below the threshold\" of awareness."
+  },
+  "maktoub": {
+    "background": "Maktoub, \"it is written,\" is said across the Arab world when something feels destined, whether a meeting, a loss or a stroke of luck.",
+    "roots": [
+      {
+        "part": "maktūb",
+        "meaning": "written (Arabic)"
+      },
+      {
+        "part": "k-t-b",
+        "meaning": "the root for writing"
+      }
+    ],
+    "myth": "Paulo Coelho's novel The Alchemist made maktub famous worldwide as the word a merchant uses for fate.",
+    "fun_fact": "The same k-t-b root gives Arabic kitab, book, and maktab, office or desk."
+  },
+  "mamihlapinatapai": {
+    "background": "From Yaghan, the language of Tierra del Fuego at the tip of South America, mamihlapinatapai describes a look shared by two people who each want something but wait for the other to begin.",
+    "roots": [
+      {
+        "part": "ihlapi",
+        "meaning": "to be at a loss about what to do next (Yaghan)"
+      },
+      {
+        "part": "mam-",
+        "meaning": "a reflexive or reciprocal prefix"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Guinness World Records once listed it as the world's most succinct word."
+  },
+  "matrescence": {
+    "background": "Anthropologist Dana Raphael coined matrescence in the 1970s to describe the physical, emotional and social transformation of becoming a mother. Psychologist Aurélie Athan has brought it back into use.",
+    "roots": [
+      {
+        "part": "mater",
+        "meaning": "mother (Latin)"
+      },
+      {
+        "part": "-escence",
+        "meaning": "becoming, as in adolescence"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "It was designed to sound like adolescence, another life change the body and mind go through."
+  },
+  "melancholy": {
+    "background": "Ancient Greek medicine held that the body had four humors. Too much black bile made a person melancholic: sad, thoughtful and withdrawn. The idea lasted for two thousand years.",
+    "roots": [
+      {
+        "part": "melas",
+        "meaning": "black (Greek)"
+      },
+      {
+        "part": "kholē",
+        "meaning": "bile"
+      }
+    ],
+    "myth": "Renaissance thinkers believed melancholy was the temperament of geniuses, which is why Albrecht Dürer's famous 1514 engraving Melencolia I shows a brooding winged figure surrounded by tools of invention.",
+    "fun_fact": "Choleric, an angry temperament, comes from yellow bile, the same kholē."
+  },
+  "mensch": {
+    "background": "In Yiddish, a mensch is a person of integrity and kindness, someone who does the right thing. Calling someone a real mensch is high praise.",
+    "roots": [
+      {
+        "part": "mentsh",
+        "meaning": "person, human being (Yiddish)"
+      },
+      {
+        "part": "Mensch",
+        "meaning": "human being (German)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "In German, Mensch simply means a human; Yiddish gave it its moral weight."
+  },
+  "merak": {
+    "background": "In Serbian, merak is the deep pleasure of simple things: a good meal with friends, a song, a slow evening. It is less about doing and more about savoring.",
+    "roots": [
+      {
+        "part": "merak",
+        "meaning": "pleasure, desire (Turkish)"
+      },
+      {
+        "part": "meraq",
+        "meaning": "longing, concern (Arabic)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "The word traveled from Arabic through Turkish into the Balkans, where it gained its sense of contented pleasure."
+  },
+  "meraki": {
+    "background": "Greeks use meraki for doing something with soul, creativity and love, leaving a bit of yourself in it. Cooking, painting and arranging flowers can all be done with meraki.",
+    "roots": [
+      {
+        "part": "merak",
+        "meaning": "pleasure, passion (Turkish)"
+      },
+      {
+        "part": "-i",
+        "meaning": "a Greek ending"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Meraki and the Serbian merak are cousins, sharing a Turkish ancestor."
+  },
+  "metanoia": {
+    "background": "Metanoia meant a change of mind in ancient Greek. Early Christians used it for spiritual conversion and repentance, and today it describes any deep turning of heart and outlook.",
+    "roots": [
+      {
+        "part": "meta-",
+        "meaning": "after, beyond, change (Greek)"
+      },
+      {
+        "part": "nous",
+        "meaning": "mind"
+      }
+    ],
+    "myth": "The Greeks had a minor goddess named Metanoia, who followed the god of opportunity, Kairos, offering regret to those who let him pass.",
+    "fun_fact": "In rhetoric, metanoia is correcting yourself mid-sentence to say something better."
+  },
+  "microsatisfaction": {
+    "background": "A modern coinage for the small, real pleasure of finishing a simple task. Psychologists note that small wins like these can lift mood and motivation more than we expect.",
+    "roots": [
+      {
+        "part": "mikros",
+        "meaning": "small (Greek)"
+      },
+      {
+        "part": "satisfacere",
+        "meaning": "to do enough (Latin)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Satisfaction literally means \"making enough.\""
+  },
+  "monachopsis": {
+    "background": "Monachopsis comes from The Dictionary of Obscure Sorrows by John Koenig. It is the subtle, persistent feeling of being out of place, like a seal on a beach built for walking.",
+    "roots": [
+      {
+        "part": "monachos",
+        "meaning": "solitary (Greek)"
+      },
+      {
+        "part": "opsis",
+        "meaning": "sight, appearance"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Monachos also gives us monk, someone who lives alone."
+  },
+  "mono-no-aware": {
+    "background": "Scholar Motoori Norinaga championed mono no aware in the 1700s as the heart of Japanese literature: a gentle sadness at the passing of things. It is felt most in cherry blossom season, when the petals fall within days.",
+    "roots": [
+      {
+        "part": "mono",
+        "meaning": "things (Japanese)"
+      },
+      {
+        "part": "no",
+        "meaning": "of"
+      },
+      {
+        "part": "aware",
+        "meaning": "pathos, sensitivity, an \"ah\" of feeling"
+      }
+    ],
+    "myth": "Motoori saw mono no aware everywhere in The Tale of Genji, the thousand-year-old novel often called the world's first.",
+    "fun_fact": "Aware may have begun as two sighs: \"ah\" and \"hare.\""
+  },
+  "mudita": {
+    "background": "In Buddhism, mudita is one of the four boundless states of the heart, alongside loving-kindness, compassion and equanimity. It is sympathetic joy: delight in other people's happiness.",
+    "roots": [
+      {
+        "part": "mudita",
+        "meaning": "joy, gladness (Pali and Sanskrit)"
+      },
+      {
+        "part": "mud",
+        "meaning": "to be glad"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "It is often called the opposite of schadenfreude."
+  },
+  "naches": {
+    "background": "Naches is the special pride and joy that comes from the achievements of children and grandchildren. Jewish parents often say they \"shep naches,\" or gather joy, from their kids.",
+    "roots": [
+      {
+        "part": "naches",
+        "meaning": "joy, pride (Yiddish)"
+      },
+      {
+        "part": "naḥat",
+        "meaning": "contentment, rest (Hebrew)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "\"Shep\" comes from the Yiddish for scooping, as if lifting joy like water."
+  },
+  "natsukashii": {
+    "background": "Natsukashii is a warm Japanese word for the happy nostalgia stirred by a song, a smell or an old toy. Unlike English nostalgia, it carries little sadness, more a smile of recognition.",
+    "roots": [
+      {
+        "part": "natsuku",
+        "meaning": "to grow attached to, to become fond of (Japanese)"
+      },
+      {
+        "part": "-shii",
+        "meaning": "an adjective ending"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Japanese people often just say \"natsukashii!\" out loud when something brings back a fond memory."
+  },
+  "nirvana": {
+    "background": "In Buddhism, nirvana is release from suffering and the cycle of rebirth: the fires of craving and ignorance going out. In English, it has softened into a word for perfect bliss.",
+    "roots": [
+      {
+        "part": "nir-",
+        "meaning": "out (Sanskrit)"
+      },
+      {
+        "part": "vā",
+        "meaning": "to blow"
+      }
+    ],
+    "myth": "Buddhist texts compare nirvana to a flame going out when its fuel is gone, not destroyed, simply no longer burning.",
+    "fun_fact": "Literally, nirvana means \"blown out,\" like a candle."
+  },
+  "nostalgia": {
+    "background": "Swiss medical student Johannes Hofer coined nostalgia in 1688 for a disease of homesickness seen in Swiss soldiers serving abroad. For two centuries it was treated as a real and sometimes deadly illness.",
+    "roots": [
+      {
+        "part": "nostos",
+        "meaning": "homecoming (Greek)"
+      },
+      {
+        "part": "algos",
+        "meaning": "pain"
+      }
+    ],
+    "myth": "Some armies reportedly banned Swiss mercenaries from singing a Swiss herding song because it made soldiers so homesick they deserted.",
+    "fun_fact": "Nostos is the theme of Homer's Odyssey, the long voyage home."
+  },
+  "numinous": {
+    "background": "German theologian Rudolf Otto coined numinous in his 1917 book The Idea of the Holy for the feeling of encountering something sacred: awe, fascination and a kind of trembling all at once.",
+    "roots": [
+      {
+        "part": "numen",
+        "meaning": "divine presence, a nod of the gods (Latin)"
+      }
+    ],
+    "myth": "In Roman belief, every place, spring and grove could hold a numen, a spirit whose presence you could sense.",
+    "fun_fact": "Numen originally meant a nod, as in a god nodding their will."
+  },
+  "orenda": {
+    "background": "Among the Haudenosaunee (Iroquois) peoples, orenda is the spiritual power that flows through people, animals and nature. A hunter, a singer or a storm could have strong orenda.",
+    "roots": [
+      {
+        "part": "orenda",
+        "meaning": "spiritual power (Wyandot / Huron)"
+      }
+    ],
+    "myth": "Some accounts describe a contest of orenda between a hunter and his prey: the one with the stronger power wins.",
+    "fun_fact": "Anthropologist J.N.B. Hewitt brought the word into English scholarship in 1902."
+  },
+  "oubaitori": {
+    "background": "Oubaitori is a Japanese idiom: like cherry, plum, peach and apricot trees, each person blooms in their own time and way, so there's no point comparing.",
+    "roots": [
+      {
+        "part": "ō",
+        "meaning": "cherry (桜)"
+      },
+      {
+        "part": "bai",
+        "meaning": "plum (梅)"
+      },
+      {
+        "part": "tō",
+        "meaning": "peach (桃)"
+      },
+      {
+        "part": "ri",
+        "meaning": "apricot or Japanese plum (李)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "The four kanji simply name four trees that blossom at different times each spring."
+  },
+  "paracosm": {
+    "background": "Psychiatrist Robert Silvey coined paracosm in 1976 for a detailed imaginary world created in childhood, often kept up for years. Many writers began with one.",
+    "roots": [
+      {
+        "part": "para-",
+        "meaning": "beside, beyond (Greek)"
+      },
+      {
+        "part": "kosmos",
+        "meaning": "world, order"
+      }
+    ],
+    "myth": "As children, Charlotte, Emily, Anne and Branwell Brontë invented the kingdoms of Angria and Gondal, filling tiny handmade books with their stories.",
+    "fun_fact": "The Brontës' miniature books were small enough to be read by toy soldiers."
+  },
+  "parasocial": {
+    "background": "Sociologists Donald Horton and Richard Wohl coined parasocial interaction in 1956, studying how TV and radio audiences felt they knew the hosts personally.",
+    "roots": [
+      {
+        "part": "para-",
+        "meaning": "beside, alongside (Greek)"
+      },
+      {
+        "part": "socius",
+        "meaning": "companion (Latin)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Cambridge Dictionary named parasocial its Word of the Year in 2023."
+  },
+  "petrichor": {
+    "background": "Two Australian scientists, Isabel Bear and Richard Thomas, named petrichor in a 1964 Nature paper on the oil plants release in dry weather, which mixes with soil compounds to create the smell of rain.",
+    "roots": [
+      {
+        "part": "petra",
+        "meaning": "stone (Greek)"
+      },
+      {
+        "part": "ichor",
+        "meaning": "the ethereal blood of the gods"
+      }
+    ],
+    "myth": "In Greek myth, ichor was the golden fluid that flowed in the veins of the gods instead of blood.",
+    "fun_fact": "Humans can smell geosmin, the earthy part of the scent, at a few parts per trillion."
+  },
+  "projection": {
+    "background": "Freud described projection as a defense: placing feelings you can't accept in yourself onto someone else. If you feel angry, you may see others as hostile.",
+    "roots": [
+      {
+        "part": "pro-",
+        "meaning": "forward (Latin)"
+      },
+      {
+        "part": "iacere",
+        "meaning": "to throw"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Projection literally means throwing something forward, like an image onto a screen."
+  },
+  "quaintrelle": {
+    "background": "Quaintrelle is a rare, revived word for a woman who lives with style, passion and pleasure in life's small arts. It is often set beside the dandy and flâneur as a female counterpart.",
+    "roots": [
+      {
+        "part": "cointe",
+        "meaning": "elegant, clever (Old French)"
+      },
+      {
+        "part": "cognitus",
+        "meaning": "known (Latin)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "It shares its root with quaint, which once meant clever and well made."
+  },
+  "querencia": {
+    "background": "In Spanish, querencia is the place where you feel most at home and most yourself. In bullfighting, it's the spot in the ring where the bull returns to gather its strength.",
+    "roots": [
+      {
+        "part": "querer",
+        "meaning": "to want, to love (Spanish)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Ernest Hemingway described the bull's querencia in Death in the Afternoon."
+  },
+  "redamancy": {
+    "background": "Redamancy is a rare English word from the 1600s for the act of loving someone who loves you back. It names a love that is fully returned.",
+    "roots": [
+      {
+        "part": "re-",
+        "meaning": "back, again (Latin)"
+      },
+      {
+        "part": "amare",
+        "meaning": "to love"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Romans had the verb redamare, to love in return."
+  },
+  "retrouvailles": {
+    "background": "In French, retrouvailles is the joy of finding someone again after a long time apart: the hug at the airport, the friend you haven't seen in years.",
+    "roots": [
+      {
+        "part": "re-",
+        "meaning": "again (French)"
+      },
+      {
+        "part": "trouver",
+        "meaning": "to find"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "French has no singular form for this sense; reunions always come in the plural."
+  },
+  "reverie": {
+    "background": "Reverie once meant wild delight or even revelry in Old French. Over the centuries it softened into a quiet daydream, the pleasant state of being lost in thought.",
+    "roots": [
+      {
+        "part": "rêver",
+        "meaning": "to dream (French)"
+      },
+      {
+        "part": "resver",
+        "meaning": "to wander, to rave (Old French)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Many composers, including Debussy and Schumann, wrote pieces called Rêverie."
+  },
+  "rumination": {
+    "background": "To ruminate first meant to chew the cud, as cows do, bringing food back to chew again. Psychologists use it for thoughts that keep returning without resolution.",
+    "roots": [
+      {
+        "part": "ruminare",
+        "meaning": "to chew the cud (Latin)"
+      },
+      {
+        "part": "rumen",
+        "meaning": "throat, the first stomach of cattle"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Cows, sheep, goats and giraffes are all ruminants."
+  },
+  "sangfroid": {
+    "background": "French sang-froid, \"cold blood,\" names the composure of keeping calm in danger. English borrowed it in the 1700s as a mark of admirable coolness.",
+    "roots": [
+      {
+        "part": "sang",
+        "meaning": "blood (French)"
+      },
+      {
+        "part": "froid",
+        "meaning": "cold"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "In English, \"cold-blooded\" sounds cruel, but in French sang-froid is a compliment."
+  },
+  "saudade": {
+    "background": "Saudade is often called the soul of Portuguese culture: a deep, bittersweet longing for someone or something loved and lost, with the faint hope it might return. It pours through fado music.",
+    "roots": [
+      {
+        "part": "solitas",
+        "meaning": "solitude, loneliness (Latin)"
+      }
+    ],
+    "myth": "Portuguese tradition links saudade to the Age of Discoveries, when sailors left for years at sea and families waited on the shore, not knowing if they would ever return.",
+    "fun_fact": "Brazil celebrates Dia da Saudade every year on January 30."
+  },
+  "schadenfreude": {
+    "background": "German schadenfreude names the guilty pleasure at someone else's misfortune. Studies show it is strongest when the person who stumbles seemed to deserve it, or was envied.",
+    "roots": [
+      {
+        "part": "Schaden",
+        "meaning": "harm, damage (German)"
+      },
+      {
+        "part": "Freude",
+        "meaning": "joy"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "English has the rare word epicaricacy for the same feeling, but almost no one uses it."
+  },
+  "sehnsucht": {
+    "background": "Sehnsucht is a German longing for something distant, undefined and perhaps unreachable. C.S. Lewis wrote that this \"inconsolable longing\" was central to his life and faith.",
+    "roots": [
+      {
+        "part": "sehnen",
+        "meaning": "to long for, to yearn (German)"
+      },
+      {
+        "part": "Sucht",
+        "meaning": "addiction, sickness"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Sucht is not related to suchen, to search, though many people assume it is."
+  },
+  "shadow": {
+    "background": "Carl Jung called the shadow the parts of ourselves we reject and hide, often without knowing. He believed meeting your shadow, not banishing it, was key to becoming whole.",
+    "roots": [
+      {
+        "part": "sceadu",
+        "meaning": "shade, shadow (Old English)"
+      }
+    ],
+    "myth": "Many folk tales, from Peter Pan to Hans Christian Andersen's The Shadow, imagine a shadow that slips free and lives its own life.",
+    "fun_fact": "Jung wrote that the shadow can also hold our best hidden qualities, which he called the golden shadow."
+  },
+  "sheyda": {
+    "background": "In Persian poetry, sheyda describes a lover so consumed by love that they lose themselves completely, like the poets of Rumi's tradition, intoxicated by the divine.",
+    "roots": [
+      {
+        "part": "šeydā",
+        "meaning": "love-mad, infatuated (Persian)"
+      }
+    ],
+    "myth": "Persian poets often wrote of the nightingale, sheyda for the rose, singing all night for a love that would only wound it.",
+    "fun_fact": "Sheyda is also a popular given name in Iran and Turkey."
+  },
+  "sielvartas": {
+    "background": "Lithuanian sielvartas is the deepest kind of grief, an anguish that turns the soul over. It is used for the heaviest losses.",
+    "roots": [
+      {
+        "part": "siela",
+        "meaning": "soul (Lithuanian)"
+      },
+      {
+        "part": "vartyti",
+        "meaning": "to turn, to toss"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Lithuanian is one of the oldest living Indo-European languages, keeping sounds close to ancient Sanskrit."
+  },
+  "sisu": {
+    "background": "Sisu is the Finnish idea of grit: a stubborn inner strength that keeps going against all odds. It is often credited with helping Finland resist the Soviet invasion in the Winter War of 1939 to 1940.",
+    "roots": [
+      {
+        "part": "sisu",
+        "meaning": "guts, the inside (Finnish)"
+      },
+      {
+        "part": "sisä",
+        "meaning": "interior, inner"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "In 1940 Time magazine wrote a short article titled \"Sisu\" explaining the word to Americans."
+  },
+  "solivagant": {
+    "background": "A rare word from the 1600s for someone who wanders alone, solivagant was rediscovered by word lovers as a name for the joy of solo travel.",
+    "roots": [
+      {
+        "part": "solus",
+        "meaning": "alone (Latin)"
+      },
+      {
+        "part": "vagari",
+        "meaning": "to wander"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Vagari also gives us vague and vagabond."
+  },
+  "storge": {
+    "background": "Storge was the Greek word for natural family affection, the quiet love of parents for children. C.S. Lewis described it as \"affection\" in his book The Four Loves.",
+    "roots": [
+      {
+        "part": "storgē",
+        "meaning": "natural affection (Greek)"
+      },
+      {
+        "part": "stergein",
+        "meaning": "to love, to cherish"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Lewis called storge the humblest of loves, but the one most of our happiness depends on."
+  },
+  "sturm-und-drang": {
+    "background": "Sturm und Drang was a German literary movement of the 1770s that rebelled against cool reason with wild emotion. Young Goethe and Schiller were its stars.",
+    "roots": [
+      {
+        "part": "Sturm",
+        "meaning": "storm (German)"
+      },
+      {
+        "part": "Drang",
+        "meaning": "urge, stress, pressure"
+      }
+    ],
+    "myth": "The movement was named after a 1776 play by Friedrich Maximilian Klinger, whose original title was Wirrwarr, meaning chaos.",
+    "fun_fact": "Goethe's The Sorrows of Young Werther, a key Sturm und Drang novel, made fans across Europe dress like its hero."
+  },
+  "sublime": {
+    "background": "Philosopher Edmund Burke wrote in 1757 that the sublime is the thrilling mix of awe and terror we feel before something vast: a mountain, a storm, the sea.",
+    "roots": [
+      {
+        "part": "sub",
+        "meaning": "up to, under (Latin)"
+      },
+      {
+        "part": "limen",
+        "meaning": "threshold, lintel"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Sublime may originally mean \"up to the lintel,\" the top beam of a doorway, lifted as high as can be."
+  },
+  "susto": {
+    "background": "In Latin American folk healing, susto is soul loss caused by a sudden fright. The shock is thought to scare the soul out of the body, leaving fatigue and sadness behind.",
+    "roots": [
+      {
+        "part": "susto",
+        "meaning": "fright, scare (Spanish)"
+      }
+    ],
+    "myth": "Traditional healers, curanderos, perform a limpia, a cleansing, often sweeping the body with herbs or an egg and calling the person's soul back home.",
+    "fun_fact": "Susto was once listed in the DSM, psychiatry's diagnostic manual, as a cultural syndrome."
+  },
+  "synchronicity": {
+    "background": "Carl Jung coined synchronicity for meaningful coincidences that seem connected by meaning rather than cause, such as dreaming of an old friend just before they call.",
+    "roots": [
+      {
+        "part": "syn-",
+        "meaning": "together (Greek)"
+      },
+      {
+        "part": "khronos",
+        "meaning": "time"
+      }
+    ],
+    "myth": "Jung described a patient telling him a dream about a golden scarab, just as a scarab-like beetle tapped on his window. He caught it and handed it to her.",
+    "fun_fact": "Jung developed the idea in talks with physicist Wolfgang Pauli."
+  },
+  "tacenda": {
+    "background": "Tacenda is a Latin word adopted into English for things better left unsaid: secrets, private feelings and truths kept in silence.",
+    "roots": [
+      {
+        "part": "tacere",
+        "meaning": "to be silent (Latin)"
+      },
+      {
+        "part": "-enda",
+        "meaning": "things to be done"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Tacit, an unspoken agreement, comes from the same root."
+  },
+  "tarab": {
+    "background": "In Arabic music, tarab is the state of ecstatic enchantment that music can bring, shared between performer and audience. Great singers like Umm Kulthum were famous for it.",
+    "roots": [
+      {
+        "part": "ṭarab",
+        "meaning": "delight, rapture (Arabic)"
+      }
+    ],
+    "myth": "Umm Kulthum would repeat a single line again and again, varying it each time, as the audience cried out, until a song could last over an hour.",
+    "fun_fact": "Listeners shout \"Allah!\" or \"Ya salaam!\" when tarab hits."
+  },
+  "tesoro": {
+    "background": "Italians and Spanish speakers use tesoro, treasure, as a term of endearment for children, partners and dear friends.",
+    "roots": [
+      {
+        "part": "thēsauros",
+        "meaning": "treasure, storehouse (Greek)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Thesaurus, a treasury of words, comes from the same Greek root."
+  },
+  "tiam": {
+    "background": "Tiam is a Persian word for the twinkle in someone's eyes when you first meet, the light of connection. It is also a common name.",
+    "roots": [
+      {
+        "part": "tiam",
+        "meaning": "eyes' sparkle (Persian, as popularly explained)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Its meaning is mostly passed on through word lists and songs rather than dictionaries."
+  },
+  "torschlusspanik": {
+    "background": "German torschlusspanik is the anxiety that time is running out and doors are closing on your options, especially as one grows older.",
+    "roots": [
+      {
+        "part": "Tor",
+        "meaning": "gate (German)"
+      },
+      {
+        "part": "Schluss",
+        "meaning": "closing"
+      },
+      {
+        "part": "Panik",
+        "meaning": "panic"
+      }
+    ],
+    "myth": "In medieval towns, gates closed at nightfall. Travelers rushed to get inside before they were shut out for the night.",
+    "fun_fact": "It literally means \"gate-closing panic.\""
+  },
+  "toska": {
+    "background": "Russian writers treat toska as a soul-deep ache without a clear cause. Vladimir Nabokov said no single English word renders all its shades.",
+    "roots": [
+      {
+        "part": "toska",
+        "meaning": "yearning, anguish (Russian)"
+      },
+      {
+        "part": "tesk-",
+        "meaning": "narrowness, tightness (Old Slavic)"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Nabokov described toska ranging from great spiritual anguish to dull restlessness and boredom."
+  },
+  "transference": {
+    "background": "Freud noticed that patients often treated him as if he were a parent or past lover. He called it transference: feelings from old relationships redirected onto someone new.",
+    "roots": [
+      {
+        "part": "trans-",
+        "meaning": "across (Latin)"
+      },
+      {
+        "part": "ferre",
+        "meaning": "to carry"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Its mirror, a therapist's feelings toward the patient, is called countertransference."
+  },
+  "ubuntu": {
+    "background": "Ubuntu is a Southern African philosophy captured in the Zulu saying \"umuntu ngumuntu ngabantu\": a person is a person through other people. Archbishop Desmond Tutu shared it with the world.",
+    "roots": [
+      {
+        "part": "ubu-",
+        "meaning": "a prefix for an abstract quality (Nguni)"
+      },
+      {
+        "part": "-ntu",
+        "meaning": "person, human"
+      }
+    ],
+    "myth": "A widely shared story tells of children told to race for a basket of fruit. Instead they held hands and ran together, saying \"ubuntu: how can one of us be happy if the others are sad?\"",
+    "fun_fact": "The Ubuntu operating system was named after the philosophy."
+  },
+  "uitwaaien": {
+    "background": "The Dutch go uitwaaien by walking or cycling in strong wind to clear their heads. In a windy, flat country, it's a beloved way to blow away stress.",
+    "roots": [
+      {
+        "part": "uit",
+        "meaning": "out (Dutch)"
+      },
+      {
+        "part": "waaien",
+        "meaning": "to blow"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Dutch beaches often fill with people uitwaaien on stormy winter days."
+  },
+  "vagabond": {
+    "background": "A vagabond is a wanderer with no fixed home. Medieval laws punished vagabonds; later writers like Robert Louis Stevenson turned the word romantic.",
+    "roots": [
+      {
+        "part": "vagabundus",
+        "meaning": "wandering, strolling (Latin)"
+      },
+      {
+        "part": "vagari",
+        "meaning": "to wander"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Stevenson's poem The Vagabond begins, \"Give to me the life I love.\""
+  },
+  "vidreisn": {
+    "background": "Old Norse viðreisn means rising again after hardship. Today it is also the name of an Icelandic political party.",
+    "roots": [
+      {
+        "part": "við",
+        "meaning": "against, back (Old Norse)"
+      },
+      {
+        "part": "reisn",
+        "meaning": "raising, dignity"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Modern Icelandic still uses reisn for dignity, standing tall."
+  },
+  "viraha": {
+    "background": "In Indian poetry and music, viraha is the pain of separation from a beloved. It is central to devotional poems about Radha longing for Krishna.",
+    "roots": [
+      {
+        "part": "vi-",
+        "meaning": "apart (Sanskrit)"
+      },
+      {
+        "part": "rah",
+        "meaning": "to leave, to abandon"
+      }
+    ],
+    "myth": "In Hindu tradition, Radha waits by the Yamuna river for Krishna, and her longing in his absence becomes a symbol of the soul yearning for the divine.",
+    "fun_fact": "There is even a monsoon song form, the barahmasa, that tracks a lover's viraha month by month."
+  },
+  "viridity": {
+    "background": "Viridity means greenness and freshness, and by extension the innocence of youth. Medieval mystic Hildegard of Bingen wrote of viriditas, the greening power of life.",
+    "roots": [
+      {
+        "part": "viridis",
+        "meaning": "green (Latin)"
+      },
+      {
+        "part": "virere",
+        "meaning": "to be green, to flourish"
+      }
+    ],
+    "myth": "Hildegard of Bingen saw viriditas as the divine life force that makes plants grow and souls flourish.",
+    "fun_fact": "Verdant and the color viridian share the same green root."
+  },
+  "viveka": {
+    "background": "In Hindu philosophy, viveka is discernment: the ability to tell the real and lasting from the passing. Swami Vivekananda took his name from it.",
+    "roots": [
+      {
+        "part": "vi-",
+        "meaning": "apart (Sanskrit)"
+      },
+      {
+        "part": "vic",
+        "meaning": "to separate, to sift"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Vivekananda means \"the bliss of discernment.\""
+  },
+  "wabi-sabi": {
+    "background": "Wabi-sabi is a Japanese way of seeing beauty in what is imperfect, incomplete and passing: a cracked bowl, moss on stone, a weathered gate. It grew out of Zen and the tea ceremony.",
+    "roots": [
+      {
+        "part": "wabi",
+        "meaning": "rustic simplicity, quiet solitude (Japanese)"
+      },
+      {
+        "part": "sabi",
+        "meaning": "the beauty of age and wear"
+      }
+    ],
+    "myth": "A tea master's story tells of the young Sen no Rikyū raking a perfect garden, then shaking a tree so a few leaves fell, because nature's imperfection made it beautiful.",
+    "fun_fact": "Sabi is related to the Japanese word for rust."
+  },
+  "waldeinsamkeit": {
+    "background": "German Romantic writers used waldeinsamkeit for the feeling of being alone in the woods: solitude, peace and a connection to nature. Ralph Waldo Emerson wrote a poem with that title.",
+    "roots": [
+      {
+        "part": "Wald",
+        "meaning": "forest (German)"
+      },
+      {
+        "part": "Einsamkeit",
+        "meaning": "solitude, loneliness"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Ludwig Tieck's 1797 fairy tale Der blonde Eckbert made the word famous."
+  },
+  "wistful": {
+    "background": "Wistful appeared in the 1600s, possibly from wistly, meaning intently. It describes a gentle, longing sadness for something past or out of reach.",
+    "roots": [
+      {
+        "part": "wistly",
+        "meaning": "intently, attentively (Middle English)"
+      },
+      {
+        "part": "-ful",
+        "meaning": "full of"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Many linguists think it was influenced by wishful."
+  },
+  "woolgathering": {
+    "background": "Woolgathering once meant collecting tufts of wool snagged on bushes and fences, a wandering, aimless task. It came to mean letting the mind drift into daydreams.",
+    "roots": [
+      {
+        "part": "wool",
+        "meaning": "sheep's fleece"
+      },
+      {
+        "part": "gathering",
+        "meaning": "collecting"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "Wool gatherers really did wander the hills picking scraps of fleece to spin."
+  },
+  "ya-aburnee": {
+    "background": "Ya'aburnee, \"may you bury me,\" is an Arabic expression of love so deep that the speaker hopes to die before the beloved, unable to bear living without them.",
+    "roots": [
+      {
+        "part": "yā",
+        "meaning": "O, a calling word (Arabic)"
+      },
+      {
+        "part": "tuqburnī",
+        "meaning": "you bury me, from qabr, grave"
+      }
+    ],
+    "myth": null,
+    "fun_fact": "It is said tenderly, especially by parents to children."
+  },
+  "yugen": {
+    "background": "Yūgen is a key idea in Japanese aesthetics: a deep, mysterious beauty that is felt rather than seen. Noh playwright Zeami made it the highest goal of his art.",
+    "roots": [
+      {
+        "part": "yū",
+        "meaning": "faint, deep, dim (幽)"
+      },
+      {
+        "part": "gen",
+        "meaning": "mysterious, dark (玄)"
+      }
+    ],
+    "myth": "Zeami compared yūgen to watching the sun sink behind a flower-covered hill, or wandering a forest with no thought of return.",
+    "fun_fact": "The word came to Japan from Chinese Daoist and Buddhist writings."
+  }
+}
