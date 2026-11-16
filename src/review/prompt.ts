@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as StoreReview from 'expo-store-review';
 import { Platform } from 'react-native';
 
 /**
@@ -12,6 +11,20 @@ import { Platform } from 'react-native';
 const LAST_ASKED_KEY = 'emotionary.review.lastAsked.v1';
 const MIN_GAP_MS = 120 * 24 * 60 * 60 * 1000;
 export const REVIEW_STREAK = 3;
+
+type StoreReviewModule = typeof import('expo-store-review');
+
+/**
+ * Loaded on first use, so a build missing the native module can never crash
+ * the screen that imports this file; the prompt is simply skipped.
+ */
+function loadStoreReview(): StoreReviewModule | null {
+  try {
+    return require('expo-store-review') as StoreReviewModule;
+  } catch {
+    return null;
+  }
+}
 
 export function isReviewMoment(streak: number): boolean {
   return streak >= REVIEW_STREAK;
@@ -27,7 +40,8 @@ export async function maybeAskForReview(): Promise<boolean> {
   try {
     const last = Number((await AsyncStorage.getItem(LAST_ASKED_KEY)) ?? 0);
     if (!canAskAgain(last)) return false;
-    if (!(await StoreReview.isAvailableAsync())) return false;
+    const StoreReview = loadStoreReview();
+    if (!StoreReview || !(await StoreReview.isAvailableAsync())) return false;
     await AsyncStorage.setItem(LAST_ASKED_KEY, String(Date.now()));
     await StoreReview.requestReview();
     return true;
