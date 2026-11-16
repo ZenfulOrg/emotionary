@@ -63,7 +63,7 @@ export default function WordDetailScreen() {
         <View style={styles.message}>
           <Eyebrow>Full access</Eyebrow>
           <WordTitle word={word} />
-          <Body tone="muted">Unlock every word, every widget theme, and every future update.</Body>
+          <Body tone="muted">Unlock every word and its story (roots, origins and cultural background), every widget theme, and every future update.</Body>
           <Button
             label="Unlock Emotionary"
             onPress={() => router.push('/paywall' as Href)}

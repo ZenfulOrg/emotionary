@@ -52,7 +52,7 @@ export function UnlockSheet({
         Don&apos;t miss a single day.
       </Headline>
       <Body tone="muted" align="center" style={styles.subtitle}>
-        Read today&apos;s meaning, and every word that comes after it.
+        Read today&apos;s meaning and the story behind it: its roots, origins and culture. Then every word after it.
       </Body>
 
       <View style={styles.plans} accessibilityRole="radiogroup">

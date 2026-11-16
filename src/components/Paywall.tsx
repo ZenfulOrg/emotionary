@@ -96,8 +96,8 @@ export function Paywall({
       </Headline>
       <Body tone="muted" style={styles.subtitle}>
         {subtitle ?? (Platform.OS === 'android'
-          ? 'The full emotional vocabulary dictionary and future word updates.'
-          : 'The full emotional vocabulary dictionary, every widget theme, and future word updates.')}
+          ? "The full emotional vocabulary dictionary, every word's story (its roots, origins and cultural background), and future word updates."
+          : "The full emotional vocabulary dictionary, every word's story (its roots, origins and cultural background), every widget theme, and future word updates.")}
       </Body>
 
       <View style={styles.options} accessibilityRole="radiogroup">

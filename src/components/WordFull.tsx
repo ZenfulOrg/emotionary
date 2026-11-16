@@ -252,7 +252,7 @@ export function WordFull({
               router.push((meaningLocked ? `/unlock/${word.slug}` : `/share/${word.slug}`) as Href);
             }}
           />
-          {story && !meaningLocked ? (
+          {story ? (
             <WordAction
               glyph="flip"
               label="Story"

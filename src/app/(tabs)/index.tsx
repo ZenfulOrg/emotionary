@@ -366,8 +366,8 @@ function UpgradeSlide({ freeCount }: { freeCount: number }) {
             Keep discovering.
           </Headline>
           <Body tone="muted" style={styles.upgradeBody}>
-            Unlock the full emotional vocabulary dictionary, every widget theme, and future word
-            updates.
+            Unlock the full emotional vocabulary dictionary, the story behind every word (its
+            roots, origins and cultural background), every widget theme, and future word updates.
           </Body>
         </View>
         <RoundCta
