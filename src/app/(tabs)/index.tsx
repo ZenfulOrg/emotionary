@@ -56,6 +56,10 @@ export default function TodayScreen() {
   const markTodayActionCoachmarkSeen = useUserStore((s) => s.markTodayActionCoachmarkSeen);
   const setNotifEnabled = useUserStore((s) => s.setNotifEnabled);
   const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
+  const welcomeDate = useUserStore((s) => s.welcomeDate);
+  const feedScrolled = useUserStore((s) => s.feedScrolled);
+  const markFeedScrolled = useUserStore((s) => s.markFeedScrolled);
+  const listRef = useRef<FlatList<TodayFeedItem>>(null);
   const kept = useKeptSlugs();
   const [feedHeight, setFeedHeight] = useState(0);
   const [visibleSlug, setVisibleSlug] = useState<string | null>(null);
@@ -100,12 +104,23 @@ export default function TodayScreen() {
   useFocusEffect(useCallback(() => dismissStreak, [dismissStreak]));
 
   const feed = useMemo(
-    () => buildTodayFeed(words, today, hasFullAccess, cycleCount),
-    [words, today, hasFullAccess, cycleCount],
+    () => buildTodayFeed(words, today, hasFullAccess, cycleCount, welcomeDate),
+    [words, today, hasFullAccess, cycleCount, welcomeDate],
   );
   // Admin-controlled, so count live instead of assuming ten.
   const freeCount = useMemo(() => freeWords(words).length, [words]);
   const firstFeedSlug = feed[0]?.kind === 'word' ? feed[0].word.slug : null;
+  // Until someone has swiped once, Today's first word says more wait below.
+  const wordsBelow = feed.filter((item) => item.kind === 'word').length - 1;
+  const scrollHintLabel =
+    feedScrolled || feed.length < 2
+      ? null
+      : hasFullAccess
+        ? 'Swipe up for more words'
+        : `${wordsBelow} free ${wordsBelow === 1 ? 'word' : 'words'} below`;
+  const scrollToNext = useCallback(() => {
+    listRef.current?.scrollToIndex({ index: 1, animated: true });
+  }, []);
   const activeAudioSlug = feed.some(
     (item) => item.kind === 'word' && item.word.slug === visibleSlug,
   )
@@ -200,6 +215,9 @@ export default function TodayScreen() {
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken<TodayFeedItem>[] }) => {
       const visibleToken = viewableItems.find((token) => token.isViewable);
+      if (visibleToken && visibleToken.index !== null && visibleToken.index > 0) {
+        if (!useUserStore.getState().feedScrolled) markFeedScrolled();
+      }
       if (visibleToken?.item.kind === 'word') {
         visibleSlugRef.current = visibleToken.item.word.slug;
         setVisibleSlug(visibleToken.item.word.slug);
@@ -212,7 +230,7 @@ export default function TodayScreen() {
         }
       }
     },
-    [markRead, showCoachmark],
+    [markRead, markFeedScrolled, showCoachmark],
   );
 
   useFocusEffect(
@@ -265,6 +283,7 @@ export default function TodayScreen() {
       )}
       <View style={styles.container} onLayout={onLayout}>
         <FlatList
+          ref={listRef}
           data={feed}
           keyExtractor={(item) => item.key}
           renderItem={({ item, index }) => (
@@ -283,6 +302,11 @@ export default function TodayScreen() {
                   feedPage
                   eyebrow={index === 0 ? "Today's word" : undefined}
                   reveal={revealing && index === 0}
+                  scrollHint={
+                    index === 0 && scrollHintLabel
+                      ? { label: scrollHintLabel, onPress: scrollToNext }
+                      : undefined
+                  }
                   audioActive={item.word.slug === activeAudioSlug}
                   meaningLocked={
                     wordAccess(item.word, firstFeedSlug, hasFullAccess, kept) === 'teaser'
@@ -294,7 +318,7 @@ export default function TodayScreen() {
             </View>
           )}
           pagingEnabled={feedHeight > 0}
-          extraData={`${activeAudioSlug}|${hasFullAccess}|${kept.size}`}
+          extraData={`${activeAudioSlug}|${hasFullAccess}|${kept.size}|${scrollHintLabel ?? ''}`}
           decelerationRate="fast"
           contentInsetAdjustmentBehavior="never"
           showsVerticalScrollIndicator={false}

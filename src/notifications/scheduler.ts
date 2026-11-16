@@ -2,7 +2,8 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import type { Word } from '@/content/types';
-import { addDays, localDateString, monthKey, wordOfDay } from '@/daily/engine';
+import { addDays, daysSinceEpoch, localDateString, monthKey, wordOfDay } from '@/daily/engine';
+import { WELCOME_DAYS, welcomeWords } from '@/daily/welcome';
 import { canBrowseWord } from '@/entitlements';
 import { dailyNotificationContent } from '@/notifications/content';
 import { registerForPush } from '@/notifications/push';
@@ -84,6 +85,8 @@ interface RebuildArgs {
   hasFullAccess: boolean;
   /** Words this free user keeps (read or saved while free). */
   kept: readonly string[];
+  /** Local date onboarding finished; the first two weeks use welcome words. */
+  welcomeDate?: string | null;
 }
 
 export function streakRescueDate(streakState: StreakState): Date | null {
@@ -98,6 +101,7 @@ async function doRebuild({
   streakState,
   hasFullAccess,
   kept,
+  welcomeDate = null,
 }: RebuildArgs): Promise<void> {
   const keptSet = new Set(kept);
   if (Platform.OS === 'web') return;
@@ -136,10 +140,14 @@ async function doRebuild({
   const startOffset = fireDate(today, time).getTime() > now.getTime() ? 0 : 1;
 
   const cache = new Map<string, Word[]>();
+  const welcome = welcomeWords(words);
+  const welcomeStart = welcomeDate === null ? null : daysSinceEpoch(welcomeDate);
   for (let i = 0; i < MAX_SLOTS; i++) {
     const date = addDays(today, startOffset + i);
     const worded = monthKey(date) === monthKey(today);
-    const word = worded ? wordOfDay(words, date, cache) : null;
+    const welcomeDay = welcomeStart === null ? -1 : daysSinceEpoch(date) - welcomeStart;
+    const curated = welcomeDay >= 0 && welcomeDay < WELCOME_DAYS ? welcome[welcomeDay] : undefined;
+    const word = worded ? (curated ?? wordOfDay(words, date, cache)) : null;
     await Notifications.scheduleNotificationAsync({
       content: {
         ...(word

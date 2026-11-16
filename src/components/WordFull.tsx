@@ -21,6 +21,7 @@ import { pronunciationLineFor } from '@/content/part-of-speech';
 import { asEntry, displayWord } from '@/content/presentation';
 import type { Word } from '@/content/types';
 import { lightImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
+import { ScrollHint } from '@/components/ScrollHint';
 import { useUserStore } from '@/store/userStore';
 import { useGround } from '@/theme/ground';
 import { font, layout, levelPalettes, planets, space, tracking, type } from '@/theme/tokens';
@@ -41,6 +42,7 @@ export function WordFull({
   meaningLocked = false,
   eyebrow,
   reveal = false,
+  scrollHint,
 }: {
   word: Word;
   feedPage?: boolean;
@@ -52,6 +54,8 @@ export function WordFull({
   eyebrow?: string;
   /** Play the once-a-day reveal: each part rises in, the word last and springy. */
   reveal?: boolean;
+  /** Today's first page: a cue that more words wait below. */
+  scrollHint?: { label: string; onPress: () => void };
 }) {
   const isFavorite = useUserStore((s) => s.favorites.includes(word.slug));
   const toggleFavorite = useUserStore((s) => s.toggleFavorite);
@@ -209,6 +213,7 @@ export function WordFull({
             }}
           />
         </View>
+        {scrollHint ? <ScrollHint label={scrollHint.label} onPress={scrollHint.onPress} /> : null}
       </Animated.View>
     </>
   );

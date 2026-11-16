@@ -4,7 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { isSimulator } from '@/dev/simulator';
 
-import { daysSinceEpoch } from '@/daily/engine';
+import { daysSinceEpoch, localDateString } from '@/daily/engine';
 import { nextStreak, type StreakState } from '@/store/streak';
 
 export interface NotifTime {
@@ -14,6 +14,10 @@ export interface NotifTime {
 
 interface UserState {
   onboarded: boolean;
+  /** Local date onboarding finished; that day opens on the welcome word. */
+  welcomeDate: string | null;
+  /** Has swiped past Today's first word at least once (retires the scroll cue). */
+  feedScrolled: boolean;
   favorites: string[]; // slugs, insertion order
   readSlugs: string[]; // unique slugs ever read
   /** Words a free user keeps after they stop being free (read or saved while free). */
@@ -51,6 +55,7 @@ interface UserState {
   simulatorProPreview: boolean;
 
   completeOnboarding: () => void;
+  markFeedScrolled: () => void;
   toggleFavorite: (slug: string) => void;
   /** Idempotent favorite — used by the widget's like action. */
   addFavorite: (slug: string) => void;
@@ -84,6 +89,8 @@ export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
       onboarded: false,
+      welcomeDate: null,
+      feedScrolled: false,
       favorites: [],
       readSlugs: [],
       keptSlugs: [],
@@ -107,7 +114,9 @@ export const useUserStore = create<UserState>()(
       marketingOptIn: null,
       marketingPending: false,
 
-      completeOnboarding: () => set({ onboarded: true }),
+      completeOnboarding: () =>
+        set((s) => ({ onboarded: true, welcomeDate: s.welcomeDate ?? localDateString() })),
+      markFeedScrolled: () => set({ feedScrolled: true }),
 
       toggleFavorite: (slug) =>
         set((s) => ({

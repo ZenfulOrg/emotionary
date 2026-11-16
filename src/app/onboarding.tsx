@@ -321,7 +321,6 @@ function KeyPage() {
 function DrawnPage({ selected, onToggle }: { selected: string[]; onToggle: (label: string) => void }) {
   return (
     <PageCopy
-      eyebrow="Your palette"
       title="What are you drawn to?"
       body="Pick as many as you like."
     >
@@ -350,7 +349,6 @@ function ReminderPage({
 }) {
   return (
     <PageCopy
-      eyebrow="A gentle nudge"
       title="Never miss your word."
       body="Once a day, at the time you choose."
     >

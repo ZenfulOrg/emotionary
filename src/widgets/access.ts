@@ -2,6 +2,8 @@
 export interface WidgetAccess {
   hasFullAccess: boolean;
   kept: readonly string[];
+  /** Local date onboarding finished; that day shows the welcome word. */
+  welcomeDate?: string | null;
 }
 
 /** Shown in place of the definition when today's word is paid and the user is free. */

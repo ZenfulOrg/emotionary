@@ -8,8 +8,12 @@ const FEED_SEED_PREFIX = 'emotionary-feed-v1:';
  * random-looking order for the local day. The order only changes at midnight,
  * so content never jumps while someone is reading.
  */
-export function dailyFeed(words: readonly Word[], localDate: string): Word[] {
-  const today = wordOfDay(words, localDate);
+export function dailyFeed(
+  words: readonly Word[],
+  localDate: string,
+  todaysWord: Word | null = wordOfDay(words, localDate),
+): Word[] {
+  const today = todaysWord;
   if (!today) return [];
 
   const rest = words.filter((word) => word.id !== today.id);

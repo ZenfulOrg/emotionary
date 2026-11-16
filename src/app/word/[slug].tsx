@@ -5,7 +5,8 @@ import { StyleSheet, View } from 'react-native';
 import { Body, Button, Eyebrow, Headline, Screen, ScreenHeader } from '@/components/brand';
 import { WordFull, WordTitle } from '@/components/WordFull';
 import { findWord, useContentStore } from '@/content/store';
-import { localDateString, wordOfDay } from '@/daily/engine';
+import { localDateString } from '@/daily/engine';
+import { useTodaysWord } from '@/daily/useTodaysWord';
 import { wordAccess } from '@/entitlements';
 import { useKeptSlugs } from '@/store/useKeptSlugs';
 import { useUserStore } from '@/store/userStore';
@@ -20,7 +21,7 @@ export default function WordDetailScreen() {
   const kept = useKeptSlugs();
 
   const word = slug ? findWord(words, slug) : undefined;
-  const todaysSlug = wordOfDay(words, localDateString())?.slug ?? null;
+  const todaysSlug = useTodaysWord(localDateString())?.slug ?? null;
   const access = word ? wordAccess(word, todaysSlug, hasFullAccess, kept) : 'full';
   const locked = access === 'locked';
 

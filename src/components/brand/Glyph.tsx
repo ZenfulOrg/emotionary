@@ -13,6 +13,7 @@ const STROKES = {
   back: 'M19 12H5M11 6l-6 6 6 6',
   forward: 'M5 12h14M13 6l6 6-6 6',
   up: 'M12 19V5M6 11l6-6 6 6',
+  down: 'M12 5v14M6 13l6 6 6-6',
   spark: 'M4 13c2.5-4 5-4 8-1s5.5 3 8-1',
   menu: 'M4 9h16M4 15h16',
   close: 'M6 6l12 12M18 6 6 18',

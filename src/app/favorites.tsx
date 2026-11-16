@@ -4,7 +4,8 @@ import { FlatList, StyleSheet, View } from 'react-native';
 import { Body, PageTitle, Screen, ScreenHeader } from '@/components/brand';
 import { WordCard } from '@/components/WordCard';
 import { findWord, useContentStore } from '@/content/store';
-import { localDateString, wordOfDay } from '@/daily/engine';
+import { localDateString } from '@/daily/engine';
+import { useTodaysWord } from '@/daily/useTodaysWord';
 import { canViewWord } from '@/entitlements';
 import { useKeptSlugs } from '@/store/useKeptSlugs';
 import { useUserStore } from '@/store/userStore';
@@ -16,7 +17,7 @@ export default function FavoritesScreen() {
   const favorites = useUserStore((s) => s.favorites);
   const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
   const kept = useKeptSlugs();
-  const todaysSlug = wordOfDay(words, localDateString())?.slug ?? null;
+  const todaysSlug = useTodaysWord(localDateString())?.slug ?? null;
 
   const favoriteWords = favorites
     .map((slug) => findWord(words, slug))

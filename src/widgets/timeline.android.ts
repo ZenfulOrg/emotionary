@@ -1,6 +1,7 @@
 import Widget from '../../modules/emotionary-widgets/src/EmotionaryWidgetsModule';
 import type { Word } from '@/content/types';
-import { addDays, localDateString, wordOfDay } from '@/daily/engine';
+import { addDays, localDateString } from '@/daily/engine';
+import { todaysWordFor } from '@/daily/welcome';
 import { canBrowseWord } from '@/entitlements';
 import { LOCKED_WIDGET_LINE, type WidgetAccess } from '@/widgets/access';
 import { asEntry, displayWord } from '@/content/presentation';
@@ -16,7 +17,7 @@ export function refreshDailyWordWidget(
   const start = localDateString();
   const entries = Array.from({ length: 366 }, (_, offset) => {
     const date = addDays(start, offset);
-    const word = wordOfDay(words, date);
+    const word = todaysWordFor(words, date, access.welcomeDate ?? null);
     return word ? { date, word: displayWord(word.word), definition: canBrowseWord(word, access.hasFullAccess, kept) ? asEntry(word.definition) : LOCKED_WIDGET_LINE,
       category: `${planets[word.type].label} · ${word.language}`.toUpperCase(),
       tint: levelPalettes[word.level].tint, slug: word.slug } : null;

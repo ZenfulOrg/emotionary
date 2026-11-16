@@ -20,6 +20,7 @@ type StoreReviewModule = typeof import('expo-store-review');
  */
 function loadStoreReview(): StoreReviewModule | null {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- lazy on purpose
     return require('expo-store-review') as StoreReviewModule;
   } catch {
     return null;

@@ -1,4 +1,5 @@
 import { dailyFeed } from '@/daily/feed';
+import { todaysWordFor } from '@/daily/welcome';
 import { freeWords } from '@/entitlements';
 import type { Word } from '@/content/types';
 
@@ -11,8 +12,9 @@ export function buildTodayFeed(
   today: string,
   hasFullAccess: boolean,
   cycleCount: number,
+  welcomeDate: string | null = null,
 ): TodayFeedItem[] {
-  const all = dailyFeed(words, today);
+  const all = dailyFeed(words, today, todaysWordFor(words, today, welcomeDate));
   if (all.length === 0) return [];
 
   if (!hasFullAccess) {

@@ -21,7 +21,8 @@ import {
   Separator,
   useGroundStatusBar,
 } from '@/components/brand';
-import { localDateString, wordOfDay } from '@/daily/engine';
+import { localDateString } from '@/daily/engine';
+import { useTodaysWord } from '@/daily/useTodaysWord';
 import { wordAccess } from '@/entitlements';
 import { lightImpactHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
 import { CARD_BASE_HEIGHT, CARD_BASE_WIDTH, ShareCard, SHARE_THEMES } from '@/share/ShareCard';
@@ -53,7 +54,7 @@ export default function ShareModal() {
   const [saved, setSaved] = useState(false);
 
   const word = slug ? findWord(words, slug) : undefined;
-  const todaysSlug = wordOfDay(words, localDateString())?.slug ?? null;
+  const todaysSlug = useTodaysWord(localDateString())?.slug ?? null;
   // Share cards show the meaning, so they need full access to the word.
   const access = word ? wordAccess(word, todaysSlug, hasFullAccess, kept) : 'full';
   const locked = demo !== '1' && access !== 'full';

@@ -50,6 +50,7 @@ export default function RootLayout() {
 
   const [userHydrated, setUserHydrated] = useState(useUserStore.persist.hasHydrated());
   const onboarded = useUserStore((s) => s.onboarded);
+  const welcomeDate = useUserStore((s) => s.welcomeDate);
   const notifTime = useUserStore((s) => s.notifTime);
   const notifEnabled = useUserStore((s) => s.notifEnabled);
   const streakState = useUserStore((s) => s.streakState);
@@ -155,26 +156,26 @@ export default function RootLayout() {
   useEffect(() => {
     // Wait for this launch's purchase check so paid users never get teasers.
     if (!userHydrated || !contentHydrated || !onboarded || !accessResolved) return;
-    const args = { words, time: notifTime, enabled: notifEnabled, streakState, hasFullAccess, kept: keptSlugs };
+    const args = { words, time: notifTime, enabled: notifEnabled, streakState, hasFullAccess, kept: keptSlugs, welcomeDate };
     void rebuildQueue(args);
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') void rebuildQueue(args);
     });
     return () => sub.remove();
-  }, [userHydrated, contentHydrated, onboarded, accessResolved, words, notifTime, notifEnabled, streakState, hasFullAccess, keptSlugs]);
+  }, [userHydrated, contentHydrated, onboarded, accessResolved, words, notifTime, notifEnabled, streakState, hasFullAccess, keptSlugs, welcomeDate]);
 
   // Keep the widget timeline current — including the like state on today's
   // word, so the widget heart fills as soon as a word is favorited.
   // Seed it during onboarding too: the widget guide appears before signup.
   useEffect(() => {
     if (!userHydrated || !contentHydrated || !accessResolved) return;
-    const access = { hasFullAccess, kept: keptSlugs };
+    const access = { hasFullAccess, kept: keptSlugs, welcomeDate };
     refreshDailyWordWidget(words, favorites, access);
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') refreshDailyWordWidget(words, favorites, access);
     });
     return () => sub.remove();
-  }, [userHydrated, contentHydrated, accessResolved, words, favorites, hasFullAccess, keptSlugs]);
+  }, [userHydrated, contentHydrated, accessResolved, words, favorites, hasFullAccess, keptSlugs, welcomeDate]);
 
   const ready = fontsLoaded && contentHydrated && userHydrated;
 
