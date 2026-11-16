@@ -16,6 +16,7 @@ import { daysSinceEpoch, wordOfDay } from '@/daily/engine';
 export const WELCOME_DAYS = 14;
 
 export const WELCOME_SLUGS = [
+  'meraki',
   'komorebi',
   'retrouvailles',
   'chrysalism',
@@ -25,7 +26,6 @@ export const WELCOME_SLUGS = [
   'forelsket',
   'hygge',
   'natsukashii',
-  'meraki',
   'querencia',
   'kintsugi',
   'oubaitori',

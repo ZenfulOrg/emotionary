@@ -209,6 +209,40 @@ export function WordFull({
             </Body>
           )}
         </Animated.View>
+        {/* Right under the meaning, where the eyes already are. */}
+        <Animated.View entering={rise(820)}>
+          <View style={[styles.actions, feedPage && styles.centeredRow]}>
+            <WordAction
+              glyph={isFavorite ? 'heartFilled' : 'heart'}
+              label={isFavorite ? 'Saved' : 'Save'}
+              accessibilityLabel={isFavorite ? 'Remove from saved words' : 'Save this word'}
+              selected={isFavorite}
+              onPress={() => {
+                lightImpactHaptic();
+                toggleFavorite(word.slug);
+              }}
+            />
+            <WordAction
+              glyph="leaves"
+              label="Share"
+              accessibilityLabel="Share this word as an image card"
+              onPress={() => {
+                selectionHaptic();
+                router.push((meaningLocked ? `/unlock/${word.slug}` : `/share/${word.slug}`) as Href);
+              }}
+            />
+            {story ? (
+              <WordAction
+                glyph="flip"
+                label="Story"
+                accessibilityLabel={
+                  hasFullAccess ? `Read the story of ${word.word}` : 'Word stories come with Emotionary Pro'
+                }
+                onPress={openStory}
+              />
+            ) : null}
+          </View>
+        </Animated.View>
       </View>
 
       <Animated.View entering={rise(900)} style={[styles.bottom, feedPage && styles.feedBottom]}>
@@ -232,37 +266,6 @@ export function WordFull({
             {word.wisdom}
           </Body>
         )}
-        <View style={[styles.actions, feedPage && styles.centeredRow]}>
-          <WordAction
-            glyph={isFavorite ? 'heartFilled' : 'heart'}
-            label={isFavorite ? 'Saved' : 'Save'}
-            accessibilityLabel={isFavorite ? 'Remove from saved words' : 'Save this word'}
-            selected={isFavorite}
-            onPress={() => {
-              lightImpactHaptic();
-              toggleFavorite(word.slug);
-            }}
-          />
-          <WordAction
-            glyph="leaves"
-            label="Share"
-            accessibilityLabel="Share this word as an image card"
-            onPress={() => {
-              selectionHaptic();
-              router.push((meaningLocked ? `/unlock/${word.slug}` : `/share/${word.slug}`) as Href);
-            }}
-          />
-          {story ? (
-            <WordAction
-              glyph="flip"
-              label="Story"
-              accessibilityLabel={
-                hasFullAccess ? `Read the story of ${word.word}` : 'Word stories come with Emotionary Pro'
-              }
-              onPress={openStory}
-            />
-          ) : null}
-        </View>
         {scrollHint ? <ScrollHint label={scrollHint.label} onPress={scrollHint.onPress} /> : null}
       </Animated.View>
     </>
@@ -438,7 +441,7 @@ const styles = StyleSheet.create({
   bottom: { marginTop: space.xl },
   feedBottom: { marginTop: space.m },
   wisdom: { marginTop: space.m },
-  actions: { flexDirection: 'row', gap: space.xl, marginTop: space.m },
+  actions: { flexDirection: 'row', gap: space.xl, marginTop: space.l },
   action: {
     minHeight: layout.touch,
     flexDirection: 'row',
