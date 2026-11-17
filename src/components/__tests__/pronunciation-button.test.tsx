@@ -97,8 +97,9 @@ describe('PronunciationButton', () => {
     const button = renderer.root.findByProps({ accessibilityRole: 'button' });
     expect(Speech.stop).toHaveBeenCalledTimes(1);
     expect(button.props.accessibilityLabel).toBe('Play pronunciation of rumination');
-    expect(button.props.accessibilityState).toEqual({ disabled: true, selected: false });
-    expect(button.props.disabled).toBe(true);
+    // Still tappable: a quick tap on a card that is settling always plays.
+    expect(button.props.accessibilityState).toEqual({ selected: false });
+    expect(button.props.disabled).toBeUndefined();
   });
 
   it('resets when a recycled card receives a different word', async () => {
@@ -154,18 +155,28 @@ describe('PronunciationButton audio', () => {
   });
 
   it('prefers a recording over speech', async () => {
-    const player = { addListener: jest.fn(), play: jest.fn(), pause: jest.fn(), remove: jest.fn() };
+    const player = {
+      addListener: jest.fn(),
+      play: jest.fn(),
+      pause: jest.fn(),
+      remove: jest.fn(),
+      seekTo: jest.fn(() => Promise.resolve()),
+      currentTime: 0,
+    };
     Audio.createAudioPlayer.mockReturnValue(player);
     jest.mocked(Speech.speak).mockClear();
     let renderer!: ReactTestRenderer;
     await act(async () => {
       renderer = create(<PronunciationButton word="saudade" audioUrl="https://example.com/s.mp3" />);
     });
+    // Loaded before the tap, so playback starts at once.
+    expect(Audio.createAudioPlayer).toHaveBeenCalledWith({ uri: 'https://example.com/s.mp3' });
+    expect(player.play).not.toHaveBeenCalled();
     await act(async () => {
       renderer.root.findByProps({ accessibilityRole: 'button' }).props.onPress();
       await Promise.resolve();
     });
-    expect(Audio.createAudioPlayer).toHaveBeenCalledWith({ uri: 'https://example.com/s.mp3' });
+    expect(Audio.createAudioPlayer).toHaveBeenCalledTimes(1);
     expect(player.play).toHaveBeenCalled();
     expect(Speech.speak).not.toHaveBeenCalled();
     act(() => renderer.unmount());

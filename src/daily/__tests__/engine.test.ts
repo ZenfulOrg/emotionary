@@ -2,6 +2,7 @@ import type { Word } from '@/content/types';
 import {
   addDays,
   cycleFor,
+  deckWordOfDay,
   DECK_EPOCH,
   daysSinceEpoch,
   fnv1a,
@@ -39,7 +40,7 @@ const FIXTURE = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf'
 /** The daily words for `days` consecutive days starting at `from`. */
 function run(words: readonly Word[], from: string, days: number): string[] {
   const cache = new Map<string, Word[]>();
-  return Array.from({ length: days }, (_, i) => wordOfDay(words, addDays(from, i), cache)?.slug ?? '');
+  return Array.from({ length: days }, (_, i) => deckWordOfDay(words, addDays(from, i), cache)?.slug ?? '');
 }
 
 describe('protocol primitives (GOLDEN — changing any value requires bumping SEED_PREFIX)', () => {

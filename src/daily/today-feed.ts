@@ -13,8 +13,10 @@ export function buildTodayFeed(
   hasFullAccess: boolean,
   cycleCount: number,
   welcomeDate: string | null = null,
+  /** Words already read, snapshotted when Today opens: they go to the back. */
+  seen: ReadonlySet<string> = new Set(),
 ): TodayFeedItem[] {
-  const all = dailyFeed(words, today, todaysWordFor(words, today, welcomeDate));
+  const all = dailyFeed(words, today, todaysWordFor(words, today, welcomeDate), seen);
   if (all.length === 0) return [];
 
   if (!hasFullAccess) {

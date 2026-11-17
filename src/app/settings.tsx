@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
-import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { deleteAccount, getAuthAccount, signOut, type AuthAccount } from '@/auth/client';
 import { syncMarketingConsent } from '@/auth/marketing';
@@ -94,7 +94,7 @@ export default function SettingsScreen() {
     warningHaptic();
     Alert.alert(
       'Delete your account?',
-      'This permanently deletes your Emotionary account. Favorites and progress saved on this device will remain. Deleting your account does not cancel your store subscription. Cancel it first using Manage subscription.',
+      'This permanently deletes your Emotionary account. Favorites and progress saved on this device will remain. Deleting your account does not cancel a store subscription. Cancel it first in your App Store or Google Play subscriptions.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -147,7 +147,6 @@ export default function SettingsScreen() {
             onPress={hasFullAccess ? undefined : () => router.push('/paywall' as Href)}
           />
           <SettingsRow label={restoring ? 'Restoring…' : 'Restore purchases'} onPress={restoring ? undefined : () => void restore()} />
-          <SettingsRow label="Manage subscription" onPress={() => void Linking.openURL(Platform.OS === 'android' ? 'https://play.google.com/store/account/subscriptions' : 'https://apps.apple.com/account/subscriptions')} leaves />
           {account && (
             <>
               <SettingsRow label="Sign out" onPress={accountBusy ? undefined : confirmSignOut} />

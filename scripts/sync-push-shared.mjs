@@ -25,6 +25,11 @@ export function sharedFiles() {
       read('src/notifications/content.ts')
         .replace("import type { Word } from '@/content/types';", word)
         .replace("from '@/daily/engine';", "from './daily-engine.ts';"),
+    'supabase/functions/_shared/welcome.ts':
+      HEADER +
+      read('src/daily/welcome.ts')
+        .replace("import type { Word } from '@/content/types';", word)
+        .replace("from '@/daily/engine';", "from './daily-engine.ts';"),
   };
 }
 

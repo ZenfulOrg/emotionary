@@ -10,8 +10,9 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-import { addDays, wordOfDay } from '../_shared/daily-engine.ts';
+import { addDays, daysSinceEpoch, wordOfDay } from '../_shared/daily-engine.ts';
 import { dailyNotificationContent } from '../_shared/notification-content.ts';
+import { WELCOME_DAYS, welcomeWords } from '../_shared/welcome.ts';
 import type { Word } from '../_shared/word.ts';
 
 type Device = {
@@ -28,6 +29,7 @@ type Device = {
   streak: number;
   last_open_date: string | null;
   last_daily_sent_on: string | null;
+  welcome_date: string | null;
   created_at: string;
 };
 
@@ -188,7 +190,7 @@ function matchesAudience(device: Device, audience: 'all' | 'free' | 'paid') {
 async function loadWords(): Promise<Word[]> {
   const { data, error } = await supabase
     .from('words')
-    .select('id, slug, word, definition, is_free, published_at')
+    .select('id, slug, word, definition, is_free, level, published_at')
     .eq('published', true)
     .limit(10000);
   if (error) throw new Error(error.message);
@@ -215,6 +217,35 @@ function triggerEpisode(trigger: Trigger, device: Device, localDate: string): st
   }
 }
 
+/** The same word Today shows: a welcome word for the first two weeks, then the daily word. */
+function todaysWord(words: Word[], welcome: Word[], device: Device, localDate: string, cache: Map<string, Word[]>) {
+  if (device.welcome_date) {
+    const day = daysSinceEpoch(localDate) - daysSinceEpoch(device.welcome_date);
+    if (day >= 0 && day < WELCOME_DAYS && welcome[day]) return welcome[day];
+  }
+  return wordOfDay(words, localDate, cache);
+}
+
+function dailyPush(words: Word[], welcome: Word[], device: Device, localDate: string, cache: Map<string, Word[]>) {
+  const word = todaysWord(words, welcome, device, localDate, cache);
+  if (!word) return null;
+  const unlocked = device.plan === 'paid' || word.is_free || device.kept_slugs.includes(word.slug);
+  return dailyNotificationContent(word, localDate, unlocked);
+}
+
+/** Sends today's daily notification to one device now, live or not (admin test). */
+async function runTest(installId: string, now: Date) {
+  const { data: device } = await supabase.from('push_devices').select('*').eq('install_id', installId).single();
+  if (!device) return { result: 'no such device' };
+  const words = await loadWords();
+  const local = localNow((device as Device).timezone, now);
+  const push = dailyPush(words, welcomeWords(words), device as Device, local.date, new Map());
+  if (!push) return { result: 'no word' };
+  const result = await send(device as Device, push);
+  await recordResult(device as Device, result);
+  return { result, title: push.title };
+}
+
 async function runScheduled(now: Date, dryRun: boolean) {
   const stats = { daily: 0, triggered: 0, failed: 0, skipped: 0 };
   const [{ data: devices }, { data: triggers }, words] = await Promise.all([
@@ -223,6 +254,7 @@ async function runScheduled(now: Date, dryRun: boolean) {
     loadWords(),
   ]);
   const cache = new Map<string, Word[]>();
+  const welcome = welcomeWords(words);
 
   await inBatches((devices ?? []) as Device[], async (device) => {
     let local: { date: string; minutes: number };
@@ -237,9 +269,8 @@ async function runScheduled(now: Date, dryRun: boolean) {
       device.last_daily_sent_on !== local.date &&
       inWindow(local.minutes, device.notify_hour * 60 + device.notify_minute)
     ) {
-      const word = wordOfDay(words, local.date, cache);
-      if (word) {
-        const unlocked = device.plan === 'paid' || word.is_free || device.kept_slugs.includes(word.slug);
+      const push = dailyPush(words, welcome, device, local.date, cache);
+      if (push) {
         if (dryRun) {
           stats.daily++;
         } else {
@@ -251,7 +282,7 @@ async function runScheduled(now: Date, dryRun: boolean) {
             .or(`last_daily_sent_on.is.null,last_daily_sent_on.neq.${local.date}`)
             .select('install_id');
           if (claimed?.length) {
-            const result = await send(device, dailyNotificationContent(word, local.date, unlocked));
+            const result = await send(device, push);
             if (result === 'sent') stats.daily++;
             else if (result === 'skipped') stats.skipped++;
             else stats.failed++;
@@ -375,9 +406,22 @@ Deno.serve(async (req) => {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const options = (await req.json().catch(() => ({}))) as { dryRun?: boolean; only?: 'messages' };
+  const options = (await req.json().catch(() => ({}))) as {
+    dryRun?: boolean;
+    only?: 'messages';
+    testInstallId?: string;
+  };
   const dryRun = options.dryRun === true;
   const now = new Date();
+
+  if (options.testInstallId) {
+    try {
+      return Response.json({ ok: true, test: await runTest(options.testInstallId, now) });
+    } catch (error) {
+      console.error(error);
+      return Response.json({ ok: false, error: String(error) }, { status: 500 });
+    }
+  }
 
   const { data: settings } = await supabase.from('push_settings').select('push_live').single();
   const live = settings?.push_live === true;

@@ -2,6 +2,7 @@ import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Animated, { FadeOut } from 'react-native-reanimated';
 import {
+  AppState,
   FlatList,
   Linking,
   StyleSheet,
@@ -29,6 +30,9 @@ import { getPermissionGranted, requestPermission } from '@/notifications/schedul
 import { useUserStore } from '@/store/userStore';
 import { isReviewMoment, maybeAskForReview } from '@/review/prompt';
 import { brand, layout, levelPalettes, space } from '@/theme/tokens';
+
+/** How long a word's meaning must be on screen to count as read. */
+const READ_AFTER_MS = 1500;
 
 const VIEWABILITY_CONFIG = {
   itemVisiblePercentThreshold: 70,
@@ -80,32 +84,61 @@ export default function TodayScreen() {
     setStreakVisible(false);
   }, []);
 
-  const today = localDateString();
+  const [today, setToday] = useState(localDateString);
   const markRevealed = useUserStore((s) => s.markRevealed);
-  // First open of the day: play the reveal once (sparkle, staggered word, a
-  // soft haptic as it lands, then the streak). Later opens are calm.
-  const [revealing] = useState(() => useUserStore.getState().lastRevealDate !== today);
+  // First open of the day, and right after signing in: play the reveal
+  // (sparkle, staggered word, a soft haptic as it lands, then the streak).
+  // Checked whenever Today is shown or the app comes back to the front, so it
+  // also plays when the app was left open overnight. Later opens are calm.
+  const [revealing, setRevealing] = useState(() => useUserStore.getState().lastRevealDate !== today);
   const [burstVisible, setBurstVisible] = useState(revealing);
+  /** Bumped per reveal: remounts the first card so its entrance plays again. */
+  const [revealRun, setRevealRun] = useState(0);
+  /** A reveal that is starting but not yet marked as played (avoids a double start). */
+  const revealPending = useRef<string | null>(revealing ? today : null);
+  const checkReveal = useCallback(() => {
+    const now = localDateString();
+    setToday(now);
+    if (useUserStore.getState().lastRevealDate === now || revealPending.current === now) return;
+    revealPending.current = now;
+    setRevealing(true);
+    setBurstVisible(true);
+    setRevealRun((run) => run + 1);
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, []);
+  useFocusEffect(checkReveal);
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') checkReveal();
+    });
+    return () => subscription.remove();
+  }, [checkReveal]);
   useEffect(() => {
     if (!revealing) return;
-    markRevealed(today);
+    markRevealed(localDateString());
+    revealPending.current = null;
     const timers = [
       setTimeout(lightImpactHaptic, REVEAL_LAND_MS),
       setTimeout(lightImpactHaptic, REVEAL_LAND_MS + 130),
       setTimeout(() => setBurstVisible(false), REVEAL_BURST_MS),
     ];
     return () => timers.forEach(clearTimeout);
-    // Once per mount; `today` is fixed for the reveal that started it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [revealing]);
+  }, [revealing, revealRun, markRevealed]);
 
   // The popup belongs to Today: leaving (e.g. the unlock sheet) closes it so it
   // can't catch taps meant for the screen on top.
   useFocusEffect(useCallback(() => dismissStreak, [dismissStreak]));
 
+  // Read words go to the back of the scroll. Snapshotted once per day so
+  // reading doesn't reshuffle the feed under someone's thumb.
+  const seen = useMemo(
+    () => new Set(useUserStore.getState().readSlugs),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [today],
+  );
   const feed = useMemo(
-    () => buildTodayFeed(words, today, hasFullAccess, cycleCount, welcomeDate),
-    [words, today, hasFullAccess, cycleCount, welcomeDate],
+    () => buildTodayFeed(words, today, hasFullAccess, cycleCount, welcomeDate, seen),
+    [words, today, hasFullAccess, cycleCount, welcomeDate, seen],
   );
   // Admin-controlled, so count live instead of assuming ten.
   const freeCount = useMemo(() => freeWords(words).length, [words]);
@@ -130,6 +163,24 @@ export default function TodayScreen() {
   useEffect(() => {
     visibleSlugRef.current = activeAudioSlug;
   }, [activeAudioSlug]);
+
+  // "Words read" counts a word once its meaning has been on screen for a
+  // moment: not when it flicks past, and not while its meaning is locked.
+  const [isFocused, setFocused] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      setFocused(true);
+      return () => setFocused(false);
+    }, []),
+  );
+  useEffect(() => {
+    if (!isFocused || !activeAudioSlug) return;
+    const item = feed.find((entry) => entry.kind === 'word' && entry.word.slug === activeAudioSlug);
+    if (item?.kind !== 'word') return;
+    if (wordAccess(item.word, firstFeedSlug, hasFullAccess, kept) !== 'full') return;
+    const timer = setTimeout(() => markRead(activeAudioSlug), READ_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [isFocused, activeAudioSlug, feed, firstFeedSlug, hasFullAccess, kept, markRead]);
 
   useEffect(() => {
     coachmarkSeenRef.current = todayActionCoachmarkSeen;
@@ -216,12 +267,14 @@ export default function TodayScreen() {
     ({ viewableItems }: { viewableItems: ViewToken<TodayFeedItem>[] }) => {
       const visibleToken = viewableItems.find((token) => token.isViewable);
       if (visibleToken && visibleToken.index !== null && visibleToken.index > 0) {
-        if (!useUserStore.getState().feedScrolled) markFeedScrolled();
+        // Swipes during the first-visit tips don't count: the cue sits under
+        // the tip card there, so it stays until a swipe after the tips.
+        const { feedScrolled: scrolled, walkthroughDone: tipsDone } = useUserStore.getState();
+        if (!scrolled && tipsDone) markFeedScrolled();
       }
       if (visibleToken?.item.kind === 'word') {
         visibleSlugRef.current = visibleToken.item.word.slug;
         setVisibleSlug(visibleToken.item.word.slug);
-        markRead(visibleToken.item.word.slug);
         if (
           useUserStore.getState().walkthroughDone &&
           shouldShowTodayActionCoachmark(visibleToken.index, coachmarkSeenRef.current)
@@ -230,7 +283,7 @@ export default function TodayScreen() {
         }
       }
     },
-    [markRead, markFeedScrolled, showCoachmark],
+    [markFeedScrolled, showCoachmark],
   );
 
   useFocusEffect(
@@ -241,14 +294,11 @@ export default function TodayScreen() {
       const reviewTimer = isReviewMoment(useUserStore.getState().streakState.streak)
         ? setTimeout(() => void maybeAskForReview(), 6000)
         : null;
-      if (feed[0]?.kind === 'word') {
-        visibleSlugRef.current = feed[0].word.slug;
-        markRead(feed[0].word.slug);
-      }
+      if (feed[0]?.kind === 'word') visibleSlugRef.current = feed[0].word.slug;
       return () => {
         if (reviewTimer) clearTimeout(reviewTimer);
       };
-    }, [recordOpen, markRead, today, feed]),
+    }, [recordOpen, today, feed]),
   );
 
   if (feed.length === 0) {
@@ -298,6 +348,7 @@ export default function TodayScreen() {
             >
               {item.kind === 'word' ? (
                 <WordFull
+                  key={index === 0 ? `reveal-${revealRun}` : undefined}
                   word={item.word}
                   feedPage
                   eyebrow={index === 0 ? "Today's word" : undefined}
@@ -366,8 +417,8 @@ function UpgradeSlide({ freeCount }: { freeCount: number }) {
             Keep discovering.
           </Headline>
           <Body tone="muted" style={styles.upgradeBody}>
-            Unlock the full emotional vocabulary dictionary, the story behind every word (its
-            roots, origins and cultural background), every widget theme, and future word updates.
+            Unlock the full emotional vocabulary dictionary, the origin of every word (its
+            roots, history and cultural background), every widget theme, and future word updates.
           </Body>
         </View>
         <RoundCta

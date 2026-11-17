@@ -32,7 +32,7 @@ export function WordStoryBack({
       ]}
     >
       <Eyebrow tone="muted" style={styles.center}>
-        The story of
+        The origin of
       </Eyebrow>
       <Body size={40} style={[styles.center, styles.title]} accessibilityRole="header">
         {displayWord(word.word)}
@@ -59,7 +59,7 @@ export function WordStoryBack({
       )}
 
       {story.myth ? (
-        <Section label="The story">
+        <Section label="The legend">
           <Body size={type.small + 2}>{story.myth}</Body>
         </Section>
       ) : null}

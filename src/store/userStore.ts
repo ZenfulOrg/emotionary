@@ -53,6 +53,8 @@ interface UserState {
   signedOut: boolean;
   /** Simulator-only "Preview Pro" switch for reviewing the paid app. Ignored on real devices. */
   simulatorProPreview: boolean;
+  /** Account whose progress (stats, saved words) this device holds; null before any sign-in. */
+  progressOwner: string | null;
 
   completeOnboarding: () => void;
   markFeedScrolled: () => void;
@@ -64,7 +66,15 @@ interface UserState {
   keepSlugs: (slugs: readonly string[], legacyDone?: boolean) => void;
   recordOpen: (localDate: string) => void;
   markRevealed: (localDate: string) => void;
+  /** Signing in plays Today's reveal again, even if it already played today. */
+  replayReveal: () => void;
   setSignedOut: (signedOut: boolean) => void;
+  /**
+   * Called on every sign-in. A different account than the one this device's
+   * progress belongs to starts fresh (streak, words read, saved, shares);
+   * the first account to sign in keeps what was done before signing in.
+   */
+  claimProgress: (userId: string) => void;
   setSimulatorProPreview: (enabled: boolean) => void;
   /** Returns true if the share was counted (at most once per word per local date). */
   recordShare: (slug: string, localDate: string) => boolean;
@@ -111,6 +121,7 @@ export const useUserStore = create<UserState>()(
       lastRevealDate: null,
       signedOut: false,
       simulatorProPreview: false,
+      progressOwner: null,
       marketingOptIn: null,
       marketingPending: false,
 
@@ -158,7 +169,26 @@ export const useUserStore = create<UserState>()(
         }),
 
       markRevealed: (localDate) => set({ lastRevealDate: localDate }),
+      replayReveal: () => set({ lastRevealDate: null }),
       setSignedOut: (signedOut) => set({ signedOut }),
+      claimProgress: (userId) => {
+        const owner = get().progressOwner;
+        if (owner === userId) return;
+        if (owner === null) {
+          set({ progressOwner: userId });
+          return;
+        }
+        set({
+          progressOwner: userId,
+          favorites: [],
+          readSlugs: [],
+          keptSlugs: [],
+          sharedCount: 0,
+          lastSharedBySlug: {},
+          streakState: { lastOpenDate: null, streak: 0 },
+          streakBrokeDate: null,
+        });
+      },
 
       recordShare: (slug, localDate) => {
         if (get().lastSharedBySlug[slug] === localDate) return false;

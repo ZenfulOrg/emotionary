@@ -27,8 +27,9 @@ export default function WordDetailScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (word && !locked) markRead(word.slug);
-    }, [word, locked, markRead]),
+      // Counted only when the meaning is shown (not today's locked teaser).
+      if (word && access === 'full') markRead(word.slug);
+    }, [word, access, markRead]),
   );
 
   const back = () => {
@@ -63,7 +64,7 @@ export default function WordDetailScreen() {
         <View style={styles.message}>
           <Eyebrow>Full access</Eyebrow>
           <WordTitle word={word} />
-          <Body tone="muted">Unlock every word and its story (roots, origins and cultural background), every widget theme, and every future update.</Body>
+          <Body tone="muted">Unlock every word and its origin (roots, history and cultural background), every widget theme, and every future update.</Body>
           <Button
             label="Unlock Emotionary"
             onPress={() => router.push('/paywall' as Href)}

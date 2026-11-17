@@ -234,9 +234,9 @@ export function WordFull({
             {story ? (
               <WordAction
                 glyph="flip"
-                label="Story"
+                label="Origin"
                 accessibilityLabel={
-                  hasFullAccess ? `Read the story of ${word.word}` : 'Word stories come with Emotionary Pro'
+                  hasFullAccess ? `Read the origin of ${word.word}` : 'Word origins come with Emotionary Pro'
                 }
                 onPress={openStory}
               />
@@ -254,7 +254,7 @@ export function WordFull({
             tone="muted"
             style={[styles.wisdom, feedPage && styles.centeredText]}
           >
-            Its meaning, and the story behind it.
+            Its meaning, and where it comes from.
           </Body>
         ) : (
           <Body

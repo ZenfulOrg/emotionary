@@ -45,6 +45,8 @@ export function useAuthForm({
     const store = useUserStore.getState();
     if (mode === 'create' && store.marketingOptIn === null) store.setMarketingOptIn(true);
     store.setSignedOut(false);
+    // Today greets a fresh sign-in with its reveal and haptic.
+    store.replayReveal();
     void syncMarketingConsent();
     void linkPurchasesToAccount();
     onComplete();

@@ -25,6 +25,23 @@ describe('dailyFeed', () => {
     expect(tomorrow).not.toEqual(today);
   });
 
+  test('puts new unread words first and read words last', () => {
+    const date = '2026-07-15';
+    const today = wordOfDay(seedWords, date)!;
+    const others = seedWords
+      .filter((word) => word.id !== today.id)
+      .map((word) => ({ ...word, published_at: '2026-01-01T00:00:00Z' }));
+    const fresh = { ...others[0], published_at: '2026-07-10T00:00:00Z' };
+    const read = new Set([others[1].slug, others[2].slug]);
+    const words = [fresh, ...others.slice(1), today];
+    const feed = dailyFeed(words, date, today, read).map((word) => word.slug);
+
+    expect(feed[0]).toBe(today.slug);
+    expect(feed[1]).toBe(fresh.slug);
+    expect(feed.slice(-2).sort()).toEqual([...read].sort());
+    expect(feed).toHaveLength(words.length);
+  });
+
   test('returns an empty feed for an empty corpus', () => {
     expect(dailyFeed([], '2026-07-15')).toEqual([]);
   });

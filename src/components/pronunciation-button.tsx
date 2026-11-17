@@ -53,11 +53,15 @@ export function PronunciationButton({
   audioUrl?: string | null;
   /** defaults to the ground's text color */
   tint?: string;
+  /**
+   * False while the card is off screen (or scrolling away): stops playback.
+   * The button itself stays tappable, so a quick tap always plays.
+   */
   active?: boolean;
 }) {
   return (
     <PronunciationButtonControl
-      key={`${word}:${active ? 'active' : 'inactive'}`}
+      key={`${word}:${audioUrl ?? ''}`}
       word={word}
       language={language}
       audioUrl={audioUrl ?? null}
@@ -66,6 +70,8 @@ export function PronunciationButton({
     />
   );
 }
+
+type Playback = 'idle' | 'playing' | 'paused';
 
 function PronunciationButtonControl({
   word,
@@ -80,42 +86,90 @@ function PronunciationButtonControl({
   tint?: string;
   active: boolean;
 }) {
-  const [playback, setPlayback] = useState<'idle' | 'playing' | 'paused'>('idle');
-  const activeRef = useRef(false);
+  const [playback, setPlayback] = useState<Playback>('idle');
+  const playbackRef = useRef<Playback>('idle');
+  const speakingRef = useRef(false);
   const sessionRef = useRef(0);
   const playerRef = useRef<AudioPlayer | null>(null);
+  const startedRef = useRef(false);
+  const fallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const preferredLocale = speechLocaleFor(language ?? '');
+
+  const show = (next: Playback) => {
+    playbackRef.current = next;
+    setPlayback(next);
+  };
+
+  const clearFallback = () => {
+    if (fallbackRef.current) clearTimeout(fallbackRef.current);
+    fallbackRef.current = null;
+  };
+
+  /**
+   * The recording's player, created (and buffering) before the first tap so
+   * playback starts the moment the button is pressed.
+   */
+  const ensurePlayer = (): AudioPlayer | null => {
+    if (!audioUrl) return null;
+    if (playerRef.current) return playerRef.current;
+    const player = createAudioPlayer({ uri: audioUrl });
+    player.addListener('playbackStatusUpdate', (status) => {
+      if (status.playing) startedRef.current = true;
+      if (status.didJustFinish) {
+        clearFallback();
+        if (playbackRef.current !== 'idle') show('idle');
+      }
+    });
+    playerRef.current = player;
+    return player;
+  };
 
   useEffect(() => {
     ensurePlaybackMode();
     if (preferredLocale !== DEFAULT_LOCALE) prefetchVoices();
   }, [preferredLocale]);
 
-  const releasePlayer = () => {
-    playerRef.current?.remove();
-    playerRef.current = null;
+  // Preload the recording for the card on screen.
+  useEffect(() => {
+    if (active) ensurePlayer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, audioUrl]);
+
+  const stopAll = () => {
+    sessionRef.current += 1;
+    clearFallback();
+    if (speakingRef.current) void Speech.stop();
+    speakingRef.current = false;
+    playerRef.current?.pause();
   };
+
+  // Scrolled away: stop, ready to play again from the start.
+  useEffect(() => {
+    if (active || playbackRef.current === 'idle') return;
+    stopAll();
+    show('idle');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
 
   useEffect(
     () => () => {
-      sessionRef.current += 1;
-      if (activeRef.current) void Speech.stop();
-      activeRef.current = false;
-      releasePlayer();
+      stopAll();
+      playerRef.current?.remove();
+      playerRef.current = null;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
-
-  const finish = (session: number) => {
-    if (sessionRef.current !== session) return;
-    activeRef.current = false;
-    releasePlayer();
-    setPlayback('idle');
-  };
 
   const speak = (session: number) => {
     const locale =
       preferredLocale === DEFAULT_LOCALE ? DEFAULT_LOCALE : resolveLocale(preferredLocale, voiceLocales ?? []);
+    const done = () => {
+      if (sessionRef.current !== session) return;
+      speakingRef.current = false;
+      show('idle');
+    };
+    speakingRef.current = true;
     Speech.speak(word, {
       language: locale,
       // Native voices sound most natural nearer normal speed.
@@ -123,80 +177,75 @@ function PronunciationButtonControl({
       pitch: 1,
       volume: 1,
       useApplicationAudioSession: true,
-      onDone: () => finish(session),
-      onStopped: () => finish(session),
-      onError: () => finish(session),
+      onDone: done,
+      onStopped: done,
+      onError: done,
     });
   };
 
-  const playRecording = (url: string, session: number) => {
-    const player = createAudioPlayer({ uri: url });
-    playerRef.current = player;
-    let started = false;
-    const fallback = setTimeout(() => {
-      if (started || sessionRef.current !== session) return;
-      releasePlayer();
+  const playRecording = (player: AudioPlayer, session: number) => {
+    startedRef.current = false;
+    // Offline or a broken file: read the word instead of staying silent.
+    fallbackRef.current = setTimeout(() => {
+      if (startedRef.current || sessionRef.current !== session) return;
+      player.pause();
       speak(session);
     }, RECORDING_LOAD_TIMEOUT_MS);
-    player.addListener('playbackStatusUpdate', (status) => {
-      if (status.playing) started = true;
-      if (status.didJustFinish) {
-        clearTimeout(fallback);
-        finish(session);
-      }
-    });
     player.play();
   };
 
   const toggle = async () => {
-    if (!active) return;
     selectionHaptic();
     ensurePlaybackMode();
     const player = playerRef.current;
+    const usingPlayer = Boolean(player) && !speakingRef.current;
 
     if (playback === 'playing') {
-      if (player) {
+      if (usingPlayer && player) {
         player.pause();
-        setPlayback('paused');
+        show('paused');
         return;
       }
       try {
         await Speech.pause();
-        setPlayback('paused');
+        show('paused');
       } catch {
         // Android does not expose native speech pause/resume. Stopping is the
         // safest fallback there and keeps the control usable instead of throwing.
-        await Speech.stop();
-        activeRef.current = false;
-        setPlayback('idle');
+        stopAll();
+        show('idle');
       }
       return;
     }
     if (playback === 'paused') {
-      if (player) {
+      if (usingPlayer && player) {
         player.play();
-        setPlayback('playing');
+        show('playing');
         return;
       }
       try {
         await Speech.resume();
-        setPlayback('playing');
+        show('playing');
       } catch {
-        await Speech.stop();
-        activeRef.current = false;
-        setPlayback('idle');
+        stopAll();
+        show('idle');
       }
       return;
     }
 
-    await Speech.stop();
-    releasePlayer();
-    const session = sessionRef.current + 1;
-    sessionRef.current = session;
-    activeRef.current = true;
-    setPlayback('playing');
-    if (audioUrl) playRecording(audioUrl, session);
-    else speak(session);
+    stopAll();
+    const session = sessionRef.current;
+    show('playing');
+    const recording = ensurePlayer();
+    if (!recording) {
+      // Clears anything still speaking (another card's word).
+      await Speech.stop();
+      if (sessionRef.current === session) speak(session);
+      return;
+    }
+    // Replays start from the top (a finished or stopped recording sits at its end).
+    if (recording.currentTime > 0) await recording.seekTo(0).catch(() => {});
+    if (sessionRef.current === session) playRecording(recording, session);
   };
 
   const action = playback === 'playing' ? 'Pause' : playback === 'paused' ? 'Resume' : 'Play';
@@ -207,8 +256,7 @@ function PronunciationButtonControl({
       style={({ pressed }) => [styles.button, pressed && styles.pressed]}
       accessibilityRole="button"
       accessibilityLabel={`${action} pronunciation of ${word}`}
-      accessibilityState={{ disabled: !active, selected: playback !== 'idle' }}
-      disabled={!active}
+      accessibilityState={{ selected: playback !== 'idle' }}
       hitSlop={8}
     >
       <Glyph name={playback === 'playing' ? 'pause' : 'listen'} size={22} color={tint} />

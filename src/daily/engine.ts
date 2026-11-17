@@ -7,7 +7,8 @@ import type { Word } from '@/content/types';
  * protocol. Every client (and the notification scheduler) must compute
  * byte-identical permutations forever. Changing ANY algorithm here requires
  * bumping SEED_PREFIX to 'emotionary-v2:' (deliberately re-rolling everyone).
- * Golden fixtures in __tests__ pin exact outputs.
+ * Golden fixtures in __tests__ pin exact outputs. The level rules (v3, from
+ * LEVELS_START) use their own seed prefix and leave earlier days unchanged.
  */
 
 // v2: deck rotation (every word once per cycle) replaced monthly reshuffles.
@@ -153,12 +154,8 @@ export function cycleFor(
   }
 }
 
-/**
- * The word of the day for a local calendar date — deterministic on any device
- * (and the push server) from the same published word list. Returns null only
- * when there are no words at all.
- */
-export function wordOfDay(
+/** The v2 deck's word for a date (every day before LEVELS_START). */
+export function deckWordOfDay(
   words: readonly Word[],
   localDate: string,
   cache?: Map<string, Word[]>,
@@ -168,4 +165,259 @@ export function wordOfDay(
   const offset = daysSinceEpoch(localDate) - daysSinceEpoch(cycle.start);
   const n = cycle.deck.length;
   return cycle.deck[((offset % n) + n) % n];
+}
+
+// ---------------------------------------------------------------------------
+// v3: level-aware days (from LEVELS_START)
+//
+// Every word has an emotional depth, level 1 (light) to 5 (heaviest). From
+// LEVELS_START the daily word follows these rules:
+//   - about 85% of days are light (levels 1-3), about 15% deep (levels 4-5),
+//     i.e. 4 or 5 deep days a month;
+//   - level 5 at most once a calendar month;
+//   - never two deep days in a row (a deep day is always followed by a
+//     lighter one);
+//   - weekends and major holidays (US federal holidays plus Christmas Eve,
+//     New Year's Eve, Valentine's Day, Easter, Mother's Day, Father's Day,
+//     Halloween and Thanksgiving Eve) use levels 1-2 only;
+//   - no repeats: each group (levels 1-2, level 3, level 4, level 5) is dealt
+//     like a shuffled deck, every word once before any word in that group
+//     repeats. Ordinary light days alternate between the 1-2 and 3 decks so
+//     both go round at the same pace (weekends only use 1-2). Words published
+//     later join their group's next deal.
+//
+// Deterministic from the date and the published word list alone, so the app,
+// widgets, local notifications and the push server always agree. Days are the
+// person's own calendar days (weekends and holidays included).
+// ---------------------------------------------------------------------------
+
+/** First day the level rules apply (a Monday, once 1.8.0 is in both stores). */
+export const LEVELS_START = '2026-11-30';
+
+const LEVELS_SEED = 'emotionary-v3:';
+/** Share of all days that are deep (levels 4-5): 15% is 4.5 days a month. */
+const DEEP_SHARE = 0.15;
+
+/** 0 = Sunday ... 6 = Saturday (1970-01-01 was a Thursday). */
+export function weekday(localDate: string): number {
+  return (((daysSinceEpoch(localDate) + 4) % 7) + 7) % 7;
+}
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const ymd = (y: number, m: number, d: number) => `${y}-${pad(m)}-${pad(d)}`;
+
+/** The nth (1-based) given weekday of a month; n = -1 is the last one. */
+function nthWeekday(year: number, month: number, day: number, n: number): string {
+  if (n > 0) {
+    const first = weekday(ymd(year, month, 1));
+    return ymd(year, month, 1 + ((day - first + 7) % 7) + (n - 1) * 7);
+  }
+  const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const lastDay = weekday(ymd(year, month, last));
+  return ymd(year, month, last - ((lastDay - day + 7) % 7));
+}
+
+/** Western Easter Sunday (anonymous Gregorian algorithm). */
+export function easter(year: number): string {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const dayOfMonth = ((h + l - 7 * m + 114) % 31) + 1;
+  return ymd(year, month, dayOfMonth);
+}
+
+const holidayCache = new Map<number, Set<string>>();
+
+/** The year's major holidays, as local calendar dates. */
+export function holidays(year: number): Set<string> {
+  const hit = holidayCache.get(year);
+  if (hit) return hit;
+  const thanksgiving = nthWeekday(year, 11, 4, 4);
+  const set = new Set<string>([
+    ymd(year, 1, 1), // New Year's Day
+    nthWeekday(year, 1, 1, 3), // Martin Luther King Jr. Day
+    ymd(year, 2, 14), // Valentine's Day
+    nthWeekday(year, 2, 1, 3), // Presidents' Day
+    easter(year), // Easter
+    nthWeekday(year, 5, 0, 2), // Mother's Day
+    nthWeekday(year, 5, 1, -1), // Memorial Day
+    nthWeekday(year, 6, 0, 3), // Father's Day
+    ymd(year, 6, 19), // Juneteenth
+    ymd(year, 7, 4), // Independence Day
+    nthWeekday(year, 9, 1, 1), // Labor Day
+    nthWeekday(year, 10, 1, 2), // Columbus / Indigenous Peoples' Day
+    ymd(year, 10, 31), // Halloween
+    ymd(year, 11, 11), // Veterans Day
+    addDays(thanksgiving, -1), // Thanksgiving Eve
+    thanksgiving, // Thanksgiving
+    ymd(year, 12, 24), // Christmas Eve
+    ymd(year, 12, 25), // Christmas
+    ymd(year, 12, 31), // New Year's Eve
+  ]);
+  holidayCache.set(year, set);
+  return set;
+}
+
+/** Weekends and major holidays: light words only (levels 1-2). */
+export function isGentleDay(localDate: string): boolean {
+  const day = weekday(localDate);
+  return day === 0 || day === 6 || holidays(Number(localDate.slice(0, 4))).has(localDate);
+}
+
+const deepPlanCache = new Map<string, Map<string, 4 | 5>>();
+
+/**
+ * The month's deep days and their level. Chosen from its working days (not
+ * weekends or holidays, and never the month's last day, so a deep day can't
+ * be followed by one at the start of the next month), never two in a row,
+ * and exactly one of them level 5.
+ */
+export function deepDays(month: string): Map<string, 4 | 5> {
+  const hit = deepPlanCache.get(month);
+  if (hit) return hit;
+  const days: string[] = [];
+  for (let date = `${month}-01`; monthKey(date) === month; date = addDays(date, 1)) days.push(date);
+  const inRange = days.filter((date) => date >= LEVELS_START);
+  const eligible = inRange.filter((date) => !isGentleDay(date) && date !== days[days.length - 1]);
+
+  const rand = mulberry32(fnv1a(`${LEVELS_SEED}deep:${month}`));
+  // 15% of the month's days: 4 or 5 (the fraction is carried by chance).
+  const target = Math.floor(inRange.length * DEEP_SHARE + rand());
+  const picked: string[] = [];
+  for (const date of seededShuffle(eligible, `${LEVELS_SEED}deep-days:${month}`)) {
+    if (picked.length >= target) break;
+    if (picked.some((other) => Math.abs(daysSinceEpoch(other) - daysSinceEpoch(date)) <= 1)) continue;
+    picked.push(date);
+  }
+  picked.sort();
+  const plan = new Map<string, 4 | 5>(picked.map((date) => [date, 4 as const]));
+  if (picked.length > 0) plan.set(picked[Math.floor(rand() * picked.length)], 5);
+  deepPlanCache.set(month, plan);
+  return plan;
+}
+
+type Group = 'light12' | 'light3' | 'deep4' | 'deep5';
+const GROUP_LEVELS: Record<Group, readonly number[]> = {
+  light12: [1, 2],
+  light3: [3],
+  deep4: [4],
+  deep5: [5],
+};
+
+type Deck = { queue: Word[]; lastId: string | null; drawn: number };
+const newDeck = (): Deck => ({ queue: [], lastId: null, drawn: 0 });
+
+type Schedule = {
+  /** Picks from LEVELS_START, one per day. */
+  picks: (Word | null)[];
+  decks: Record<Group, Deck>;
+};
+
+const schedules = new WeakMap<readonly Word[], Schedule>();
+
+/** The group's words published before `date` (all of them if none were yet). */
+function groupPool(words: readonly Word[], group: Group, date: string): Word[] {
+  const levels = GROUP_LEVELS[group];
+  return deckPool(
+    words.filter((word) => levels.includes(word.level)),
+    date,
+  ).filter((word) => levels.includes(word.level));
+}
+
+/**
+ * The group's next card. When its deck is empty, everything published by
+ * then is shuffled into a new deal; a new deal never opens on the card that
+ * closed the last one.
+ */
+function draw(words: readonly Word[], deck: Deck, group: Group, date: string): Word | null {
+  if (deck.queue.length === 0) {
+    deck.queue = seededShuffle(groupPool(words, group, date), `${LEVELS_SEED}${group}:${date}`);
+    if (deck.queue.length > 1 && deck.queue[0].id === deck.lastId) {
+      [deck.queue[0], deck.queue[1]] = [deck.queue[1], deck.queue[0]];
+    }
+  }
+  const word = deck.queue.shift();
+  if (!word) return null;
+  deck.lastId = word.id;
+  deck.drawn += 1;
+  return word;
+}
+
+/** How far through its words a deck has gone (0 = none drawn yet). */
+function progress(words: readonly Word[], deck: Deck, group: Group, date: string): number {
+  const size = groupPool(words, group, date).length;
+  return size === 0 ? Infinity : deck.drawn / size;
+}
+
+function pickFor(words: readonly Word[], schedule: Schedule, date: string): Word | null {
+  const { decks } = schedule;
+  const take = (group: Group) => draw(words, decks[group], group, date);
+  const deep = deepDays(monthKey(date)).get(date);
+  if (deep) {
+    const word = take(deep === 5 ? 'deep5' : 'deep4');
+    if (word) return word;
+  }
+  // Gentle days: levels 1-2. Other light days: whichever light deck is
+  // further behind, so levels 1-2 and 3 both go round at the same pace.
+  const first: Group =
+    !isGentleDay(date) &&
+    progress(words, decks.light3, 'light3', date) < progress(words, decks.light12, 'light12', date)
+      ? 'light3'
+      : 'light12';
+  return (
+    take(first) ??
+    take(first === 'light12' ? 'light3' : 'light12') ??
+    // No light words at all: any word, rather than none.
+    deckWordOfDay(words, date)
+  );
+}
+
+/** The level-aware word for a date on or after LEVELS_START. */
+function levelWordOfDay(words: readonly Word[], localDate: string): Word | null {
+  if (words.length === 0) return null;
+  let schedule = schedules.get(words);
+  if (!schedule) {
+    schedule = {
+      picks: [],
+      decks: {
+        light12: newDeck(),
+        light3: newDeck(),
+        deep4: newDeck(),
+        deep5: newDeck(),
+      },
+    };
+    schedules.set(words, schedule);
+  }
+  const offset = daysSinceEpoch(localDate) - daysSinceEpoch(LEVELS_START);
+  while (schedule.picks.length <= offset) {
+    const date = addDays(LEVELS_START, schedule.picks.length);
+    schedule.picks.push(pickFor(words, schedule, date));
+  }
+  return schedule.picks[offset];
+}
+
+/**
+ * The word of the day for a local calendar date: deterministic on any device
+ * (and the push server) from the same published word list. Before
+ * LEVELS_START it is the v2 deck; from then on, the level rules above.
+ * Returns null only when there are no words at all. `cache` speeds up the v2
+ * deck; the level schedule is memoized per word list.
+ */
+export function wordOfDay(
+  words: readonly Word[],
+  localDate: string,
+  cache?: Map<string, Word[]>,
+): Word | null {
+  if (localDate < LEVELS_START) return deckWordOfDay(words, localDate, cache);
+  return levelWordOfDay(words, localDate);
 }

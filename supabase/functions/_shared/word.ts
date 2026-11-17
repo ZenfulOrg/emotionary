@@ -5,5 +5,7 @@ export interface Word {
   word: string;
   definition: string;
   is_free: boolean;
+  /** Emotional depth, 1 (light) to 5 (heaviest); picks the daily word. */
+  level: number;
   published_at: string;
 }

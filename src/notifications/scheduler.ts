@@ -109,7 +109,7 @@ async function doRebuild({
   // Hand the token and settings to the server; once server push is live the
   // server sends everything and the device keeps no local queue (no limit on
   // days, and admin one-offs/triggers work without an app update).
-  const serverPush = await registerForPush({ enabled, time, hasFullAccess, kept, streakState });
+  const serverPush = await registerForPush({ enabled, time, hasFullAccess, kept, streakState, welcomeDate });
   await Notifications.cancelAllScheduledNotificationsAsync();
   if (serverPush || !enabled || !granted || words.length === 0) return;
 

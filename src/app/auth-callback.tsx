@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Body, Button, Eyebrow, Headline, OrbitBackdrop, Screen, Wordmark } from '@/components/brand';
 import { completeAuthCallback } from '@/auth/client';
+import { useUserStore } from '@/store/userStore';
 import { linkPurchasesToAccount } from '@/purchases/account';
 import { brand, layout, space } from '@/theme/tokens';
 
@@ -30,6 +31,7 @@ function AuthCallbackContent({ liveUrl }: { liveUrl: string | null }) {
       }
       try {
         const account = await completeAuthCallback(url);
+        useUserStore.getState().replayReveal();
         void linkPurchasesToAccount();
         if (!cancelled) {
           setStatus(account.email ? `${account.email} is confirmed.` : 'Your email is confirmed.');

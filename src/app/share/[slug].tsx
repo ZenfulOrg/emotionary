@@ -18,7 +18,6 @@ import {
   Eyebrow,
   IconButton,
   Mono,
-  Separator,
   useGroundStatusBar,
 } from '@/components/brand';
 import { localDateString } from '@/daily/engine';
@@ -32,8 +31,6 @@ import { maybeAskForReview } from '@/review/prompt';
 import { GroundProvider } from '@/theme/ground';
 import { grounds, layout, scrim, space } from '@/theme/tokens';
 
-/** Every target opens the system share sheet with the card attached. */
-const SHARE_TARGETS = ['Messages', 'Instagram', 'Facebook', 'WhatsApp'] as const;
 
 export default function ShareModal() {
   const { slug, demo } = useLocalSearchParams<{ slug: string; demo?: string }>();
@@ -128,8 +125,8 @@ export default function ShareModal() {
     if (Platform.OS === 'web') return notAvailableOnWeb();
     setBusy('sharing');
     try {
-      const Sharing = await import('expo-sharing');
       const uri = await capture();
+      const Sharing = await import('expo-sharing');
       await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share this word' });
       recordShare(word.slug, localDateString());
       successHaptic();
@@ -295,25 +292,6 @@ export default function ShareModal() {
               style={styles.button}
             />
           </View>
-          <View style={styles.targets}>
-            {SHARE_TARGETS.map((target, index) => (
-              <View key={target} style={styles.target}>
-                {index > 0 && <Separator />}
-                <Pressable
-                  onPress={() => void onShare()}
-                  disabled={!ready}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Share to ${target}`}
-                  accessibilityState={{ disabled: !ready }}
-                  style={({ pressed }) => [styles.targetButton, (pressed || !ready) && styles.dim]}
-                >
-                  <Eyebrow tone="default" size={10} style={styles.targetLabel}>
-                    {target}
-                  </Eyebrow>
-                </Pressable>
-              </View>
-            ))}
-          </View>
           <Mono size={11} tone="faint" style={styles.caption}>
             SIZED FOR STORIES · 1080 × 1920
           </Mono>
@@ -358,16 +336,5 @@ const styles = StyleSheet.create({
   },
   buttons: { flexDirection: 'row', gap: space.s, marginTop: space.l },
   button: { flex: 1 },
-  targets: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: space.s,
-  },
-  target: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  targetButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
-  targetLabel: { textDecorationLine: 'underline', letterSpacing: 1.2 },
-  dim: { opacity: 0.6 },
-  caption: { textAlign: 'center', marginTop: space.xs, marginBottom: space.s },
+  caption: { textAlign: 'center', marginTop: space.m, marginBottom: space.s },
 });

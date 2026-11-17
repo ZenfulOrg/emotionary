@@ -26,6 +26,8 @@ export type PushRegistration = {
   hasFullAccess: boolean;
   kept: readonly string[];
   streakState: StreakState;
+  /** Local date onboarding finished, so the server sends the same welcome words. */
+  welcomeDate?: string | null;
 };
 
 /** The device's raw APNs (iOS) or FCM (Android) token, or null. */
@@ -99,6 +101,7 @@ export async function registerForPush(input: PushRegistration): Promise<boolean>
         p_streak: input.streakState.streak,
         p_last_open_date: input.streakState.lastOpenDate,
         p_app_version: Constants.expoConfig?.version ?? null,
+        p_welcome_date: input.welcomeDate ?? null,
       }),
     });
     if (!res.ok) return cachedPushLive();

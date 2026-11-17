@@ -15,6 +15,8 @@ export async function linkPurchasesToAccount(): Promise<void> {
     // link, Apple, Google, form), so the signed-out gate must not hide the
     // account's purchases.
     useUserStore.getState().setSignedOut(false);
+    // Another account on this device starts with its own stats.
+    useUserStore.getState().claimProgress(userId);
     await identifyPurchaser(userId);
   } catch {
     // Offline or store unavailable: retried on the next launch.
