@@ -8,6 +8,7 @@ import { PronunciationButton } from '@/components/pronunciation-button';
 jest.mock('expo-audio', () => ({
   createAudioPlayer: jest.fn(),
   setAudioModeAsync: jest.fn(() => Promise.resolve()),
+  setIsAudioActiveAsync: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock('expo-speech', () => ({
@@ -131,7 +132,11 @@ describe('PronunciationButton', () => {
 
 describe('PronunciationButton audio', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Audio = require('expo-audio') as { setAudioModeAsync: jest.Mock; createAudioPlayer: jest.Mock };
+  const Audio = require('expo-audio') as {
+    setAudioModeAsync: jest.Mock;
+    setIsAudioActiveAsync: jest.Mock;
+    createAudioPlayer: jest.Mock;
+  };
 
   it('sets the session to play in silent mode', async () => {
     // The mode is set once per app session, so load a fresh module copy.
@@ -162,6 +167,7 @@ describe('PronunciationButton audio', () => {
       remove: jest.fn(),
       seekTo: jest.fn(() => Promise.resolve()),
       currentTime: 0,
+      playing: false,
     };
     Audio.createAudioPlayer.mockReturnValue(player);
     jest.mocked(Speech.speak).mockClear();
@@ -170,13 +176,20 @@ describe('PronunciationButton audio', () => {
       renderer = create(<PronunciationButton word="saudade" audioUrl="https://example.com/s.mp3" />);
     });
     // Loaded before the tap, so playback starts at once.
-    expect(Audio.createAudioPlayer).toHaveBeenCalledWith({ uri: 'https://example.com/s.mp3' });
+    expect(Audio.createAudioPlayer).toHaveBeenCalledWith(
+      { uri: 'https://example.com/s.mp3' },
+      { keepAudioSessionActive: true },
+    );
     expect(player.play).not.toHaveBeenCalled();
     await act(async () => {
       renderer.root.findByProps({ accessibilityRole: 'button' }).props.onPress();
       await Promise.resolve();
     });
     expect(Audio.createAudioPlayer).toHaveBeenCalledTimes(1);
+    // The app turns the audio session on before the first tap plays.
+    expect(Audio.setIsAudioActiveAsync).toHaveBeenCalledWith(true);
+    // A player that isn't playing is never paused (that queues a session switch-off).
+    expect(player.pause).not.toHaveBeenCalled();
     expect(player.play).toHaveBeenCalled();
     expect(Speech.speak).not.toHaveBeenCalled();
     act(() => renderer.unmount());

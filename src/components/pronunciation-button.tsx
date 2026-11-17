@@ -1,4 +1,4 @@
-import { type AudioPlayer, createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import { type AudioPlayer, createAudioPlayer, setAudioModeAsync, setIsAudioActiveAsync } from 'expo-audio';
 import * as Speech from 'expo-speech';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
@@ -21,6 +21,24 @@ function ensurePlaybackMode(): void {
   }).catch(() => {
     playbackMode = null;
   });
+}
+
+/**
+ * The audio session is switched on and off here, not by expo-audio: its own
+ * switch-off runs ~100 ms after any pause and turns the session off if
+ * nothing is playing yet, so a recording still loading on a real phone (or
+ * speech right after a recording) started silently and only the second tap
+ * was heard. On while any pronunciation plays; off when the last one stops,
+ * so music ducked under the word comes back up.
+ */
+let audioHolders = 0;
+async function claimAudio(): Promise<void> {
+  audioHolders += 1;
+  await setIsAudioActiveAsync(true).catch(() => {});
+}
+function releaseAudio(): void {
+  audioHolders = Math.max(0, audioHolders - 1);
+  if (audioHolders === 0) void setIsAudioActiveAsync(false).catch(() => {});
 }
 
 /** Locales the device has voices for, fetched once. */
@@ -93,11 +111,23 @@ function PronunciationButtonControl({
   const playerRef = useRef<AudioPlayer | null>(null);
   const startedRef = useRef(false);
   const fallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdsAudioRef = useRef(false);
   const preferredLocale = speechLocaleFor(language ?? '');
 
   const show = (next: Playback) => {
     playbackRef.current = next;
     setPlayback(next);
+    // The session stays on while playing or paused mid-word; off once idle.
+    if (next === 'idle' && holdsAudioRef.current) {
+      holdsAudioRef.current = false;
+      releaseAudio();
+    }
+  };
+
+  const holdAudio = async () => {
+    if (holdsAudioRef.current) return;
+    holdsAudioRef.current = true;
+    await claimAudio();
   };
 
   const clearFallback = () => {
@@ -112,7 +142,7 @@ function PronunciationButtonControl({
   const ensurePlayer = (): AudioPlayer | null => {
     if (!audioUrl) return null;
     if (playerRef.current) return playerRef.current;
-    const player = createAudioPlayer({ uri: audioUrl });
+    const player = createAudioPlayer({ uri: audioUrl }, { keepAudioSessionActive: true });
     player.addListener('playbackStatusUpdate', (status) => {
       if (status.playing) startedRef.current = true;
       if (status.didJustFinish) {
@@ -140,7 +170,7 @@ function PronunciationButtonControl({
     clearFallback();
     if (speakingRef.current) void Speech.stop();
     speakingRef.current = false;
-    playerRef.current?.pause();
+    if (playerRef.current?.playing) playerRef.current.pause();
   };
 
   // Scrolled away: stop, ready to play again from the start.
@@ -156,6 +186,10 @@ function PronunciationButtonControl({
       stopAll();
       playerRef.current?.remove();
       playerRef.current = null;
+      if (holdsAudioRef.current) {
+        holdsAudioRef.current = false;
+        releaseAudio();
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -218,6 +252,7 @@ function PronunciationButtonControl({
       return;
     }
     if (playback === 'paused') {
+      await holdAudio();
       if (usingPlayer && player) {
         player.play();
         show('playing');
@@ -236,6 +271,8 @@ function PronunciationButtonControl({
     stopAll();
     const session = sessionRef.current;
     show('playing');
+    await holdAudio();
+    if (sessionRef.current !== session) return;
     const recording = ensurePlayer();
     if (!recording) {
       // Clears anything still speaking (another card's word).
