@@ -99,7 +99,8 @@
         "android.permission.READ_MEDIA_AUDIO"
       ],
       "predictiveBackGestureEnabled": false,
-      "versionCode": 6
+      "versionCode": 6,
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
@@ -120,7 +121,9 @@
         {
           "sounds": [
             "./assets/sounds/emotionary_chime.wav"
-          ]
+          ],
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#18334D"
         }
       ],
       "expo-apple-authentication",

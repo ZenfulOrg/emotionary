@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "687905390513",
+    "project_id": "emotionary-920aa",
+    "storage_bucket": "emotionary-920aa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:687905390513:android:36ffd526d42676c96b8790",
+        "android_client_info": {
+          "package_name": "com.emotionary.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAi_4UMDuQjKS-8FeXzQJcON80DeEb7fAU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

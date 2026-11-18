@@ -4,9 +4,10 @@
 //      before any repeats, new words join the next cycle),
 //   2. triggered messages (streak reminder, inactivity, milestones…),
 //   3. queued one-off messages from the admin panel.
-// iOS goes straight to Apple (APNs). Android (FCM) is added with the Android
-// release. Daily and triggered sends wait for push_settings.push_live, so
-// devices keep their own local notifications until the server takes over.
+// iOS goes straight to Apple (APNs), Android to Firebase Cloud Messaging
+// (FCM HTTP v1). Daily and triggered sends wait for push_settings.push_live,
+// and Android also for push_settings.android_push_live, so devices keep their
+// own local notifications until the server takes over for their platform.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -156,9 +157,128 @@ async function sendApns(device: Device, push: Push): Promise<SendResult> {
   }
 }
 
+// ---------------------------------------------------------------- FCM
+
+type ServiceAccount = { project_id: string; client_email: string; private_key: string };
+let fcmAccess: { token: string; at: number } | null = null;
+
+/** The Firebase service account (FCM_SERVICE_ACCOUNT secret, the downloaded JSON), or null. */
+function serviceAccount(): ServiceAccount | null {
+  const raw = Deno.env.get('FCM_SERVICE_ACCOUNT');
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<ServiceAccount>;
+    return parsed.project_id && parsed.client_email && parsed.private_key ? (parsed as ServiceAccount) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A Google OAuth access token for FCM, from a signed service-account JWT. */
+async function fcmToken(): Promise<string | null> {
+  const account = serviceAccount();
+  if (!account) return null;
+  // Google's tokens last an hour; refresh well before that.
+  if (fcmAccess && Date.now() - fcmAccess.at < 45 * 60_000) return fcmAccess.token;
+
+  const der = Uint8Array.from(
+    atob(account.private_key.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '')),
+    (c) => c.charCodeAt(0),
+  );
+  const key = await crypto.subtle.importKey(
+    'pkcs8',
+    der,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const iat = Math.floor(Date.now() / 1000);
+  const header = base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const claims = base64url(
+    JSON.stringify({
+      iss: account.client_email,
+      scope: 'https://www.googleapis.com/auth/firebase.messaging',
+      aud: 'https://oauth2.googleapis.com/token',
+      iat,
+      exp: iat + 3600,
+    }),
+  );
+  const signature = new Uint8Array(
+    await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(`${header}.${claims}`)),
+  );
+  try {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: `${header}.${claims}.${base64url(signature)}`,
+      }),
+    });
+    const body = (await res.json().catch(() => ({}))) as { access_token?: string };
+    if (!res.ok || !body.access_token) {
+      console.error('fcm auth', res.status);
+      return null;
+    }
+    fcmAccess = { token: body.access_token, at: Date.now() };
+    return fcmAccess.token;
+  } catch (error) {
+    console.error('fcm auth network', String(error));
+    return null;
+  }
+}
+
+/**
+ * Android: a data-only, high-priority message in the shape expo-notifications
+ * builds its notification from (as Expo's own push service sends it), so a
+ * tap opens the same screen as on iOS and the chime channel plays.
+ */
+async function sendFcm(device: Device, push: Push): Promise<SendResult> {
+  const account = serviceAccount();
+  const token = await fcmToken();
+  if (!account || !token) return 'skipped';
+  const message = {
+    token: device.token,
+    android: { priority: 'high' },
+    data: {
+      title: push.title,
+      message: push.body,
+      body: JSON.stringify(push.data),
+      channelId: 'daily-word-chime',
+      sound: 'emotionary_chime.wav',
+    },
+  };
+  try {
+    const res = await fetch(`https://fcm.googleapis.com/v1/projects/${account.project_id}/messages:send`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+    if (res.ok) return 'sent';
+    const error = ((await res.json().catch(() => ({}))) as {
+      error?: { status?: string; details?: Array<{ errorCode?: string }> };
+    }).error;
+    const code = error?.details?.find((d) => d.errorCode)?.errorCode ?? error?.status ?? '';
+    if (res.status === 404 || code === 'UNREGISTERED' || code === 'INVALID_ARGUMENT') return 'gone';
+    console.error('fcm', res.status, code);
+    return 'failed';
+  } catch (error) {
+    console.error('fcm network', String(error));
+    return 'failed';
+  }
+}
+
+/** Whether Android devices are sent from the server (push_settings.android_push_live). */
+let androidLive = false;
+
+/** Devices the server sends to now: iOS always, Android once it's switched on. */
+function sendable(devices: Device[]): Device[] {
+  return devices.filter((device) => device.platform === 'ios' || androidLive);
+}
+
 async function send(device: Device, push: Push): Promise<SendResult> {
   if (device.platform === 'ios') return sendApns(device, push);
-  return 'skipped'; // Android (FCM) arrives with the Android release.
+  return sendFcm(device, push);
 }
 
 async function recordResult(device: Device, result: SendResult) {
@@ -256,7 +376,7 @@ async function runScheduled(now: Date, dryRun: boolean) {
   const cache = new Map<string, Word[]>();
   const welcome = welcomeWords(words);
 
-  await inBatches((devices ?? []) as Device[], async (device) => {
+  await inBatches(sendable((devices ?? []) as Device[]), async (device) => {
     let local: { date: string; minutes: number };
     try {
       local = localNow(device.timezone, now);
@@ -338,16 +458,17 @@ async function runMessages(now: Date, dryRun: boolean) {
     let query = supabase.from('push_devices').select('*').eq('enabled', true).limit(100000);
     if (message.audience !== 'all') query = query.eq('plan', message.audience);
     if (message.platform) query = query.eq('platform', message.platform);
-    const { data: devices } = await query;
+    const { data: rows } = await query;
+    const devices = sendable((rows ?? []) as Device[]);
     if (dryRun) {
-      summary.push({ id: message.id, sent: devices?.length ?? 0, failed: 0 });
+      summary.push({ id: message.id, sent: devices.length, failed: 0 });
       continue;
     }
     await supabase.from('push_messages').update({ status: 'sending' }).eq('id', message.id);
 
     let sent = 0;
     let failed = 0;
-    await inBatches((devices ?? []) as Device[], async (device) => {
+    await inBatches(devices, async (device) => {
       // Claim this delivery so a resumed run never sends twice.
       const { data: claimed } = await supabase
         .from('push_message_deliveries')
@@ -423,13 +544,26 @@ Deno.serve(async (req) => {
     }
   }
 
-  const { data: settings } = await supabase.from('push_settings').select('push_live').single();
+  const { data: settings } = await supabase
+    .from('push_settings')
+    .select('push_live, android_push_live')
+    .single();
   const live = settings?.push_live === true;
+  androidLive = settings?.android_push_live === true;
 
   try {
     const scheduled = (live || dryRun) && options.only !== 'messages' ? await runScheduled(now, dryRun) : null;
     const messages = await runMessages(now, dryRun);
-    return Response.json({ ok: true, live, dryRun, scheduled, messages, apnsConfigured: Boolean(await apnsToken()) });
+    return Response.json({
+      ok: true,
+      live,
+      androidLive,
+      dryRun,
+      scheduled,
+      messages,
+      apnsConfigured: Boolean(await apnsToken()),
+      fcmConfigured: Boolean(await fcmToken()),
+    });
   } catch (error) {
     console.error(error);
     return Response.json({ ok: false, error: String(error) }, { status: 500 });
