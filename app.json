@@ -2,7 +2,7 @@
   "expo": {
     "name": "Emotionary",
     "slug": "emotionary",
-    "version": "1.8.0",
+    "version": "1.8.1",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -99,7 +99,7 @@
         "android.permission.READ_MEDIA_AUDIO"
       ],
       "predictiveBackGestureEnabled": false,
-      "versionCode": 6,
+      "versionCode": 7,
       "googleServicesFile": "./google-services.json"
     },
     "web": {
