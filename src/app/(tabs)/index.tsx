@@ -5,6 +5,7 @@ import {
   AppState,
   FlatList,
   Linking,
+  Platform,
   StyleSheet,
   View,
   type LayoutChangeEvent,
@@ -351,6 +352,7 @@ export default function TodayScreen() {
                   key={index === 0 ? `reveal-${revealRun}` : undefined}
                   word={item.word}
                   feedPage
+                  pageHeight={feedHeight}
                   eyebrow={index === 0 ? "Today's word" : undefined}
                   reveal={revealing && index === 0}
                   scrollHint={
@@ -417,8 +419,9 @@ function UpgradeSlide({ freeCount }: { freeCount: number }) {
             Keep discovering.
           </Headline>
           <Body tone="muted" style={styles.upgradeBody}>
-            Unlock the full emotional vocabulary dictionary, the origin of every word (its
-            roots, history and cultural background), every widget theme, and future word updates.
+            {Platform.OS === 'android'
+              ? 'Unlock the full emotional vocabulary dictionary, the origin of every word (its roots, history and cultural background), and future word updates.'
+              : 'Unlock the full emotional vocabulary dictionary, the origin of every word (its roots, history and cultural background), every widget theme, and future word updates.'}
           </Body>
         </View>
         <RoundCta

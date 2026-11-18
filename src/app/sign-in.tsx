@@ -27,7 +27,7 @@ export default function SignInScreen() {
     <Screen edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
       >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Wordmark />

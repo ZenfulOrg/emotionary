@@ -21,16 +21,28 @@ import { brand, grounds, layout, scrim, space, type GroundName } from '@/theme/t
 
 const GRAIN = require('../../../assets/images/grain.png');
 
-/** Every page wears a fine grain at 4.5 percent — laid last, over everything, untouchable. */
+/**
+ * Every page wears a fine grain at 4.5 percent — laid last, over everything, untouchable.
+ *
+ * The `pointerEvents="none"` must sit on a View *prop*: Android's image view
+ * ignores pointerEvents given as a style, so a bare full-screen Image swallowed
+ * every tap on Android (1.7.0 users could not get past "Begin").
+ */
 export function Grain({ opacity = 0.045 }: { opacity?: number }) {
   return (
-    <Image
-      source={GRAIN}
-      resizeMode="repeat"
-      style={[StyleSheet.absoluteFill, styles.grain, { opacity }]}
+    <View
+      testID="grain"
+      pointerEvents="none"
+      style={StyleSheet.absoluteFill}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-    />
+    >
+      <Image
+        source={GRAIN}
+        resizeMode="repeat"
+        style={[StyleSheet.absoluteFill, styles.grain, { opacity }]}
+      />
+    </View>
   );
 }
 
@@ -189,7 +201,7 @@ export function Dialog({
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  grain: { width: undefined, height: undefined, pointerEvents: 'none' },
+  grain: { width: undefined, height: undefined },
   header: {
     minHeight: 52,
     flexDirection: 'row',

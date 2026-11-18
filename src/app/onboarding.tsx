@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import Animated, {
@@ -43,6 +44,7 @@ import {
   Screen,
   Wordmark,
 } from '@/components/brand';
+import { FitToPage } from '@/components/FitToPage';
 import { Paywall } from '@/components/Paywall';
 import { PronunciationButton } from '@/components/pronunciation-button';
 import { StatsBurst } from '@/components/stats-burst';
@@ -53,6 +55,7 @@ import { WordTitle } from '@/components/WordFull';
 import { WordKey } from '@/components/WordKey';
 import { lightImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
 import { requestPermission } from '@/notifications/scheduler';
+import { findWord, useContentStore } from '@/content/store';
 import type { NotifTime } from '@/store/userStore';
 import { useUserStore } from '@/store/userStore';
 import { layout, levelPalettes, planets, space, type, type GroundName } from '@/theme/tokens';
@@ -112,6 +115,9 @@ export default function OnboardingScreen() {
   const setNotifEnabled = useUserStore((state) => state.setNotifEnabled);
   const completeOnboarding = useUserStore((state) => state.completeOnboarding);
   const reducedMotion = useReducedMotion();
+  // Lift the CTA well clear of the bottom edge; a little less on short phones.
+  const { height: windowHeight } = useWindowDimensions();
+  const footerLift = windowHeight >= 700 ? space.xxl : space.l;
 
   const page = PAGES[step];
   const ground = PAGE_GROUNDS[page];
@@ -146,6 +152,29 @@ export default function OnboardingScreen() {
       current.includes(label) ? current.filter((item) => item !== label) : [...current, label],
     );
 
+  const pageView = (
+    <Animated.View
+      key={page}
+      entering={reducedMotion ? undefined : FadeInDown.duration(280).easing(Easing.bezier(0.23, 1, 0.32, 1))}
+      exiting={reducedMotion ? undefined : FadeOutUp.duration(160)}
+      style={styles.page}
+    >
+      {page === 'welcome' && <WelcomePage />}
+      {page === 'daily' && <DailyPage />}
+      {page === 'key' && <KeyPage />}
+      {page === 'drawn' && <DrawnPage selected={selectedDrawnTo} onToggle={toggleDrawnTo} />}
+      {page === 'reminder' && <ReminderPage notifTime={notifTime} setNotifTime={setNotifTime} />}
+      {page === 'widget' && <WidgetPage onNext={goNext} onOpenGuide={setWidgetGuide} />}
+      {page === 'account' && (
+        <PageCopy title="Keep your words close.">
+          <AuthForm form={authForm} showSubmit={false} />
+        </PageCopy>
+      )}
+      {page === 'first-word' && <FirstWordPage reducedMotion={reducedMotion} />}
+      {page === 'paywall' && <Paywall onContinue={finish} onContinueFree={finish} />}
+    </Animated.View>
+  );
+
   return (
     <Screen ground={ground} edges={['top', 'bottom']}>
       {ground === 'ink' && <OrbitBackdrop top="4%" />}
@@ -153,37 +182,24 @@ export default function OnboardingScreen() {
 
       <KeyboardAvoidingView
         style={styles.keyboard}
-        behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
       >
-        <ScrollView
-          contentInsetAdjustmentBehavior="never"
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Animated.View
-            key={page}
-            entering={reducedMotion ? undefined : FadeInDown.duration(280).easing(Easing.bezier(0.23, 1, 0.32, 1))}
-            exiting={reducedMotion ? undefined : FadeOutUp.duration(160)}
-            style={styles.page}
+        {page === 'paywall' ? (
+          // The plans and the Buy button must all be on screen, never below a
+          // scroll: on a short phone the paywall is fitted to the space.
+          <FitToPage contentStyle={styles.scroll}>{pageView}</FitToPage>
+        ) : (
+          <ScrollView
+            contentInsetAdjustmentBehavior="never"
+            contentContainerStyle={styles.scroll}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
-            {page === 'welcome' && <WelcomePage />}
-            {page === 'daily' && <DailyPage />}
-            {page === 'key' && <KeyPage />}
-            {page === 'drawn' && <DrawnPage selected={selectedDrawnTo} onToggle={toggleDrawnTo} />}
-            {page === 'reminder' && <ReminderPage notifTime={notifTime} setNotifTime={setNotifTime} />}
-            {page === 'widget' && <WidgetPage onNext={goNext} onOpenGuide={setWidgetGuide} />}
-            {page === 'account' && (
-              <PageCopy title="Keep your words close.">
-                <AuthForm form={authForm} showSubmit={false} />
-              </PageCopy>
-            )}
-            {page === 'first-word' && <FirstWordPage reducedMotion={reducedMotion} />}
-            {page === 'paywall' && <Paywall onContinue={finish} onContinueFree={finish} />}
-          </Animated.View>
-        </ScrollView>
+            {pageView}
+          </ScrollView>
+        )}
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: footerLift }]}>
           <View style={styles.footerSide}>
             {!isFirst && (
               <IconButton
@@ -447,6 +463,9 @@ function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
   const isSaved = useUserStore((state) => state.favorites.includes('meraki'));
   const toggleFavorite = useUserStore((state) => state.toggleFavorite);
   const openShare = () => router.push('/share/meraki?demo=1');
+  // The same recording Today plays. Without it the button fell back to the
+  // phone's text-to-speech, which is silent on many Android phones.
+  const audioUrl = useContentStore((state) => findWord(state.words, 'meraki')?.audio_url ?? null);
 
   return (
     <View style={styles.copy}>
@@ -462,7 +481,7 @@ function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
         <Rule style={styles.firstRule} />
         <View style={styles.pronunciation}>
           <Mono size={14}>V. · /meh-RAH-kee/</Mono>
-          <PronunciationButton word="Meraki" language="Greek" />
+          <PronunciationButton word="Meraki" language="Greek" audioUrl={audioUrl} />
         </View>
         <WordTitle centered word={{ word: 'Meraki', language: 'Greek', level: 1 }} />
         <Body size={type.definition} style={styles.definition}>
@@ -558,7 +577,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: space.s,
     paddingTop: space.s,
-    paddingBottom: space.s,
+    paddingBottom: space.l,
     gap: space.s,
   },
   footerSide: { width: 64 },

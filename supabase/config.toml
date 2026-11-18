@@ -244,11 +244,13 @@ otp_expiry = 600
 # sender_name = "Admin"
 
 [auth.email.template.confirmation]
-subject = "Your Emotionary verification code"
+# The code in the subject keeps each email apart (Gmail threads identical
+# subjects, so people copied an older, replaced code) and shows it in the alert.
+subject = "{{ .Token }} is your Emotionary verification code"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.recovery]
-subject = "Your Emotionary password reset code"
+subject = "{{ .Token }} is your Emotionary password reset code"
 content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize notification email template

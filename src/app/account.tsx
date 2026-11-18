@@ -22,7 +22,7 @@ export default function AccountScreen() {
       />
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
       >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Headline size={44}>{form.resetStage ? 'A fresh start.' : form.verificationEmail ? 'Confirm your email.' : form.mode === 'create' ? 'Make it yours.' : 'Welcome back.'}</Headline>

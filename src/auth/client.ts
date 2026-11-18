@@ -179,9 +179,14 @@ export async function signIn(email: string, password: string) {
   await SecureStore.deleteItemAsync(APPLE_USER_KEY);
 }
 
+/** Shown when the server rejects a code. Each new code replaces the earlier ones. */
+export const CODE_REJECTED =
+  "That code didn't work. Each new code replaces the earlier ones, so use the code from your newest Emotionary email, or request a new code.";
+
 /** Confirms an email/password signup with the code from the confirmation email. */
 export async function verifySignupCode(email: string, code: string): Promise<AuthAccount> {
-  const token = code.replace(/\s/g, '');
+  // Digits only: a pasted code may carry spaces, dashes or a trailing period.
+  const token = code.replace(/\D/g, '');
   if (!/^\d{6,10}$/.test(token)) throw new AuthError('Enter the verification code from your email.');
   const normalizedEmail = email.trim().toLowerCase();
   const payload = await authPost('verify', { email: normalizedEmail, token, type: 'email' });
@@ -209,12 +214,13 @@ export async function resetPasswordWithCode(
   code: string,
   newPassword: string,
 ): Promise<AuthAccount> {
-  const token = code.replace(/\s/g, '');
+  // Digits only: a pasted code may carry spaces, dashes or a trailing period.
+  const token = code.replace(/\D/g, '');
   if (!/^\d{6,10}$/.test(token)) throw new AuthError('Enter the code from your email.');
   if (newPassword.length < 8) throw new AuthError('Use at least 8 characters for your password.');
   const normalizedEmail = email.trim().toLowerCase();
   const payload = await authPost('verify', { email: normalizedEmail, token, type: 'recovery' });
-  if (!payload.access_token) throw new AuthError('That code is invalid or has expired. Request a new code.');
+  if (!payload.access_token) throw new AuthError(CODE_REJECTED);
 
   let response: Response;
   try {

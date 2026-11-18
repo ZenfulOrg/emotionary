@@ -28,8 +28,28 @@ class DailyWordProvider : AppWidgetProvider() {
       val slug = entry?.optString("slug")
       val uri = if (slug.isNullOrBlank()) "emotionary://" else "emotionary://word/${Uri.encode(slug)}"
       val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).setPackage(context.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-      views.setOnClickPendingIntent(R.id.widget_root, PendingIntent.getActivity(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+      views.setOnClickPendingIntent(R.id.widget_root, PendingIntent.getActivity(context, id * 3, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+
+      // Save and share, the same app links the iOS widget uses.
+      val hasWord = !slug.isNullOrBlank()
+      val liked = entry?.optBoolean("liked") == true
+      views.setImageViewResource(R.id.like, if (liked) R.drawable.emotionary_ic_heart_filled else R.drawable.emotionary_ic_heart)
+      views.setContentDescription(R.id.like, if (liked) "Remove saved word" else "Save word")
+      val visibility = if (hasWord) android.view.View.VISIBLE else android.view.View.GONE
+      views.setViewVisibility(R.id.like, visibility)
+      views.setViewVisibility(R.id.share, visibility)
+      if (hasWord) {
+        val encoded = Uri.encode(slug)
+        views.setOnClickPendingIntent(R.id.like, link(context, id * 3 + 1, "emotionary://widget/${if (liked) "unlike" else "like"}/$encoded"))
+        views.setOnClickPendingIntent(R.id.share, link(context, id * 3 + 2, "emotionary://widget/share/$encoded"))
+      }
       manager.updateAppWidget(id, views)
     }
+  }
+
+  private fun link(context: Context, requestCode: Int, uri: String): PendingIntent {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).setPackage(context.packageName)
+      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    return PendingIntent.getActivity(context, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   }
 }

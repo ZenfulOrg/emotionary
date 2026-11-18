@@ -1,4 +1,4 @@
-import { BlurView } from 'expo-blur';
+import { SoftBlur } from '@/components/SoftBlur';
 import { router, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -28,6 +28,20 @@ export function WordCard({ word, locked = false }: { word: Word; locked?: boolea
           : `${word.word}. ${planets[word.type].label}. ${word.definition}`
       }
     >
+      {locked ? (
+        <SoftBlur intensity={60} overlay={<Eyebrow tone="default">Full access</Eyebrow>}>
+          <CardFace word={word} />
+        </SoftBlur>
+      ) : (
+        <CardFace word={word} />
+      )}
+    </Pressable>
+  );
+}
+
+function CardFace({ word }: { word: Word }) {
+  return (
+    <>
       <View style={styles.top}>
         <Text style={styles.word} maxFontSizeMultiplier={1.5} numberOfLines={1}>
           {displayWord(word.word)}
@@ -37,12 +51,7 @@ export function WordCard({ word, locked = false }: { word: Word; locked?: boolea
       <Body size={type.small} tone="muted" numberOfLines={1} style={styles.preview}>
         {asEntry(word.definition)}
       </Body>
-      {locked && (
-        <BlurView tint="light" intensity={60} style={styles.lockedBlur} pointerEvents="none">
-          <Eyebrow tone="default">Full access</Eyebrow>
-        </BlurView>
-      )}
-    </Pressable>
+    </>
   );
 }
 
@@ -64,13 +73,4 @@ const styles = StyleSheet.create({
     color: brand.ink,
   },
   preview: { marginTop: 2 },
-  lockedBlur: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 });

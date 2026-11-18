@@ -105,7 +105,7 @@ describe('email confirmation flow', () => {
     act(() => { form.setCode('000000'); form.setPassword('brand-new-password'); });
     await act(async () => { await form.submit(); });
     expect(form.resetStage).toBe('code');
-    expect(form.message).toMatch(/invalid or has expired/);
+    expect(form.message).toMatch(/newest Emotionary email/);
     expect(onComplete).not.toHaveBeenCalled();
   });
 
@@ -136,7 +136,7 @@ describe('email confirmation flow', () => {
     jest.mocked(verifySignupCode).mockRejectedValue(new AuthError('expired', 'otp_expired'));
     act(() => form.setCode('123456'));
     await act(async () => { await form.submit(); });
-    expect(form.message).toContain('Request a new code');
+    expect(form.message).toContain('request a new code');
     expect(form.verificationEmail).toBe('new@example.com');
     expect(onComplete).not.toHaveBeenCalled();
   });

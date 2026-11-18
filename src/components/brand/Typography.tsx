@@ -1,4 +1,4 @@
-import { StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
+import { Platform, StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
 
 import { useGround } from '@/theme/ground';
 import { font, tracking, type } from '@/theme/tokens';
@@ -82,6 +82,20 @@ export function Mono({
   );
 }
 
+/**
+ * Android cuts off glyphs that hang outside a line box shorter than the font's
+ * own height, so the tail of a "y", "g" or "p" in tight display type was
+ * clipped ("every month.", the wordmark). There the line is made tall enough
+ * for the whole glyph, and a negative margin takes the extra space back so
+ * the layout stays as designed. iOS keeps the tight line height.
+ */
+export function descenderRoom(size: number, lineHeight: number): TextStyle {
+  if (Platform.OS !== 'android') return { lineHeight };
+  const safe = Math.max(lineHeight, Math.round(size * 1.28));
+  const extra = Math.round((safe - lineHeight) / 2);
+  return { lineHeight: safe, marginTop: -extra, marginBottom: -extra };
+}
+
 /** The voice at display size: Medium, tight, calm. Bigger gets tighter. */
 export function Headline({
   children,
@@ -105,11 +119,11 @@ export function Headline({
           fontFamily: italic ? font.displayItalic : font.display,
           fontVariant: LINING,
           fontSize: size,
-          lineHeight: Math.round(size * 1.08),
           letterSpacing: tracking(size, em),
           color: color ?? toneColor,
           textAlign: align,
         },
+        descenderRoom(size, Math.round(size * 1.08)),
         style,
       ]}
     >

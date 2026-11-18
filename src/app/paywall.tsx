@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { Screen, ScreenHeader } from '@/components/brand';
+import { FitToPage } from '@/components/FitToPage';
 import { Paywall } from '@/components/Paywall';
 import { layout, space } from '@/theme/tokens';
 
@@ -14,9 +15,9 @@ export default function PaywallScreen() {
   return (
     <Screen ground="cream" edges={['top', 'bottom']}>
       <ScreenHeader left={{ glyph: 'close', label: 'Close', onPress: close }} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <FitToPage contentStyle={styles.content}>
         <Paywall onContinue={close} onContinueFree={close} />
-      </ScrollView>
+      </FitToPage>
     </Screen>
   );
 }
@@ -26,6 +27,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: layout.gutter,
+    paddingTop: space.m,
     paddingBottom: space.xl,
   },
 });

@@ -83,12 +83,14 @@ export default function ShareModal() {
   // lands at a sharp, exact 1080×1920 pixels instead of enlarging the preview.
   const capture = async () => {
     const { captureRef } = await import('react-native-view-shot');
-    return captureRef(shotRef, {
-      format: 'png',
-      quality: 1,
-      width: captureWidth,
-      height: captureHeight,
-    });
+    // iOS reads width/height in points; Android reads them as pixels (and
+    // truncates to whole numbers), so passing points there saved a blurry
+    // ~384px card. Ask Android for the exact pixel size.
+    const size =
+      Platform.OS === 'android'
+        ? { width: CARD_BASE_WIDTH, height: CARD_BASE_HEIGHT }
+        : { width: captureWidth, height: captureHeight };
+    return captureRef(shotRef, { format: 'png', quality: 1, ...size });
   };
 
   const notAvailableOnWeb = () =>

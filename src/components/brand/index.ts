@@ -14,5 +14,5 @@ export {
   ScreenHeader,
   useGroundStatusBar,
 } from './Surfaces';
-export { Body, Eyebrow, Headline, Mono } from './Typography';
+export { Body, descenderRoom, Eyebrow, Headline, Mono } from './Typography';
 export { Wordmark } from './Wordmark';

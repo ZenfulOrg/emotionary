@@ -2,6 +2,7 @@ import { Text, type TextStyle } from 'react-native';
 
 import { useGround } from '@/theme/ground';
 import { brand, font, tracking } from '@/theme/tokens';
+import { descenderRoom } from './Typography';
 
 /**
  * The wordmark: lowercase, tight, one acid period — on every ground.
@@ -33,10 +34,10 @@ export function Wordmark({
         {
           fontFamily: font.display,
           fontSize: size,
-          lineHeight: Math.round(size * 1.1),
           letterSpacing: tracking(size, -0.04),
           color: color ?? ground.text,
         },
+        descenderRoom(size, Math.round(size * 1.1)),
         style,
       ]}
     >

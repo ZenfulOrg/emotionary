@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   Body,
+  descenderRoom,
   Eyebrow,
   FloatingCard,
   Glyph,
@@ -23,6 +24,7 @@ import {
   PlanetDot,
   Rule,
 } from '@/components/brand';
+import { FitToPage } from '@/components/FitToPage';
 import { LockedMeaning } from '@/components/LockedMeaning';
 import { PronunciationButton } from '@/components/pronunciation-button';
 import { wordTitleSize } from '@/components/word-title-size';
@@ -54,6 +56,7 @@ export function WordFull({
   eyebrow,
   reveal = false,
   scrollHint,
+  pageHeight,
 }: {
   word: Word;
   feedPage?: boolean;
@@ -67,6 +70,8 @@ export function WordFull({
   reveal?: boolean;
   /** Today's first page: a cue that more words wait below. */
   scrollHint?: { label: string; onPress: () => void };
+  /** Feed pages: the page height, so content too tall for it can be fitted. */
+  pageHeight?: number;
 }) {
   const isFavorite = useUserStore((s) => s.favorites.includes(word.slug));
   const toggleFavorite = useUserStore((s) => s.toggleFavorite);
@@ -293,18 +298,19 @@ export function WordFull({
         importantForAccessibility={flipped ? 'no-hide-descendants' : 'auto'}
       >
         {feedPage ? (
-          <View
-            style={[
+          // A feed page can't scroll: content too tall for it (short phones,
+          // large display or font sizes, a locked meaning) is fitted instead of
+          // cut off under the tab bar.
+          <FitToPage
+            testID="fit-page"
+            height={pageHeight}
+            contentStyle={[
               styles.scroll,
-              styles.feedScroll,
-              {
-                paddingTop: insideSafeArea ? space.m : insets.top + space.l,
-                paddingBottom: space.l,
-              },
+              { paddingTop: insideSafeArea ? space.m : insets.top + space.l, paddingBottom: space.l },
             ]}
           >
             {content}
-          </View>
+          </FitToPage>
         ) : (
           <ScrollView
             contentInsetAdjustmentBehavior="automatic"
@@ -360,9 +366,9 @@ export function WordTitle({
         {
           color: ground.text,
           fontSize,
-          lineHeight: Math.round(fontSize * 1.08),
           letterSpacing: tracking(fontSize, fontSize >= 60 ? -0.05 : -0.04),
         },
+        descenderRoom(fontSize, Math.round(fontSize * 1.08)),
       ]}
       maxFontSizeMultiplier={1.2}
       numberOfLines={1}
@@ -416,7 +422,6 @@ const styles = StyleSheet.create({
     paddingTop: space.m,
     paddingBottom: 112,
   },
-  feedScroll: { flex: 1 },
   centeredEntry: { alignItems: 'center' },
   centeredRow: { justifyContent: 'center', marginLeft: 0 },
   centeredText: { textAlign: 'center' },

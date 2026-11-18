@@ -91,7 +91,7 @@ export function Paywall({
     <View style={styles.wrap}>
       {showPlanets && <View style={styles.planets}><Planets /></View>}
       <Eyebrow style={styles.centeredText}>{eyebrow}</Eyebrow>
-      <Headline size={48} style={styles.title}>
+      <Headline size={44} style={styles.title}>
         {title}
       </Headline>
       <Body tone="muted" style={styles.subtitle}>
@@ -139,7 +139,7 @@ export function Paywall({
           label={busy ? 'Working…' : plan === 'yearly' ? yearlyTrial ? 'Start free trial' : 'Subscribe' : 'Buy lifetime'}
           disabled={busy || loading || !prices[PRODUCT_IDS[plan]]}
           onPress={() => void unlock()}
-          size={120}
+          size={112}
           accessibilityHint={`Unlocks ${plan} full access`}
         />
       </View>
@@ -150,16 +150,17 @@ export function Paywall({
 const styles = StyleSheet.create({
   wrap: { width: '100%', maxWidth: 440, alignSelf: 'center' },
   centeredText: { textAlign: 'center' },
-  planets: { alignItems: 'center', marginBottom: space.l },
+  // Room above for the tilt, the glow and the breathing, so no dot is clipped.
+  planets: { alignItems: 'center', paddingTop: space.m, marginBottom: space.m },
   selectedPlan: { backgroundColor: brand.ink },
   title: { marginTop: space.s, textAlign: 'center' },
   subtitle: { marginTop: space.m, maxWidth: 320, alignSelf: 'center', textAlign: 'center' },
-  options: { gap: space.s, marginTop: space.xl },
+  options: { gap: space.s, marginTop: space.l },
   notice: { marginTop: space.m, lineHeight: 19 },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: space.xl,
+    marginTop: space.l,
   },
 });

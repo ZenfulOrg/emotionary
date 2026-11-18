@@ -7,6 +7,7 @@ import { useUserStore } from '@/store/userStore';
 import {
   AuthError,
   createAccount,
+  CODE_REJECTED,
   requestPasswordReset,
   resendSignupCode,
   resetPasswordWithCode,
@@ -81,7 +82,7 @@ export function useAuthForm({
 
   const errorMessage = (error: unknown) => {
     if (error instanceof AuthError && error.code === 'otp_expired') {
-      return 'That code is invalid or has expired. Request a new code and try again.';
+      return CODE_REJECTED;
     }
     return error instanceof Error ? error.message : 'Account request failed. Try again.';
   };

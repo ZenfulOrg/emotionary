@@ -1,4 +1,3 @@
-import { BlurView } from 'expo-blur';
 import { router, type Href } from 'expo-router';
 import type React from 'react';
 import { useEffect, useState } from 'react';
@@ -24,6 +23,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Body, Glyph } from '@/components/brand';
+import { SoftBlur } from '@/components/SoftBlur';
 import { placeholderText, splitLead } from '@/content/locked-text';
 import { mediumImpactHaptic } from '@/feedback/haptics';
 import { brand, font, space, tracking, type } from '@/theme/tokens';
@@ -42,8 +42,7 @@ export function BlurredText({
       importantForAccessibility="no-hide-descendants"
       accessibilityElementsHidden
     >
-      {children(placeholderText(source))}
-      <BlurView tint="light" intensity={38} style={StyleSheet.absoluteFill} pointerEvents="none" />
+      <SoftBlur intensity={38}>{children(placeholderText(source))}</SoftBlur>
     </View>
   );
 }
@@ -154,8 +153,7 @@ function Shimmer({ children }: { children: React.ReactNode }) {
       style={styles.blurBox}
       onLayout={(event: LayoutChangeEvent) => setWidth(Math.round(event.nativeEvent.layout.width))}
     >
-      {children}
-      <BlurView tint="light" intensity={38} style={StyleSheet.absoluteFill} pointerEvents="none" />
+      <SoftBlur intensity={38}>{children}</SoftBlur>
       {!reducedMotion && width > 0 && (
         <Animated.View pointerEvents="none" style={[styles.band, { width: width * 0.35 }, band]}>
           <View style={[styles.bandPart, styles.bandSoft]} />
