@@ -1,4 +1,4 @@
-import { StyleSheet, Text, type TextStyle, View } from 'react-native';
+import { Platform, StyleSheet, Text, type TextStyle, View } from 'react-native';
 
 import { descenderRoom, Grain, Planets, Wordmark } from '@/components/brand';
 import { wordTitleSize } from '@/components/word-title-size';
@@ -122,7 +122,9 @@ export function ShareCard({ word, width, theme = 'ink' }: { word: Word; width: n
               <Wordmark size={px(72)} fixed />
               <Text allowFontScaling={false} style={[mono(22), { marginTop: px(12) }]}>EMOTIONARYBOOK.COM</Text>
             </View>
-            <Planets scale={px(3)} breathing={false} />
+            {/* Android's snapshot draws each dot's soft glow as a square, so the
+                saved card uses plain dots there. */}
+            <Planets scale={px(3)} breathing={false} glow={Platform.OS !== 'android'} />
           </View>
         </View>
         <Grain />
