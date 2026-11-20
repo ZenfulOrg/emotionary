@@ -357,25 +357,18 @@ function ReminderPage({
   times: NotifTime[];
   setTimes: (times: NotifTime[]) => void;
 }) {
-  const first = times[0];
+  const label = times.map((time) => formatTime(time).toLowerCase()).join(' · ');
   return (
-    <PageCopy
-      title="Never miss your word."
-      body="At the time you choose. Add more times if you'd like a reminder later in the day."
-    >
+    <PageCopy title="Never miss your word." body="At the time you choose. Pick more than one if you like.">
       <Headline
         style={styles.centeredText}
         accessibilityRole="text"
-        size={times.length > 1 ? 44 : 64}
-        accessibilityLabel={`Notifications at ${times.map(formatTime).join(', ')}`}
+        size={times.length > 2 ? 34 : times.length > 1 ? 44 : 64}
+        accessibilityLabel={`Reminders at ${times.map(formatTime).join(', ')}`}
       >
-        {times.length > 1
-          ? times.map((time) => formatTime(time).toLowerCase()).join(' · ')
-          : formatTime(first).toLowerCase()}
+        {label}
       </Headline>
-      <View style={styles.picker}>
-        <NotificationTimes times={times} onChange={setTimes} />
-      </View>
+      <NotificationTimes times={times} onChange={setTimes} />
     </PageCopy>
   );
 }
@@ -547,7 +540,6 @@ const styles = StyleSheet.create({
   notificationTitle: { marginTop: space.s },
   options: { gap: space.s },
   chips: { justifyContent: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: space.s, marginTop: space.m },
-  picker: { marginTop: space.m, alignItems: 'center' },
   widgets: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.m },
   skip: { alignSelf: 'center', marginTop: space.m },
   pressed: { opacity: 0.72 },

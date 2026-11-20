@@ -212,12 +212,7 @@ function NotificationsSection() {
       <Rule style={styles.sectionRule} />
       {notifEnabled ? (
         <View style={styles.notifications}>
-          <Body tone="muted" size={16} style={styles.notificationsLead}>
-            {times.length > 1
-              ? 'Your word arrives at the first time; the others remind you of it.'
-              : 'Your word arrives at this time each day. Tap a time to change it.'}
-          </Body>
-          <NotificationTimes times={times} onChange={setNotifTimes} />
+          <NotificationTimes times={times} onChange={setNotifTimes} picker="onDemand" />
         </View>
       ) : (
         <View style={styles.notifications}>
