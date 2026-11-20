@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, type TextStyle, View } from 'react-native';
 
-import { Grain, Planets, Wordmark } from '@/components/brand';
+import { descenderRoom, Grain, Planets, Wordmark } from '@/components/brand';
 import { wordTitleSize } from '@/components/word-title-size';
 import { pronunciationLineFor } from '@/content/part-of-speech';
 import { asEntry, displayWord } from '@/content/presentation';
@@ -70,15 +70,18 @@ export function ShareCard({ word, width, theme = 'ink' }: { word: Word; width: n
           <Text allowFontScaling={false} style={[mono(34), { letterSpacing: px(1.4) }]}>{pronunciationLineFor(word)}</Text>
           <Text
             allowFontScaling={false}
-            style={{
-              fontFamily: font.display,
-              fontSize: wordSize,
-              lineHeight: wordSize * 1.1,
-              letterSpacing: tracking(wordSize, -0.05),
-              color: ground.text,
-              marginTop: px(12),
-              marginLeft: -px(8),
-            }}
+            style={[
+              {
+                fontFamily: font.display,
+                fontSize: wordSize,
+                letterSpacing: tracking(wordSize, -0.05),
+                color: ground.text,
+                marginLeft: -px(8),
+              },
+              // Android clips the tail of g, y, p in a tight line box; this
+              // gives it room and takes the space back (see descenderRoom).
+              withTopGap(descenderRoom(wordSize, wordSize * 1.1), px(12)),
+            ]}
             numberOfLines={1}
             adjustsFontSizeToFit
           >
@@ -126,6 +129,11 @@ export function ShareCard({ word, width, theme = 'ink' }: { word: Word; width: n
       </View>
     </GroundProvider>
   );
+}
+
+/** Adds the word's top gap to the margins descenderRoom may set. */
+function withTopGap(style: TextStyle, gap: number): TextStyle {
+  return { ...style, marginTop: ((style.marginTop as number | undefined) ?? 0) + gap };
 }
 
 const styles = StyleSheet.create({
