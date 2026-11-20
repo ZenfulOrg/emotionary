@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -28,7 +28,6 @@ import { AuthForm } from '@/components/AuthForm';
 import {
   Body,
   Button,
-  Chip,
   Eyebrow,
   FloatingCard,
   Glyph,
@@ -48,7 +47,8 @@ import { FitToPage } from '@/components/FitToPage';
 import { Paywall } from '@/components/Paywall';
 import { PronunciationButton } from '@/components/pronunciation-button';
 import { StatsBurst } from '@/components/stats-burst';
-import { formatTime, TimeControl } from '@/components/TimeControl';
+import { NotificationTimes } from '@/components/NotificationTimes';
+import { formatTime } from '@/components/TimeControl';
 import { WidgetGuideModal, type WidgetGuideVariant } from '@/components/WidgetGuideModal';
 import { WidgetPreview } from '@/components/WidgetPreview';
 import { WordTitle } from '@/components/WordFull';
@@ -56,8 +56,7 @@ import { WordKey } from '@/components/WordKey';
 import { lightImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
 import { requestPermission } from '@/notifications/scheduler';
 import { findWord, useContentStore } from '@/content/store';
-import type { NotifTime } from '@/store/userStore';
-import { useUserStore } from '@/store/userStore';
+import { sortedNotifTimes, useUserStore, type NotifTime } from '@/store/userStore';
 import { layout, levelPalettes, planets, space, type, type GroundName } from '@/theme/tokens';
 
 const PAGES = [
@@ -94,14 +93,6 @@ const DRAWN_TO = [
   ['Psychology', 'Terms from the study of the mind'],
 ] as const;
 
-const QUICK_TIMES: NotifTime[] = [
-  { hour: 11, minute: 11 },
-  { hour: 7, minute: 0 },
-  { hour: 9, minute: 0 },
-  { hour: 12, minute: 0 },
-  { hour: 18, minute: 0 },
-  { hour: 21, minute: 0 },
-];
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -111,7 +102,9 @@ export default function OnboardingScreen() {
   const [accountComplete, setAccountComplete] = useState(false);
   const [widgetGuide, setWidgetGuide] = useState<WidgetGuideVariant | null>(null);
   const notifTime = useUserStore((state) => state.notifTime);
-  const setNotifTime = useUserStore((state) => state.setNotifTime);
+  const extraNotifTimes = useUserStore((state) => state.extraNotifTimes);
+  const setNotifTimes = useUserStore((state) => state.setNotifTimes);
+  const notifTimes = useMemo(() => sortedNotifTimes([notifTime, ...extraNotifTimes]), [notifTime, extraNotifTimes]);
   const setNotifEnabled = useUserStore((state) => state.setNotifEnabled);
   const completeOnboarding = useUserStore((state) => state.completeOnboarding);
   const reducedMotion = useReducedMotion();
@@ -163,7 +156,7 @@ export default function OnboardingScreen() {
       {page === 'daily' && <DailyPage />}
       {page === 'key' && <KeyPage />}
       {page === 'drawn' && <DrawnPage selected={selectedDrawnTo} onToggle={toggleDrawnTo} />}
-      {page === 'reminder' && <ReminderPage notifTime={notifTime} setNotifTime={setNotifTime} />}
+      {page === 'reminder' && <ReminderPage times={notifTimes} setTimes={setNotifTimes} />}
       {page === 'widget' && <WidgetPage onNext={goNext} onOpenGuide={setWidgetGuide} />}
       {page === 'account' && (
         <PageCopy title="Keep your words close.">
@@ -201,7 +194,8 @@ export default function OnboardingScreen() {
 
         <View style={[styles.footer, { paddingBottom: footerLift }]}>
           <View style={styles.footerSide}>
-            {!isFirst && (
+            {/* Once signed in there's no going back to the sign-in page. */}
+            {!isFirst && !(accountComplete && step >= PAGES.indexOf('account')) && (
               <IconButton
                 glyph="back"
                 accessibilityLabel="Go back"
@@ -357,36 +351,30 @@ function DrawnPage({ selected, onToggle }: { selected: string[]; onToggle: (labe
 }
 
 function ReminderPage({
-  notifTime,
-  setNotifTime,
+  times,
+  setTimes,
 }: {
-  notifTime: NotifTime;
-  setNotifTime: (time: NotifTime) => void;
+  times: NotifTime[];
+  setTimes: (times: NotifTime[]) => void;
 }) {
+  const first = times[0];
   return (
     <PageCopy
       title="Never miss your word."
-      body="Once a day, at the time you choose."
+      body="At the time you choose. Add more times if you'd like a reminder later in the day."
     >
-      <Headline style={styles.centeredText} accessibilityRole="text" size={64} accessibilityLabel={`Reminder at ${formatTime(notifTime)}`}>
-        {formatTime(notifTime).toLowerCase()}
+      <Headline
+        style={styles.centeredText}
+        accessibilityRole="text"
+        size={times.length > 1 ? 44 : 64}
+        accessibilityLabel={`Notifications at ${times.map(formatTime).join(', ')}`}
+      >
+        {times.length > 1
+          ? times.map((time) => formatTime(time).toLowerCase()).join(' · ')
+          : formatTime(first).toLowerCase()}
       </Headline>
-      <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel="Quick times">
-        {QUICK_TIMES.map((time) => {
-          const label = formatTime(time);
-          return (
-            <Chip
-              key={label}
-              label={label}
-              role="radio"
-              selected={time.hour === notifTime.hour && time.minute === notifTime.minute}
-              onPress={() => setNotifTime(time)}
-            />
-          );
-        })}
-      </View>
       <View style={styles.picker}>
-        <TimeControl value={notifTime} onChange={setNotifTime} />
+        <NotificationTimes times={times} onChange={setTimes} />
       </View>
     </PageCopy>
   );

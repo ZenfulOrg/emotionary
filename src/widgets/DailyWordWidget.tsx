@@ -81,7 +81,7 @@ const DailyWordWidgetView = (
 
   if (isCircular) {
     return (
-      <VStack alignment="center" spacing={0} modifiers={[widgetURL(`emotionary://word/${props.slug}`)]}>
+      <VStack alignment="center" spacing={0} modifiers={[widgetURL(`emotionary://widget/open/${props.slug}`)]}>
         <Text modifiers={[font({ family: VOICE, size: 15 }), lineLimit(1), minimumScaleFactor(0.5)]}>{props.word}</Text>
         <Text modifiers={[font({ design: 'serif', size: 9 }), lineLimit(2)]}>{props.definition}</Text>
       </VStack>
@@ -90,7 +90,7 @@ const DailyWordWidgetView = (
 
   if (isLockScreen) {
     return (
-      <Link destination={`emotionary://word/${props.slug}`}>
+      <Link destination={`emotionary://widget/open/${props.slug}`}>
         <VStack alignment="leading" spacing={1} modifiers={[frame({ maxWidth: 400, alignment: 'leading' })]}>
           <Text modifiers={[font({ family: VOICE, size: 22 }), lineLimit(1)]}>{props.word}</Text>
           <Text modifiers={[font({ design: 'serif', size: 11 }), lineLimit(1)]}>{props.definition}</Text>
@@ -121,7 +121,7 @@ const DailyWordWidgetView = (
           background(fill),
         ]}
       >
-        <Link destination={`emotionary://word/${props.slug}`}>
+        <Link destination={`emotionary://widget/open/${props.slug}`}>
           <VStack alignment="leading" spacing={4}>
             <Text modifiers={[
               font({ family: VOICE, size: isMedium ? 34 : 28 }),
@@ -146,8 +146,11 @@ const DailyWordWidgetView = (
           </Link>
           <Link destination={`emotionary://widget/share/${props.slug}`}
             modifiers={[accessibilityLabel('Share word')]}>
-            <Image systemName="square.and.arrow.up" size={17} color={text}
-              modifiers={[frame({ width: 44, height: 32 })]} />
+            {/* The brand's share arrow (bundled by plugins/with-widget-assets), tinted to the theme. */}
+            <HStack modifiers={[frame({ width: 44, height: 32 })]}>
+              <Image assetName="ShareArrow"
+                modifiers={[resizable(), foregroundStyle(text), frame({ width: 22, height: 22 })]} />
+            </HStack>
           </Link>
         </HStack>
       </VStack>

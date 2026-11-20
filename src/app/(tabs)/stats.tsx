@@ -1,6 +1,7 @@
 import { router, useFocusEffect, type Href } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   DeviceEventEmitter,
   Linking,
   Pressable,
@@ -11,6 +12,7 @@ import {
 
 import {
   Body,
+  Button,
   Eyebrow,
   Glyph,
   Headline,
@@ -23,12 +25,14 @@ import {
   Rule,
   Screen,
 } from '@/components/brand';
+import { NotificationTimes } from '@/components/NotificationTimes';
 import { StatsBurst } from '@/components/stats-burst';
 import { WidgetGuideModal, type WidgetGuideVariant } from '@/components/WidgetGuideModal';
 import { WidgetPreview } from '@/components/WidgetPreview';
-import { mediumImpactHaptic, selectionHaptic } from '@/feedback/haptics';
+import { mediumImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
+import { requestPermission } from '@/notifications/scheduler';
 import { STATS_OPEN_EVENT } from '@/stats/events';
-import { useUserStore } from '@/store/userStore';
+import { sortedNotifTimes, useUserStore } from '@/store/userStore';
 import { useGround } from '@/theme/ground';
 import { font, layout, space, tracking } from '@/theme/tokens';
 
@@ -41,19 +45,33 @@ function StatTile({
   label,
   streak = false,
   second = false,
+  onPress,
 }: {
   second?: boolean;
   index: string;
   value: number;
   label: string;
   streak?: boolean;
+  /** Tappable tiles open what they count (Saved → the saved words). */
+  onPress?: () => void;
 }) {
   const ground = useGround();
   return (
-    <View
-      style={[styles.tile, second && styles.tileSecond, { borderColor: ground.hairline }]}
+    <Pressable
+      disabled={!onPress}
+      onPress={() => {
+        selectionHaptic();
+        onPress?.();
+      }}
+      style={({ pressed }) => [
+        styles.tile,
+        second && styles.tileSecond,
+        { borderColor: ground.hairline },
+        pressed && styles.pressed,
+      ]}
       accessible
-      accessibilityLabel={`${value} ${label.toLowerCase()}`}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={`${value} ${label.toLowerCase()}${onPress ? '. Opens the list.' : ''}`}
     >
       <View style={styles.tileTop}>
         <Mono size={11} tone="faint">
@@ -65,7 +83,7 @@ function StatTile({
         {value}
       </Headline>
       <Eyebrow tone="muted" style={styles.centeredText}>{label}</Eyebrow>
-    </View>
+    </Pressable>
   );
 }
 
@@ -114,7 +132,7 @@ function WidgetShowcase({ onOpen }: { onOpen: (variant: WidgetGuideVariant) => v
   const ground = useGround();
   return (
     <View style={styles.section}>
-      <Eyebrow tone="muted" style={styles.centeredText}>02 / Widgets</Eyebrow>
+      <Eyebrow tone="muted" style={styles.centeredText}>03 / Widgets</Eyebrow>
       <Rule style={styles.sectionRule} />
       <View style={styles.widgetCards}>
         {(['home', 'lock'] as const).map((variant) => (
@@ -155,6 +173,60 @@ function WidgetShowcase({ onOpen }: { onOpen: (variant: WidgetGuideVariant) => v
           </View>
         ))}
       </Panel>
+    </View>
+  );
+}
+
+/**
+ * Notification times live here, where people look for "my settings": turn
+ * them on, change the time, or add more times a day (up to four).
+ */
+function NotificationsSection() {
+  const notifEnabled = useUserStore((s) => s.notifEnabled);
+  const setNotifEnabled = useUserStore((s) => s.setNotifEnabled);
+  const notifTime = useUserStore((s) => s.notifTime);
+  const extraNotifTimes = useUserStore((s) => s.extraNotifTimes);
+  const setNotifTimes = useUserStore((s) => s.setNotifTimes);
+  const times = useMemo(() => sortedNotifTimes([notifTime, ...extraNotifTimes]), [notifTime, extraNotifTimes]);
+  const [busy, setBusy] = useState(false);
+
+  const turnOn = async () => {
+    setBusy(true);
+    try {
+      const granted = await requestPermission();
+      setNotifEnabled(granted);
+      if (granted) successHaptic();
+      else
+        Alert.alert('Notifications are off', 'Enable Emotionary notifications in system settings.', [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Open settings', onPress: () => void Linking.openSettings() },
+        ]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <View style={styles.section}>
+      <Eyebrow tone="muted" style={styles.centeredText}>02 / Notifications</Eyebrow>
+      <Rule style={styles.sectionRule} />
+      {notifEnabled ? (
+        <View style={styles.notifications}>
+          <Body tone="muted" size={16} style={styles.notificationsLead}>
+            {times.length > 1
+              ? 'Your word arrives at the first time; the others remind you of it.'
+              : 'Your word arrives at this time each day. Tap a time to change it.'}
+          </Body>
+          <NotificationTimes times={times} onChange={setNotifTimes} />
+        </View>
+      ) : (
+        <View style={styles.notifications}>
+          <Body tone="muted" size={16} style={styles.notificationsLead}>
+            Notifications are off. Turn them on to get your word each day, at the times you choose.
+          </Body>
+          <Button label="Turn on notifications" onPress={() => void turnOn()} busy={busy} />
+        </View>
+      )}
     </View>
   );
 }
@@ -220,10 +292,17 @@ export default function StatsScreen() {
           <View style={styles.grid}>
             <StatTile index="01" value={streak} label="Day streak" streak />
             <StatTile index="02" value={readCount} label="Words read" second />
-            <StatTile index="03" value={favorites.length} label="Saved" />
+            <StatTile
+              index="03"
+              value={favorites.length}
+              label="Saved"
+              onPress={() => router.push('/favorites' as Href)}
+            />
             <StatTile index="04" value={sharedCount} label="Shared" second />
           </View>
         </View>
+
+        <NotificationsSection />
 
         <View style={styles.links}>
           <LinkRow
@@ -300,6 +379,8 @@ const styles = StyleSheet.create({
   tileTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.s },
   tileValue: { fontFamily: font.display, letterSpacing: tracking(56, -0.05) },
   links: { gap: space.s, marginTop: space.xl },
+  notifications: { gap: space.m, marginTop: space.m, alignItems: 'center' },
+  notificationsLead: { maxWidth: 320, textAlign: 'center' },
   linkRow: {
     minHeight: 76,
     alignItems: 'center',

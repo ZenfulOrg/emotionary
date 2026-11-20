@@ -1,4 +1,4 @@
-// send-notifications — runs every 15 minutes (pg_cron) and on demand from
+// send-notifications — runs every minute (pg_cron) and on demand from
 // the admin panel. Sends, per device and in its own time zone:
 //   1. the daily word at the chosen time (deck rotation: every word once
 //      before any repeats, new words join the next cycle),
@@ -12,7 +12,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 import { addDays, daysSinceEpoch, wordOfDay } from '../_shared/daily-engine.ts';
-import { dailyNotificationContent } from '../_shared/notification-content.ts';
+import { dailyNotificationContent, reminderNotificationContent } from '../_shared/notification-content.ts';
 import { WELCOME_DAYS, welcomeWords } from '../_shared/welcome.ts';
 import type { Word } from '../_shared/word.ts';
 
@@ -30,6 +30,8 @@ type Device = {
   streak: number;
   last_open_date: string | null;
   last_daily_sent_on: string | null;
+  /** Later reminders the same day, minutes after midnight (app 1.8.1+). */
+  extra_minutes: number[] | null;
   welcome_date: string | null;
   created_at: string;
 };
@@ -353,6 +355,14 @@ function dailyPush(words: Word[], welcome: Word[], device: Device, localDate: st
   return dailyNotificationContent(word, localDate, unlocked);
 }
 
+/** A later reminder of the same word, the same day. */
+function reminderPush(words: Word[], welcome: Word[], device: Device, localDate: string, cache: Map<string, Word[]>) {
+  const word = todaysWord(words, welcome, device, localDate, cache);
+  if (!word) return null;
+  const unlocked = device.plan === 'paid' || word.is_free || device.kept_slugs.includes(word.slug);
+  return reminderNotificationContent(word, localDate, unlocked);
+}
+
 /** Sends today's daily notification to one device now, live or not (admin test). */
 async function runTest(installId: string, now: Date) {
   const { data: device } = await supabase.from('push_devices').select('*').eq('install_id', installId).single();
@@ -367,7 +377,7 @@ async function runTest(installId: string, now: Date) {
 }
 
 async function runScheduled(now: Date, dryRun: boolean) {
-  const stats = { daily: 0, triggered: 0, failed: 0, skipped: 0 };
+  const stats = { daily: 0, reminders: 0, triggered: 0, failed: 0, skipped: 0 };
   const [{ data: devices }, { data: triggers }, words] = await Promise.all([
     supabase.from('push_devices').select('*').eq('enabled', true).limit(100000),
     supabase.from('push_triggers').select('*').eq('enabled', true),
@@ -385,6 +395,7 @@ async function runScheduled(now: Date, dryRun: boolean) {
     }
 
     // 1. Daily word at the device's chosen time, once per local day.
+    let dailyDone = device.last_daily_sent_on === local.date;
     if (
       device.last_daily_sent_on !== local.date &&
       inWindow(local.minutes, device.notify_hour * 60 + device.notify_minute)
@@ -402,6 +413,7 @@ async function runScheduled(now: Date, dryRun: boolean) {
             .or(`last_daily_sent_on.is.null,last_daily_sent_on.neq.${local.date}`)
             .select('install_id');
           if (claimed?.length) {
+            dailyDone = true;
             const result = await send(device, push);
             if (result === 'sent') stats.daily++;
             else if (result === 'skipped') stats.skipped++;
@@ -409,6 +421,30 @@ async function runScheduled(now: Date, dryRun: boolean) {
             await recordResult(device, result);
           }
         }
+      }
+    }
+
+    // 1b. Later reminders of today's word, once each, only after the word went out.
+    if (dailyDone || dryRun) {
+      for (const minute of device.extra_minutes ?? []) {
+        if (!inWindow(local.minutes, minute)) continue;
+        const push = reminderPush(words, welcome, device, local.date, cache);
+        if (!push) break;
+        if (dryRun) {
+          stats.reminders++;
+          continue;
+        }
+        const { data: claimed } = await supabase.rpc('claim_push_reminder', {
+          p_install_id: device.install_id,
+          p_date: local.date,
+          p_minute: minute,
+        });
+        if (claimed !== true) continue;
+        const result = await send(device, push);
+        if (result === 'sent') stats.reminders++;
+        else if (result === 'skipped') stats.skipped++;
+        else stats.failed++;
+        await recordResult(device, result);
       }
     }
 

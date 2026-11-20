@@ -19,6 +19,8 @@ import { TodayCoachmark } from '@/components/TodayCoachmark';
 import { TodayWalkthrough } from '@/components/TodayWalkthrough';
 import { WordFull } from '@/components/WordFull';
 import { StreakPopup } from '@/components/StreakPopup';
+import { InvitePrompt } from '@/components/InvitePrompt';
+import { shareInvite } from '@/invite/invite';
 import { StatsBurst } from '@/components/stats-burst';
 import { useContentStore } from '@/content/store';
 import { freeWords, wordAccess } from '@/entitlements';
@@ -28,7 +30,7 @@ import { buildTodayFeed, type TodayFeedItem } from '@/daily/today-feed';
 import { shouldShowTodayActionCoachmark } from '@/daily/tutorial';
 import { lightImpactHaptic, mediumImpactHaptic, successHaptic } from '@/feedback/haptics';
 import { getPermissionGranted, requestPermission } from '@/notifications/scheduler';
-import { useUserStore } from '@/store/userStore';
+import { inviteEligible, useUserStore } from '@/store/userStore';
 import { isReviewMoment, maybeAskForReview } from '@/review/prompt';
 import { brand, layout, levelPalettes, space } from '@/theme/tokens';
 
@@ -50,6 +52,12 @@ const REVEAL_BURST_MS = 3200;
 /** The streak popup shows once per app launch, on the first open of Today. */
 let streakPopupShownThisSession = false;
 let notificationPromptHandledThisSession = false;
+/** Lets a screen change finish before a notification/widget celebration plays. */
+const CELEBRATION_SETTLE_MS = 350;
+/** The streak card mounts this long into a celebration (it then drops in). */
+const CELEBRATION_STREAK_MOUNT_MS = 600;
+/** The last notification/widget celebration Today played (one per tap). */
+let handledCelebrationRun = 0;
 
 export default function TodayScreen() {
   const words = useContentStore((s) => s.words);
@@ -69,6 +77,8 @@ export default function TodayScreen() {
   const [feedHeight, setFeedHeight] = useState(0);
   const [visibleSlug, setVisibleSlug] = useState<string | null>(null);
   const [streakVisible, setStreakVisible] = useState(() => !streakPopupShownThisSession);
+  /** How far into the reveal the streak card mounted (celebrations mount it late). */
+  const [streakMountDelay, setStreakMountDelay] = useState(0);
   const [coachmarkVisible, setCoachmarkVisible] = useState(false);
   const [notificationPromptVisible, setNotificationPromptVisible] = useState(false);
   const [notificationBusy, setNotificationBusy] = useState(false);
@@ -137,21 +147,84 @@ export default function TodayScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [today],
   );
-  const feed = useMemo(
+  // Opened from a notification or the widget: that word leads Today.
+  const [pinnedSlug, setPinnedSlug] = useState<string | null>(null);
+  const baseFeed = useMemo(
     () => buildTodayFeed(words, today, hasFullAccess, cycleCount, welcomeDate, seen),
     [words, today, hasFullAccess, cycleCount, welcomeDate, seen],
   );
+  const feed = useMemo(() => pinToFront(baseFeed, pinnedSlug), [baseFeed, pinnedSlug]);
   // Admin-controlled, so count live instead of assuming ten.
   const freeCount = useMemo(() => freeWords(words).length, [words]);
-  const firstFeedSlug = feed[0]?.kind === 'word' ? feed[0].word.slug : null;
+  // Today's own word stays the free one, wherever a pinned word moved it.
+  const firstFeedSlug = baseFeed[0]?.kind === 'word' ? baseFeed[0].word.slug : null;
   // Until someone has swiped once, Today's first word says more wait below.
   const wordsBelow = feed.filter((item) => item.kind === 'word').length - 1;
+  // A notification or widget tap brings the cue back once, even for people
+  // who already know to swipe.
+  const [celebrationHint, setCelebrationHint] = useState(false);
   const scrollHintLabel =
-    feedScrolled || feed.length < 2
+    (feedScrolled && !celebrationHint) || feed.length < 2
       ? null
       : hasFullAccess
-        ? 'Swipe up for more words'
+        ? celebrationHint
+          ? 'Keep scrolling for more words'
+          : 'Swipe up for more words'
         : `${wordsBelow} free ${wordsBelow === 1 ? 'word' : 'words'} below`;
+  // A tap on the daily notification or the widget opens Today on that word
+  // with the full welcome: confetti, a haptic as it lands, the streak drop-in
+  // and the scroll cue, even if today's reveal already played.
+  const playCelebration = useCallback(() => {
+    const { celebrateRun, celebrateSlug, clearCelebration } = useUserStore.getState();
+    if (celebrateRun === 0 || celebrateRun === handledCelebrationRun) return;
+    handledCelebrationRun = celebrateRun;
+    clearCelebration();
+    setPinnedSlug(celebrateSlug);
+    setToday(localDateString());
+    revealPending.current = null;
+    setRevealing(true);
+    setBurstVisible(true);
+    setRevealRun((run) => run + 1);
+    setCelebrationHint(true);
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    setTimeout(successHaptic, REVEAL_LAND_MS);
+    // Mounted a beat later: a drop-in that starts while the screen change is
+    // still animating never shows.
+    setTimeout(() => {
+      streakPopupShownThisSession = false;
+      setStreakMountDelay(CELEBRATION_STREAK_MOUNT_MS);
+      setStreakVisible(true);
+    }, CELEBRATION_STREAK_MOUNT_MS);
+  }, []);
+  // Played only while Today is on screen: a tap that arrives while another
+  // screen is open waits until Today is shown again.
+  const celebrationFocused = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      celebrationFocused.current = true;
+        // A tap from a cold start (or from another screen) is already waiting.
+      // The short wait lets the screen change that brought Today back finish.
+      const pending = setTimeout(playCelebration, CELEBRATION_SETTLE_MS);
+      return () => {
+        celebrationFocused.current = false;
+            clearTimeout(pending);
+      };
+    }, [playCelebration]),
+  );
+  useEffect(
+    () =>
+      useUserStore.subscribe((state, previous) => {
+        if (state.celebrateRun === previous.celebrateRun) return;
+        // A deep link opens its own screen first and Today only blurs a moment
+        // later, so check focus again once that has settled; if Today is not
+        // showing then, the focus effect plays it when Today comes back.
+        setTimeout(() => {
+          if (celebrationFocused.current) playCelebration();
+        }, CELEBRATION_SETTLE_MS);
+      }),
+    [playCelebration],
+  );
+
   const scrollToNext = useCallback(() => {
     listRef.current?.scrollToIndex({ index: 1, animated: true });
   }, []);
@@ -268,6 +341,7 @@ export default function TodayScreen() {
     ({ viewableItems }: { viewableItems: ViewToken<TodayFeedItem>[] }) => {
       const visibleToken = viewableItems.find((token) => token.isViewable);
       if (visibleToken && visibleToken.index !== null && visibleToken.index > 0) {
+        setCelebrationHint(false);
         // Swipes during the first-visit tips don't count: the cue sits under
         // the tip card there, so it stays until a swipe after the tips.
         const { feedScrolled: scrolled, walkthroughDone: tipsDone } = useUserStore.getState();
@@ -302,6 +376,31 @@ export default function TodayScreen() {
     }, [recordOpen, today, feed]),
   );
 
+  // Two weeks of near-daily use: once, ask them to share Emotionary with a
+  // friend (after the streak popup and any first-visit tips), or whenever the
+  // invite notification is tapped.
+  const inviteShown = useUserStore((s) => s.inviteShown);
+  const inviteRequested = useUserStore((s) => s.inviteRequested);
+  const openDays = useUserStore((s) => s.openDays);
+  const inviteVisible =
+    !streakVisible &&
+    !notificationPromptVisible &&
+    !coachmarkVisible &&
+    walkthroughDone &&
+    promptSettled &&
+    (inviteRequested || (!inviteShown && inviteEligible(openDays, today)));
+  const closeInvite = useCallback(() => {
+    const store = useUserStore.getState();
+    store.markInviteShown();
+    store.clearInviteRequest();
+  }, []);
+  const sendInvite = useCallback(() => {
+    closeInvite();
+    void shareInvite().then((shared) => {
+      if (shared) successHaptic();
+    });
+  }, [closeInvite]);
+
   if (feed.length === 0) {
     return (
       <Screen style={styles.empty}>
@@ -317,7 +416,7 @@ export default function TodayScreen() {
           streak={Math.max(streak, 1)}
           wilted={streakBrokeDate === today}
           onDismiss={dismissStreak}
-          enterDelay={revealing ? REVEAL_STREAK_DELAY_MS : 0}
+          enterDelay={revealing ? REVEAL_STREAK_DELAY_MS - streakMountDelay : 0}
         />
       )}
       {notificationPromptVisible && (
@@ -328,6 +427,7 @@ export default function TodayScreen() {
         />
       )}
       {coachmarkVisible && <TodayCoachmark onOpenShare={openCoachmarkShare} />}
+      {inviteVisible && <InvitePrompt onShare={sendInvite} onDismiss={closeInvite} />}
       {/* First visit: after the streak popup and the notification prompt, never on top of them. */}
       {!walkthroughDone && promptSettled && !streakVisible && !notificationPromptVisible && (
         <TodayWalkthrough onDone={completeWalkthrough} />
@@ -401,6 +501,14 @@ export default function TodayScreen() {
       )}
     </Screen>
   );
+}
+
+/** Moves a word already in the feed to the front (a notification or widget tap). */
+function pinToFront(feed: TodayFeedItem[], slug: string | null): TodayFeedItem[] {
+  if (!slug) return feed;
+  const index = feed.findIndex((item) => item.kind === 'word' && item.word.slug === slug);
+  if (index <= 0) return feed;
+  return [feed[index], ...feed.slice(0, index), ...feed.slice(index + 1)];
 }
 
 /** The end of the free feed: a page of ink, the orbit, one round CTA. */

@@ -5,10 +5,10 @@ import type { Word } from '@/content/types';
 import { addDays, daysSinceEpoch, localDateString, monthKey, wordOfDay } from '@/daily/engine';
 import { WELCOME_DAYS, welcomeWords } from '@/daily/welcome';
 import { canBrowseWord } from '@/entitlements';
-import { dailyNotificationContent } from '@/notifications/content';
+import { dailyNotificationContent, reminderNotificationContent } from '@/notifications/content';
 import { registerForPush } from '@/notifications/push';
 import type { StreakState } from '@/store/streak';
-import type { NotifTime } from '@/store/userStore';
+import { sortedNotifTimes, type NotifTime } from '@/store/userStore';
 
 export { dailyNotificationContent, notificationBody } from '@/notifications/content';
 
@@ -82,7 +82,12 @@ function fireDate(localDate: string, time: NotifTime): Date {
 
 interface RebuildArgs {
   words: readonly Word[];
+  /** The daily word's time. */
   time: NotifTime;
+  /** Later reminders of the same word, the same day. */
+  extraTimes?: readonly NotifTime[];
+  /** The one share-with-a-friend notification (ISO time), if earned. */
+  inviteAt?: string | null;
   enabled: boolean;
   streakState: StreakState;
   hasFullAccess: boolean;
@@ -100,6 +105,8 @@ export function streakRescueDate(streakState: StreakState): Date | null {
 async function doRebuild({
   words,
   time,
+  extraTimes = [],
+  inviteAt = null,
   enabled,
   streakState,
   hasFullAccess,
@@ -112,13 +119,39 @@ async function doRebuild({
   // Hand the token and settings to the server; once server push is live the
   // server sends everything and the device keeps no local queue (no limit on
   // days, and admin one-offs/triggers work without an app update).
-  const serverPush = await registerForPush({ enabled, time, hasFullAccess, kept, streakState, welcomeDate });
+  const times = sortedNotifTimes([time, ...extraTimes]);
+  const serverPush = await registerForPush({
+    enabled,
+    time: times[0],
+    extraTimes: times.slice(1),
+    hasFullAccess,
+    kept,
+    streakState,
+    welcomeDate,
+  });
   await Notifications.cancelAllScheduledNotificationsAsync();
+  const now = new Date();
+
+  // The share-with-a-friend nudge is local even with server push: it's one
+  // notification per person, ever, decided on the device.
+  const inviteDate = inviteAt ? new Date(inviteAt) : null;
+  if (enabled && granted && inviteDate && inviteDate.getTime() > now.getTime()) {
+    await ensureChannel();
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Know someone who would love this?',
+        body: 'Share Emotionary with a friend, a new word for a feeling every day.',
+        data: { url: '/invite', reason: 'invite' },
+        sound: NOTIFICATION_SOUND,
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: inviteDate, channelId: CHANNEL_ID },
+    });
+  }
+
   if (serverPush || !enabled || !granted || words.length === 0) return;
 
   await ensureChannel();
 
-  const now = new Date();
   const rescueDate = streakRescueDate(streakState);
   if (rescueDate && rescueDate.getTime() > now.getTime()) {
     await Notifications.scheduleNotificationAsync({
@@ -137,37 +170,47 @@ async function doRebuild({
   }
 
   const today = localDateString(now);
-  // Start-day rule (DESIGN.md §8): if today's delivery time has already
-  // passed, start tomorrow — never create a past-dated trigger that fires
-  // instantly as a duplicate right after a notification tap.
-  const startOffset = fireDate(today, time).getTime() > now.getTime() ? 0 : 1;
+  // Start-day rule (DESIGN.md §8): times already past today are skipped —
+  // never a past-dated trigger that fires instantly as a duplicate right after
+  // a notification tap. Today's later reminders still go out.
+  const startOffset = 0;
+  // iOS keeps only the 64 soonest: more times a day means fewer days queued
+  // (the queue is rebuilt on every open, so it never runs dry for an active user).
+  const days = Math.max(1, Math.floor(MAX_SLOTS / times.length));
 
   const cache = new Map<string, Word[]>();
   const welcome = welcomeWords(words);
   const welcomeStart = welcomeDate === null ? null : daysSinceEpoch(welcomeDate);
-  for (let i = 0; i < MAX_SLOTS; i++) {
+  for (let i = 0; i < days; i++) {
     const date = addDays(today, startOffset + i);
     const worded = monthKey(date) === monthKey(today);
     const welcomeDay = welcomeStart === null ? -1 : daysSinceEpoch(date) - welcomeStart;
     const curated = welcomeDay >= 0 && welcomeDay < WELCOME_DAYS ? welcome[welcomeDay] : undefined;
     const word = worded ? (curated ?? wordOfDay(words, date, cache)) : null;
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        ...(word
-          ? dailyNotificationContent(word, date, canBrowseWord(word, hasFullAccess, keptSet))
-          : {
-              title: 'Your word of the day is waiting ✳',
-              body: 'Open Emotionary to reveal it.',
-              data: { url: '/' },
-            }),
-        sound: NOTIFICATION_SOUND,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: fireDate(date, time),
-        channelId: CHANNEL_ID,
-      },
-    });
+    const unlocked = word ? canBrowseWord(word, hasFullAccess, keptSet) : false;
+    for (const [slot, slotTime] of times.entries()) {
+      const at = fireDate(date, slotTime);
+      if (at.getTime() <= now.getTime()) continue;
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          ...(word
+            ? slot === 0
+              ? dailyNotificationContent(word, date, unlocked)
+              : reminderNotificationContent(word, date, unlocked)
+            : {
+                title: 'Your word of the day is waiting ✳',
+                body: 'Open Emotionary to reveal it.',
+                data: { url: '/' },
+              }),
+          sound: NOTIFICATION_SOUND,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: at,
+          channelId: CHANNEL_ID,
+        },
+      });
+    }
   }
 }
 

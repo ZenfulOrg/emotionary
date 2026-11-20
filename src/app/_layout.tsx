@@ -21,9 +21,11 @@ import { UpdateAvailableDialog, UpdateRequiredScreen } from '@/components/Update
 import { findWord, useContentStore } from '@/content/store';
 import { canBrowseWord, slugsToKeep } from '@/entitlements';
 import { configureNotificationHandler, rebuildQueue } from '@/notifications/scheduler';
+import { inviteNotificationDate } from '@/invite/invite';
 import { linkPurchasesToAccount } from '@/purchases/account';
 import { observePurchases, refreshPurchases } from '@/purchases/client';
-import { useUserStore } from '@/store/userStore';
+import { inviteEligible, useUserStore } from '@/store/userStore';
+import { localDateString } from '@/daily/engine';
 import { brand } from '@/theme/tokens';
 import { notificationTarget } from '@/notifications/tap';
 import { reportDeviceStatus } from '@/telemetry/deviceStatus';
@@ -52,6 +54,9 @@ export default function RootLayout() {
   const onboarded = useUserStore((s) => s.onboarded);
   const welcomeDate = useUserStore((s) => s.welcomeDate);
   const notifTime = useUserStore((s) => s.notifTime);
+  const extraNotifTimes = useUserStore((s) => s.extraNotifTimes);
+  const openDays = useUserStore((s) => s.openDays);
+  const inviteNotifyAt = useUserStore((s) => s.inviteNotifyAt);
   const notifEnabled = useUserStore((s) => s.notifEnabled);
   const streakState = useUserStore((s) => s.streakState);
   const favorites = useUserStore((s) => s.favorites);
@@ -156,13 +161,28 @@ export default function RootLayout() {
   useEffect(() => {
     // Wait for this launch's purchase check so paid users never get teasers.
     if (!userHydrated || !contentHydrated || !onboarded || !accessResolved) return;
-    const args = { words, time: notifTime, enabled: notifEnabled, streakState, hasFullAccess, kept: keptSlugs, welcomeDate };
+    // Two weeks of near-daily use: one share-with-a-friend notification, the next evening.
+    if (!inviteNotifyAt && inviteEligible(openDays, localDateString())) {
+      useUserStore.getState().setInviteNotifyAt(inviteNotificationDate().toISOString());
+      return; // the store change re-runs this effect with the date set
+    }
+    const args = {
+      words,
+      time: notifTime,
+      extraTimes: extraNotifTimes,
+      enabled: notifEnabled,
+      streakState,
+      hasFullAccess,
+      kept: keptSlugs,
+      welcomeDate,
+      inviteAt: inviteNotifyAt,
+    };
     void rebuildQueue(args);
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') void rebuildQueue(args);
     });
     return () => sub.remove();
-  }, [userHydrated, contentHydrated, onboarded, accessResolved, words, notifTime, notifEnabled, streakState, hasFullAccess, keptSlugs, welcomeDate]);
+  }, [userHydrated, contentHydrated, onboarded, accessResolved, words, notifTime, extraNotifTimes, notifEnabled, streakState, hasFullAccess, keptSlugs, welcomeDate, openDays, inviteNotifyAt]);
 
   // Keep the widget timeline current — including the like state on today's
   // word, so the widget heart fills as soon as a word is favorited.
@@ -218,15 +238,20 @@ export default function RootLayout() {
         response.notification.request.content,
         response.notification.request.trigger,
       );
+      // Whatever screen was open (a word page, settings), the tap goes back to Today.
+      if (router.canDismiss()) router.dismissAll();
       router.navigate('/');
       // One-off and triggered pushes can open any in-app route (e.g. /paywall).
       if (url && !slug) {
         router.push(url as Href);
         return;
       }
+      // The daily word: Today opens on it and celebrates (confetti, haptic,
+      // streak, scroll cue). A free user's paid word adds the unlock sheet.
+      const user = useUserStore.getState();
+      user.celebrate(slug);
       if (!slug) return;
       const word = findWord(useContentStore.getState().words, slug);
-      const user = useUserStore.getState();
       if (word && !canBrowseWord(word, user.accessLevel === 'full', new Set(user.keptSlugs))) {
         router.push(`/unlock/${slug}` as Href);
       }

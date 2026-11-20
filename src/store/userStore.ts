@@ -12,6 +12,39 @@ export interface NotifTime {
   minute: number;
 }
 
+/** Most reminders a day someone can set (the daily word plus reminders). */
+export const MAX_NOTIF_TIMES = 4;
+
+const minutesOf = (time: NotifTime) => time.hour * 60 + time.minute;
+
+/**
+ * Every reminder time of the day, earliest first, without repeats. The first
+ * brings the day's word; the later ones remind of it.
+ */
+export function sortedNotifTimes(times: readonly NotifTime[]): NotifTime[] {
+  const seen = new Set<number>();
+  return [...times]
+    .sort((a, b) => minutesOf(a) - minutesOf(b))
+    .filter((time) => {
+      const key = minutesOf(time);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, MAX_NOTIF_TIMES);
+}
+
+/** The share-with-a-friend invite shows after this many open days in two weeks. */
+export const INVITE_OPEN_DAYS = 10;
+const INVITE_WINDOW_DAYS = 14;
+
+/** Used the app often for two weeks: opened on most of the last 14 days. */
+export function inviteEligible(openDays: readonly string[], today: string): boolean {
+  const now = daysSinceEpoch(today);
+  const recent = openDays.filter((day) => now - daysSinceEpoch(day) < INVITE_WINDOW_DAYS);
+  return recent.length >= INVITE_OPEN_DAYS;
+}
+
 interface UserState {
   onboarded: boolean;
   /** Local date onboarding finished; that day opens on the welcome word. */
@@ -29,8 +62,26 @@ interface UserState {
   streakState: StreakState;
   /** Local date on which a running streak was last broken (for the wilt visual). */
   streakBrokeDate: string | null;
+  /** The daily word's time. */
   notifTime: NotifTime;
+  /** Extra reminder times of the day, besides notifTime (at most three). */
+  extraNotifTimes: NotifTime[];
   notifEnabled: boolean;
+  /** Local dates the app was opened, the last few weeks only. */
+  openDays: string[];
+  /** The share-with-a-friend invite was shown in the app. */
+  inviteShown: boolean;
+  /** When the one share-with-a-friend notification goes out (ISO time), once set. */
+  inviteNotifyAt: string | null;
+  /**
+   * Opened from a notification or the widget: Today shows this word first and
+   * celebrates it (confetti, haptic, streak, scroll cue). Not persisted.
+   */
+  celebrateSlug: string | null;
+  /** Bumped per celebration so the same word can celebrate twice. Not persisted. */
+  celebrateRun: number;
+  /** The invite notification was tapped: Today shows the invite. Not persisted. */
+  inviteRequested: boolean;
   accessLevel: 'free' | 'full';
   /** True once this launch's store check finished (or failed). Not persisted. */
   accessResolved: boolean;
@@ -79,6 +130,15 @@ interface UserState {
   /** Returns true if the share was counted (at most once per word per local date). */
   recordShare: (slug: string, localDate: string) => boolean;
   setNotifTime: (time: NotifTime) => void;
+  /** All reminder times at once; the earliest becomes the daily word's time. */
+  setNotifTimes: (times: readonly NotifTime[]) => void;
+  markInviteShown: () => void;
+  setInviteNotifyAt: (at: string) => void;
+  requestInvite: () => void;
+  clearInviteRequest: () => void;
+  /** Opens Today on this word with the full celebration. */
+  celebrate: (slug: string | null) => void;
+  clearCelebration: () => void;
   setNotifEnabled: (enabled: boolean) => void;
   setStoreAccess: (active: boolean) => void;
   markAccessResolved: () => void;
@@ -110,7 +170,14 @@ export const useUserStore = create<UserState>()(
       streakState: { lastOpenDate: null, streak: 0 },
       streakBrokeDate: null,
       notifTime: { hour: 11, minute: 11 },
+      extraNotifTimes: [],
       notifEnabled: false,
+      openDays: [],
+      inviteShown: false,
+      inviteNotifyAt: null,
+      celebrateSlug: null,
+      celebrateRun: 0,
+      inviteRequested: false,
       accessLevel: 'free',
       accessResolved: false,
       storeAccess: false,
@@ -162,8 +229,13 @@ export const useUserStore = create<UserState>()(
             prev.lastOpenDate !== null &&
             prev.streak >= 1 &&
             daysSinceEpoch(localDate) - daysSinceEpoch(prev.lastOpenDate) > 1;
+          const today = daysSinceEpoch(localDate);
+          const openDays = s.openDays.includes(localDate)
+            ? s.openDays
+            : [...s.openDays, localDate].filter((day) => today - daysSinceEpoch(day) < 30);
           return {
             streakState: nextStreak(prev, localDate),
+            openDays,
             ...(broke ? { streakBrokeDate: localDate } : {}),
           };
         }),
@@ -199,7 +271,23 @@ export const useUserStore = create<UserState>()(
         return true;
       },
 
-      setNotifTime: (notifTime) => set({ notifTime }),
+      setNotifTime: (notifTime) =>
+        set((s) => ({
+          notifTime,
+          // Picking a time that's already an extra one keeps the list unique.
+          extraNotifTimes: s.extraNotifTimes.filter((time) => minutesOf(time) !== minutesOf(notifTime)),
+        })),
+      setNotifTimes: (times) => {
+        const sorted = sortedNotifTimes(times);
+        if (sorted.length === 0) return;
+        set({ notifTime: sorted[0], extraNotifTimes: sorted.slice(1) });
+      },
+      markInviteShown: () => set({ inviteShown: true }),
+      requestInvite: () => set({ inviteRequested: true }),
+      clearInviteRequest: () => set({ inviteRequested: false }),
+      setInviteNotifyAt: (at) => set((s) => (s.inviteNotifyAt ? s : { inviteNotifyAt: at })),
+      celebrate: (celebrateSlug) => set((s) => ({ celebrateSlug, celebrateRun: s.celebrateRun + 1 })),
+      clearCelebration: () => set({ celebrateSlug: null }),
       setNotifEnabled: (notifEnabled) => set({ notifEnabled }),
       setStoreAccess: (active) => set((s) => ({
         storeAccess: active,
@@ -232,6 +320,9 @@ export const useUserStore = create<UserState>()(
         accessResolved: _resolved,
         storeAccess: _store,
         complimentaryAccess: _complimentary,
+        celebrateSlug: _celebrate,
+        celebrateRun: _celebrateRun,
+        inviteRequested: _inviteRequested,
         ...state
       }) => state,
       merge: (persisted, current) => ({
@@ -241,6 +332,9 @@ export const useUserStore = create<UserState>()(
         accessResolved: current.accessResolved,
         storeAccess: current.storeAccess,
         complimentaryAccess: current.complimentaryAccess,
+        celebrateSlug: current.celebrateSlug,
+        celebrateRun: current.celebrateRun,
+        inviteRequested: current.inviteRequested,
       }),
     },
   ),

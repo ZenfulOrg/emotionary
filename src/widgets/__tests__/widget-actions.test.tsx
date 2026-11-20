@@ -8,7 +8,10 @@ import { useUserStore } from '@/store/userStore';
 
 jest.mock('@react-native-async-storage/async-storage', () => jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 
-jest.mock('expo-router', () => ({ router: { replace: jest.fn() }, useLocalSearchParams: jest.fn() }));
+jest.mock('expo-router', () => ({
+  router: { replace: jest.fn(), canDismiss: jest.fn(() => false), dismissTo: jest.fn() },
+  useLocalSearchParams: jest.fn(),
+}));
 jest.mock('@/feedback/haptics', () => ({ successHaptic: jest.fn() }));
 jest.mock('@/content/store', () => ({ useContentStore: { getState: jest.fn() } }));
 
@@ -32,7 +35,9 @@ it('saves before navigation and tolerates a repeated save URL', async () => {
   await openWidget('like');
   await openWidget('like');
   expect(useUserStore.getState().favorites).toEqual(['meraki']);
-  expect(router.replace).toHaveBeenLastCalledWith('/word/meraki');
+  // Every widget tap lands on Today, on that word, with the celebration.
+  expect(router.replace).toHaveBeenLastCalledWith('/');
+  expect(useUserStore.getState().celebrateSlug).toBe('meraki');
 });
 
 it('removes a saved word without toggling it back on repeated delivery', async () => {
@@ -54,5 +59,15 @@ it('does not save an unavailable word', async () => {
   jest.mocked(router.replace).mockImplementation(() => {});
   await openWidget('like', 'missing');
   expect(router.replace).toHaveBeenCalledWith('/');
+  expect(useUserStore.getState().favorites).toEqual([]);
+});
+
+it('opens Today on the tapped word with the celebration', async () => {
+  jest.mocked(router.replace).mockImplementation(() => {});
+  const run = useUserStore.getState().celebrateRun;
+  await openWidget('open');
+  expect(router.replace).toHaveBeenLastCalledWith('/');
+  expect(useUserStore.getState().celebrateSlug).toBe('meraki');
+  expect(useUserStore.getState().celebrateRun).toBe(run + 1);
   expect(useUserStore.getState().favorites).toEqual([]);
 });

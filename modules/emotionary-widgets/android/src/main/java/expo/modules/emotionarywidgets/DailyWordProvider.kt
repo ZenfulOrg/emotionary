@@ -26,7 +26,7 @@ class DailyWordProvider : AppWidgetProvider() {
       val tint = try { Color.parseColor(entry?.optString("tint") ?: "#F5F0E6") } catch (_: Exception) { Color.rgb(245,240,230) }
       views.setInt(R.id.widget_root, "setBackgroundColor", tint)
       val slug = entry?.optString("slug")
-      val uri = if (slug.isNullOrBlank()) "emotionary://" else "emotionary://word/${Uri.encode(slug)}"
+      val uri = if (slug.isNullOrBlank()) "emotionary://" else "emotionary://widget/open/${Uri.encode(slug)}"
       val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).setPackage(context.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
       views.setOnClickPendingIntent(R.id.widget_root, PendingIntent.getActivity(context, id * 3, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 

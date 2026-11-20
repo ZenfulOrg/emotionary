@@ -68,6 +68,27 @@ function withWidgetAssetFiles(config) {
         )}\n`,
       );
 
+      // The brand's share arrow (the app's "leaves" glyph), as a vector the
+      // widget tints to its theme, instead of the system share icon.
+      const arrowSet = path.join(catalog, 'ShareArrow.imageset');
+      fs.mkdirSync(arrowSet, { recursive: true });
+      fs.copyFileSync(
+        path.join(modConfig.modRequest.projectRoot, 'assets/images/widget-share-arrow.svg'),
+        path.join(arrowSet, 'widget-share-arrow.svg'),
+      );
+      fs.writeFileSync(
+        path.join(arrowSet, 'Contents.json'),
+        `${JSON.stringify(
+          {
+            images: [{ filename: 'widget-share-arrow.svg', idiom: 'universal' }],
+            info: { author: 'xcode', version: 1 },
+            properties: { 'preserves-vector-representation': true, 'template-rendering-intent': 'template' },
+          },
+          null,
+          2,
+        )}\n`,
+      );
+
       return modConfig;
     },
   ]);

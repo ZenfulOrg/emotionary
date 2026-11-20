@@ -47,3 +47,16 @@ export function dailyNotificationContent(
     data: { url: `/unlock/${word.slug}`, slug: word.slug, teaser: '1' },
   };
 }
+
+/**
+ * A later reminder the same day (people can choose up to four times): the
+ * same word again, so a day never brings a second new word.
+ */
+export function reminderNotificationContent(
+  word: Word,
+  localDate: string,
+  unlocked: boolean,
+): { title: string; body: string; data: Record<string, string> } {
+  const daily = dailyNotificationContent(word, localDate, unlocked);
+  return { ...daily, title: `Still with you today: ${word.word}`, data: { ...daily.data, reminder: '1' } };
+}

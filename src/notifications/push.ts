@@ -23,6 +23,8 @@ const LIVE_KEY = 'emotionary.push.live.v1';
 export type PushRegistration = {
   enabled: boolean;
   time: NotifTime;
+  /** Later reminders the same day (the server sends the same word again). */
+  extraTimes?: readonly NotifTime[];
   hasFullAccess: boolean;
   kept: readonly string[];
   streakState: StreakState;
@@ -102,6 +104,7 @@ export async function registerForPush(input: PushRegistration): Promise<boolean>
         p_last_open_date: input.streakState.lastOpenDate,
         p_app_version: Constants.expoConfig?.version ?? null,
         p_welcome_date: input.welcomeDate ?? null,
+        p_extra_minutes: (input.extraTimes ?? []).map((t) => t.hour * 60 + t.minute),
       }),
     });
     if (!res.ok) return cachedPushLive();
