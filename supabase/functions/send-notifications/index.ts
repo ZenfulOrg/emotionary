@@ -244,7 +244,7 @@ async function sendFcm(device: Device, push: Push): Promise<SendResult> {
       title: push.title,
       message: push.body,
       body: JSON.stringify(push.data),
-      channelId: 'daily-word-chime',
+      channelId: 'daily-word-banner',
       sound: 'emotionary_chime.wav',
     },
   };

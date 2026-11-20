@@ -21,10 +21,13 @@ export { dailyNotificationContent, notificationBody } from '@/notifications/cont
  * foreground / settings change — one code path self-heals everything.
  */
 
-// Android fixes a channel's sound when it's created, so the chime needs a new
-// channel id; the old one is deleted so Settings doesn't show two.
-export const CHANNEL_ID = 'daily-word-chime';
-const LEGACY_CHANNEL_IDS = ['daily-word'] as const;
+// Android fixes a channel's sound and importance when it's created, so each
+// change needs a new channel id; old ones are deleted so Settings doesn't show
+// duplicates. High importance shows the word as a banner (heads-up), like iOS;
+// the default level only chimed and waited in the shade. The push server sends
+// to this same id (supabase/functions/send-notifications).
+export const CHANNEL_ID = 'daily-word-banner';
+const LEGACY_CHANNEL_IDS = ['daily-word', 'daily-word-chime'] as const;
 /** Bundled via the expo-notifications config plugin (app.json). */
 export const NOTIFICATION_SOUND = 'emotionary_chime.wav';
 const MAX_SLOTS = 38;
@@ -49,7 +52,7 @@ export async function ensureChannel(): Promise<void> {
   }
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
     name: 'Daily word',
-    importance: Notifications.AndroidImportance.DEFAULT,
+    importance: Notifications.AndroidImportance.HIGH,
     sound: NOTIFICATION_SOUND,
     // No exact-alarm permissions by design — delivery is "around" the chosen
     // time (Android 14+ denies SCHEDULE_EXACT_ALARM to this app category).
