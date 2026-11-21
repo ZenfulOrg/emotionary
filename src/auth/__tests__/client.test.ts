@@ -182,9 +182,35 @@ describe('auth client', () => {
       .mockResolvedValueOnce(response({ access_token: 'reset-access', refresh_token: 'reset-refresh' }))
       .mockResolvedValueOnce(response({ msg: 'Password is too weak.', error_code: 'weak_password' }, false));
     await expect(resetPasswordWithCode('me@example.com', '123456', 'new-password-1')).rejects.toThrow(
-      'Password is too weak. Request a new code and try again.',
+      'Password is too weak. Try a different password.',
     );
     expect(mockSetItem).not.toHaveBeenCalled();
+
+    // The same code still works for a second try: it isn't sent to /verify again.
+    mockFetch.mockResolvedValueOnce(response({ id: 'user' }));
+    await expect(resetPasswordWithCode('me@example.com', '123456', 'stronger-password-2')).resolves.toEqual({
+      email: 'me@example.com',
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+    expect(mockFetch).toHaveBeenLastCalledWith(
+      'https://example.supabase.co/auth/v1/user',
+      expect.objectContaining({ body: JSON.stringify({ password: 'stronger-password-2' }) }),
+    );
+  });
+
+  test('signs in when the new password is the same as the old one', async () => {
+    mockFetch
+      .mockResolvedValueOnce(response({ access_token: 'reset-access', refresh_token: 'reset-refresh' }))
+      .mockResolvedValueOnce(
+        response({ msg: 'New password should be different from the old password.', error_code: 'same_password' }, false),
+      );
+    await expect(resetPasswordWithCode('me@example.com', '654321', 'old-password-1')).resolves.toEqual({
+      email: 'me@example.com',
+    });
+    expect(mockSetItem).toHaveBeenCalledWith(
+      'emotionary.auth.session.v1',
+      JSON.stringify({ accessToken: 'reset-access', refreshToken: 'reset-refresh', email: 'me@example.com' }),
+    );
   });
 
   test('exchanges an Apple identity token and saves the Supabase session', async () => {

@@ -41,7 +41,7 @@ export default function FavoritesScreen() {
         ListHeaderComponent={
           <PageTitle
             eyebrow={`Saved · ${favoriteWords.length} ${favoriteWords.length === 1 ? 'word' : 'words'}`}
-            title="Words to keep close."
+            title="Your word collection."
             size={44}
             style={styles.title}
           />

@@ -8,6 +8,7 @@ const ASSET_CATALOG = `${TARGET_NAME}/Assets.xcassets`;
 // The brand's two families, bundled so the widget speaks in the same voice.
 const WIDGET_FONTS = [
   'node_modules/@expo-google-fonts/cormorant-garamond/500Medium/CormorantGaramond_500Medium.ttf',
+  'node_modules/@expo-google-fonts/cormorant-garamond/400Regular/CormorantGaramond_400Regular.ttf',
   'node_modules/@expo-google-fonts/dm-mono/400Regular/DMMono_400Regular.ttf',
 ];
 const fontName = (file) => path.basename(file);

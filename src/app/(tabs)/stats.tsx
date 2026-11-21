@@ -212,7 +212,12 @@ function NotificationsSection() {
       <Rule style={styles.sectionRule} />
       {notifEnabled ? (
         <View style={styles.notifications}>
-          <NotificationTimes times={times} onChange={setNotifTimes} picker="onDemand" />
+          <NotificationTimes
+            times={times}
+            onChange={setNotifTimes}
+            picker="onDemand"
+            hint="Add a time for every part of your day: morning coffee, a lunch break, a quiet night."
+          />
         </View>
       ) : (
         <View style={styles.notifications}>
@@ -302,7 +307,7 @@ export default function StatsScreen() {
         <View style={styles.links}>
           <LinkRow
             eyebrow="Saved words"
-            title="Words to keep close"
+            title="Your word collection"
             aside={String(favorites.length)}
             glyph="forward"
             onPress={() => router.push('/favorites' as Href)}

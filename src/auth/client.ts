@@ -206,6 +206,14 @@ export async function requestPasswordReset(email: string): Promise<void> {
 }
 
 /**
+ * A recovery code works once. When the code is accepted but the new password
+ * is turned down (too weak, say), the verified session is kept here so the
+ * person can try another password with the same code instead of hearing that
+ * their code is wrong.
+ */
+let verifiedRecovery: { email: string; token: string; payload: SupabaseAuthResponse } | null = null;
+
+/**
  * Finishes a password reset in one step: the emailed code proves the address,
  * the new password is saved, and the person is signed in.
  */
@@ -219,8 +227,12 @@ export async function resetPasswordWithCode(
   if (!/^\d{6,10}$/.test(token)) throw new AuthError('Enter the code from your email.');
   if (newPassword.length < 8) throw new AuthError('Use at least 8 characters for your password.');
   const normalizedEmail = email.trim().toLowerCase();
-  const payload = await authPost('verify', { email: normalizedEmail, token, type: 'recovery' });
+  const reuse = verifiedRecovery?.email === normalizedEmail && verifiedRecovery.token === token;
+  const payload = reuse
+    ? verifiedRecovery!.payload
+    : await authPost('verify', { email: normalizedEmail, token, type: 'recovery' });
   if (!payload.access_token) throw new AuthError(CODE_REJECTED);
+  verifiedRecovery = { email: normalizedEmail, token, payload };
 
   let response: Response;
   try {
@@ -234,13 +246,22 @@ export async function resetPasswordWithCode(
       body: JSON.stringify({ password: newPassword }),
     });
   } catch {
-    throw new AuthError('Could not connect. Check your internet connection and request a new code.');
+    throw new AuthError('Could not connect. Check your internet connection and try again.');
   }
   if (!response.ok) {
     const body = (await response.json().catch(() => ({}))) as SupabaseAuthResponse;
-    const reason = body.msg ?? body.message ?? body.error_description ?? 'Your new password could not be saved.';
-    throw new AuthError(`${reason} Request a new code and try again.`, body.error_code, response.status);
+    // The password typed is already theirs, and the code proved the address,
+    // so there is nothing to change: sign them in.
+    if (body.error_code !== 'same_password') {
+      if (response.status === 401 || response.status === 403) {
+        verifiedRecovery = null;
+        throw new AuthError('This reset took too long. Request a new code and try again.', body.error_code, response.status);
+      }
+      const reason = body.msg ?? body.message ?? body.error_description ?? 'Your new password could not be saved.';
+      throw new AuthError(`${reason} Try a different password.`, body.error_code, response.status);
+    }
   }
+  verifiedRecovery = null;
 
   if (!(await saveSession(payload, normalizedEmail))) {
     throw new AuthError('Your password was changed, but your session could not be saved. Sign in with your new password.');

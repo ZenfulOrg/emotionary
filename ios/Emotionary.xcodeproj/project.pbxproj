@@ -10,6 +10,7 @@
 		04D2B324004842B691E22B26 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8DA8F8BB8BD3430FB7924A7D /* Assets.xcassets */; };
 		11E905EA12E76AA3E5523D5C /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DEDB012FE788F864C07E1FC /* SceneDelegate.swift */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		EA2859004CE24E7FA3A88CA7 /* CormorantGaramond_400Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A34304F6A3C4442798CBC7E8 /* CormorantGaramond_400Regular.ttf */; };
 		14E50722BA0A41F0B458252B /* CormorantGaramond_500Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C39F19C64DCA4311B67B822A /* CormorantGaramond_500Medium.ttf */; };
 		34C6B90573CF4396868BC6EE /* index.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D0F6445D814B139CA0DB1C /* index.swift */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
@@ -69,6 +70,7 @@
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Emotionary/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		C297FDEBA74421FCB5BEB465 /* Pods-Emotionary.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Emotionary.release.xcconfig"; path = "Target Support Files/Pods-Emotionary/Pods-Emotionary.release.xcconfig"; sourceTree = "<group>"; };
+		A34304F6A3C4442798CBC7E8 /* CormorantGaramond_400Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CormorantGaramond_400Regular.ttf; path = ExpoWidgetsTarget/CormorantGaramond_400Regular.ttf; sourceTree = "<group>"; };
 		C39F19C64DCA4311B67B822A /* CormorantGaramond_500Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CormorantGaramond_500Medium.ttf; path = ExpoWidgetsTarget/CormorantGaramond_500Medium.ttf; sourceTree = "<group>"; };
 		CE12CF47335D3624AAB02591 /* libPods-ExpoWidgetsTarget.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ExpoWidgetsTarget.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEFBE20B68126AD6734141AC /* Pods-ExpoWidgetsTarget.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ExpoWidgetsTarget.debug.xcconfig"; path = "Target Support Files/Pods-ExpoWidgetsTarget/Pods-ExpoWidgetsTarget.debug.xcconfig"; sourceTree = "<group>"; };
@@ -121,6 +123,7 @@
 			children = (
 				8DA8F8BB8BD3430FB7924A7D /* Assets.xcassets */,
 				C39F19C64DCA4311B67B822A /* CormorantGaramond_500Medium.ttf */,
+				A34304F6A3C4442798CBC7E8 /* CormorantGaramond_400Regular.ttf */,
 				A11FE4BA160A4A6D957C03E8 /* DMMono_400Regular.ttf */,
 			);
 			name = "Recovered References";
@@ -315,6 +318,7 @@
 			files = (
 				04D2B324004842B691E22B26 /* Assets.xcassets in Resources */,
 				14E50722BA0A41F0B458252B /* CormorantGaramond_500Medium.ttf in Resources */,
+				EA2859004CE24E7FA3A88CA7 /* CormorantGaramond_400Regular.ttf in Resources */,
 				EE3BA2ABF7594A40B2AA00B1 /* DMMono_400Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

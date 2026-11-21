@@ -56,6 +56,8 @@ const DailyWordWidgetView = (
   const INK = '#18334D';
   const PINK = '#E9828C';
   const VOICE = 'CormorantGaramond-Medium';
+  // The app's text face; Cormorant's small x-height wants a size a step up.
+  const TEXT = 'CormorantGaramond-Regular';
 
   const family = environment.widgetFamily;
   const isInline = family === 'accessoryInline';
@@ -83,7 +85,7 @@ const DailyWordWidgetView = (
     return (
       <VStack alignment="center" spacing={0} modifiers={[widgetURL(`emotionary://widget/open/${props.slug}`)]}>
         <Text modifiers={[font({ family: VOICE, size: 15 }), lineLimit(1), minimumScaleFactor(0.5)]}>{props.word}</Text>
-        <Text modifiers={[font({ design: 'serif', size: 9 }), lineLimit(2)]}>{props.definition}</Text>
+        <Text modifiers={[font({ family: TEXT, size: 11 }), lineLimit(2)]}>{props.definition}</Text>
       </VStack>
     );
   }
@@ -93,7 +95,7 @@ const DailyWordWidgetView = (
       <Link destination={`emotionary://widget/open/${props.slug}`}>
         <VStack alignment="leading" spacing={1} modifiers={[frame({ maxWidth: 400, alignment: 'leading' })]}>
           <Text modifiers={[font({ family: VOICE, size: 22 }), lineLimit(1)]}>{props.word}</Text>
-          <Text modifiers={[font({ design: 'serif', size: 11 }), lineLimit(1)]}>{props.definition}</Text>
+          <Text modifiers={[font({ family: TEXT, size: 13 }), lineLimit(1)]}>{props.definition}</Text>
         </VStack>
       </Link>
     );
@@ -130,7 +132,7 @@ const DailyWordWidgetView = (
               {`${props.word}.`}
             </Text>
             <Text modifiers={[
-              font({ design: 'serif', size: 12 }), foregroundStyle(muted),
+              font({ family: TEXT, size: 14 }), foregroundStyle(muted),
               multilineTextAlignment('leading'), lineLimit(3), minimumScaleFactor(0.85),
             ]}>
               {props.definition}
