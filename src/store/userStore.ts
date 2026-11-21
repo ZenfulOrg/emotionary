@@ -339,3 +339,20 @@ export const useUserStore = create<UserState>()(
     },
   ),
 );
+
+/**
+ * Runs `run` once this launch's access check has finished (straight away if it
+ * already has). Returns a function that cancels the wait.
+ */
+export function whenAccessResolved(run: () => void): () => void {
+  if (useUserStore.getState().accessResolved) {
+    run();
+    return () => {};
+  }
+  const unsubscribe = useUserStore.subscribe((state) => {
+    if (!state.accessResolved) return;
+    unsubscribe();
+    run();
+  });
+  return unsubscribe;
+}

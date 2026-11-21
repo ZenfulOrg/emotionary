@@ -24,7 +24,7 @@ import { configureNotificationHandler, rebuildQueue } from '@/notifications/sche
 import { inviteNotificationDate } from '@/invite/invite';
 import { linkPurchasesToAccount } from '@/purchases/account';
 import { observePurchases, refreshPurchases } from '@/purchases/client';
-import { inviteEligible, useUserStore } from '@/store/userStore';
+import { inviteEligible, useUserStore, whenAccessResolved } from '@/store/userStore';
 import { localDateString } from '@/daily/engine';
 import { brand } from '@/theme/tokens';
 import { notificationTarget } from '@/notifications/tap';
@@ -248,13 +248,18 @@ export default function RootLayout() {
       }
       // The daily word: Today opens on it and celebrates (confetti, haptic,
       // streak, scroll cue). A free user's paid word adds the unlock sheet.
-      const user = useUserStore.getState();
-      user.celebrate(slug);
+      useUserStore.getState().celebrate(slug);
       if (!slug) return;
-      const word = findWord(useContentStore.getState().words, slug);
-      if (word && !canBrowseWord(word, user.accessLevel === 'full', new Set(user.keptSlugs))) {
-        router.push(`/unlock/${slug}` as Href);
-      }
+      // On a cold start the purchase check may still be running, and until it
+      // answers everyone reads as free: wait for it, so a paying member isn't
+      // sent to the unlock sheet for a word they own.
+      whenAccessResolved(() => {
+        const user = useUserStore.getState();
+        const word = findWord(useContentStore.getState().words, slug);
+        if (word && !canBrowseWord(word, user.accessLevel === 'full', new Set(user.keptSlugs))) {
+          router.push(`/unlock/${slug}` as Href);
+        }
+      });
     };
     open(Notifications.getLastNotificationResponse());
     const sub = Notifications.addNotificationResponseReceivedListener(open);
