@@ -102,7 +102,29 @@ export default function TodayScreen() {
   // Checked whenever Today is shown or the app comes back to the front, so it
   // also plays when the app was left open overnight. Later opens are calm.
   const [revealing, setRevealing] = useState(() => useUserStore.getState().lastRevealDate !== today);
-  const [burstVisible, setBurstVisible] = useState(revealing);
+  // Confetti greets every open of the app on Today (a cold start, or coming
+  // back from the background), as well as the reveal and celebrations.
+  const [burstVisible, setBurstVisible] = useState(true);
+  /** Bumped to replay the confetti from the start. */
+  const [burstRun, setBurstRun] = useState(1);
+  const playBurst = useCallback(() => {
+    setBurstVisible(true);
+    setBurstRun((run) => run + 1);
+  }, []);
+  useEffect(() => {
+    if (!burstVisible) return;
+    const timer = setTimeout(() => setBurstVisible(false), REVEAL_BURST_MS);
+    return () => clearTimeout(timer);
+  }, [burstVisible, burstRun]);
+  const todayFocused = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      todayFocused.current = true;
+      return () => {
+        todayFocused.current = false;
+      };
+    }, []),
+  );
   /** Bumped per reveal: remounts the first card so its entrance plays again. */
   const [revealRun, setRevealRun] = useState(0);
   /** A reveal that is starting but not yet marked as played (avoids a double start). */
@@ -113,17 +135,22 @@ export default function TodayScreen() {
     if (useUserStore.getState().lastRevealDate === now || revealPending.current === now) return;
     revealPending.current = now;
     setRevealing(true);
-    setBurstVisible(true);
+    playBurst();
     setRevealRun((run) => run + 1);
     listRef.current?.scrollToOffset({ offset: 0, animated: false });
-  }, []);
+  }, [playBurst]);
   useFocusEffect(checkReveal);
   useEffect(() => {
+    let previous = AppState.currentState;
     const subscription = AppState.addEventListener('change', (state) => {
+      // Back from the background counts as an open; a pulled-down
+      // notification centre ('inactive') does not.
+      if (state === 'active' && previous === 'background' && todayFocused.current) playBurst();
       if (state === 'active') checkReveal();
+      previous = state;
     });
     return () => subscription.remove();
-  }, [checkReveal]);
+  }, [checkReveal, playBurst]);
   useEffect(() => {
     if (!revealing) return;
     markRevealed(localDateString());
@@ -131,7 +158,6 @@ export default function TodayScreen() {
     const timers = [
       setTimeout(lightImpactHaptic, REVEAL_LAND_MS),
       setTimeout(lightImpactHaptic, REVEAL_LAND_MS + 130),
-      setTimeout(() => setBurstVisible(false), REVEAL_BURST_MS),
     ];
     return () => timers.forEach(clearTimeout);
   }, [revealing, revealRun, markRevealed]);
@@ -183,7 +209,7 @@ export default function TodayScreen() {
     setToday(localDateString());
     revealPending.current = null;
     setRevealing(true);
-    setBurstVisible(true);
+    playBurst();
     setRevealRun((run) => run + 1);
     setCelebrationHint(true);
     listRef.current?.scrollToOffset({ offset: 0, animated: false });
@@ -195,7 +221,7 @@ export default function TodayScreen() {
       setStreakMountDelay(CELEBRATION_STREAK_MOUNT_MS);
       setStreakVisible(true);
     }, CELEBRATION_STREAK_MOUNT_MS);
-  }, []);
+  }, [playBurst]);
   // Played only while Today is on screen: a tap that arrives while another
   // screen is open waits until Today is shown again.
   const celebrationFocused = useRef(false);
@@ -496,7 +522,7 @@ export default function TodayScreen() {
           style={StyleSheet.absoluteFill}
           pointerEvents="none"
         >
-          <StatsBurst burstKey={1} />
+          <StatsBurst burstKey={burstRun} />
         </Animated.View>
       )}
     </Screen>

@@ -359,7 +359,7 @@ function ReminderPage({
 }) {
   const label = times.map((time) => formatTime(time).toLowerCase()).join(' · ');
   return (
-    <PageCopy title="Never miss your word." body="At the time you choose. Pick more than one if you like.">
+    <PageCopy title="Never miss your word." body="Add a time for every part of your day: morning coffee, a lunch break, a quiet night.">
       <Headline
         style={styles.centeredText}
         accessibilityRole="text"
@@ -368,7 +368,7 @@ function ReminderPage({
       >
         {label}
       </Headline>
-      <NotificationTimes times={times} onChange={setTimes} />
+      <NotificationTimes times={times} onChange={setTimes} hint={null} />
     </PageCopy>
   );
 }

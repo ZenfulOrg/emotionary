@@ -35,8 +35,8 @@ export function NotificationTimes({
   times: readonly NotifTime[];
   onChange: (times: NotifTime[]) => void;
   picker?: 'always' | 'onDemand';
-  /** A fixed line under the chips in place of the default guidance. */
-  hint?: string;
+  /** A fixed line under the chips in place of the default guidance; null for none. */
+  hint?: string | null;
 }) {
   const selected = sortedNotifTimes(times);
   const [active, setActive] = useState<NotifTime>(selected[selected.length - 1] ?? QUICK_TIMES[0]);
@@ -90,12 +90,14 @@ export function NotificationTimes({
           />
         )}
       </View>
-      <Body size={15} tone="muted" style={styles.hint}>
-        {hint ??
-          (selected.length > 1
-            ? 'Your word comes at the first time; the others remind you of it.'
-            : 'Pick more than one for a reminder later in the day.')}
-      </Body>
+      {hint !== null && (
+        <Body size={15} tone="muted" style={styles.hint}>
+          {hint ??
+            (selected.length > 1
+              ? 'Your word comes at the first time; the others remind you of it.'
+              : 'Pick more than one for a reminder later in the day.')}
+        </Body>
+      )}
       {pickerOpen && (
         <View style={styles.picker}>
           <TimeControl value={current} onChange={setOwnTime} />
