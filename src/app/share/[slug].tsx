@@ -6,6 +6,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   useWindowDimensions,
   View,
@@ -25,6 +26,7 @@ import { useTodaysWord } from '@/daily/useTodaysWord';
 import { wordAccess } from '@/entitlements';
 import { lightImpactHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
 import { CARD_BASE_HEIGHT, CARD_BASE_WIDTH, ShareCard, SHARE_THEMES } from '@/share/ShareCard';
+import { INVITE_MESSAGE, INVITE_URL } from '@/invite/invite';
 import { useKeptSlugs } from '@/store/useKeptSlugs';
 import { useUserStore } from '@/store/userStore';
 import { maybeAskForReview } from '@/review/prompt';
@@ -128,8 +130,14 @@ export default function ShareModal() {
     setBusy('sharing');
     try {
       const uri = await capture();
-      const Sharing = await import('expo-sharing');
-      await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share this word' });
+      if (Platform.OS === 'ios') {
+        // The card plus a line about the app, so a message arrives with a link.
+        const result = await Share.share({ url: uri, message: `${INVITE_MESSAGE} ${INVITE_URL}` });
+        if (result.action !== Share.sharedAction) return;
+      } else {
+        const Sharing = await import('expo-sharing');
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share this word' });
+      }
       recordShare(word.slug, localDateString());
       successHaptic();
       // Just shared a card: a good moment to ask for a rating.
