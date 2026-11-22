@@ -1,7 +1,8 @@
 # Emotionary product analytics plan
 
-Draft, November 22, 2026. What to measure, how, and what it answers. Nothing
-here is built yet except where marked **(live)**.
+Decided November 22, 2026: **no new tools.** App events go to Supabase,
+revenue and customer attributes to RevenueCat, crashes to the stores' own
+reports. Nothing here is built yet except where marked **(live)**.
 
 ## Principles
 
@@ -71,31 +72,37 @@ Every event carries: `install_id`, `platform`, `app_version`, `plan`
 
 About 25 events. At today's scale that is well under 1 million events a month.
 
-## Tools (recommended)
+## Tools (decided: only what we already have)
 
-| Need | Tool | Why |
+| Need | Where | How |
 |---|---|---|
-| Product events, funnels, cohorts | **PostHog** (free up to 1M events/month) | React Native SDK, funnels, retention charts and feature flags in one place; can keep data in the EU or US; turn off session replay and autocapture |
-| Revenue | **RevenueCat** (already set up) | Trials, conversion, churn, lifetime value per store |
-| Crashes and slow starts | **Sentry** (free tier) | Crash-free sessions and stack traces with source maps for Expo |
-| Store numbers | App Store Connect, Play Console | Installs, page views, ratings by country |
-| Our own anonymous tables | Supabase **(live)** | `device_status`, `push_devices`, `invite_events` keep working; no need to move them |
+| Product events, funnels, retention | **Supabase** | One anonymous `events` table (install id, event, properties as JSON, platform, app version, time), written through a `report_event()` function like `report_invite_event()` **(live)**. Nobody can read it with the public key. Answers come from SQL views (below). |
+| Revenue | **RevenueCat** (already set up) | Trials, purchases, renewals, cancellations, refunds and churn per store. The app sends no revenue events of its own. |
+| Revenue by behaviour | **RevenueCat customer attributes** | The app sets `streak`, `notifications_on`, `widget_count`, `words_saved`, `days_since_install` and `install_id` on the RevenueCat customer, so revenue and conversion charts can be split by habit (for example: do widget users pay more often?). |
+| Crashes and slow starts | **App Store Connect / Xcode Organizer, Play Console** | Free crash reports and crash rates. Add Sentry only if these stop being enough. |
+| Store numbers | App Store Connect, Play Console | Installs, page views, ratings by country. |
+| Existing tables | Supabase **(live)** | `device_status`, `push_devices` and `invite_events` stay as they are. |
 
-Supabase-only is possible (one `events` table and SQL views), but funnels,
-cohort retention and dashboards would have to be built by hand. PostHog gives
-them for free.
+If charts become worth paying for later, PostHog can read the same event
+names without changing the app's tracking calls.
 
-## Dashboards (weekly review)
+## Answers (SQL views in Supabase, reviewed weekly)
 
-1. **Health:** weekly engaged readers, DAU/MAU, crash-free sessions.
-2. **New people:** onboarding funnel, notification opt-in, day 1/7/30 retention by install week.
-3. **Habit:** streak spread, notification open rate, widget adoption.
-4. **Money:** paywall → purchase by placement, trial → paid, monthly revenue (RevenueCat).
-5. **Word of mouth:** invite funnel by moment, cards shared, links opened.
+Read-only views for the team, like `device_status_summary` and
+`invite_summary` **(live)**:
+
+1. `metrics_health`: weekly engaged readers, DAU, WAU, MAU, DAU/MAU.
+2. `metrics_retention`: day 1 / 7 / 30 retention by install week.
+3. `metrics_onboarding`: onboarding funnel step by step, notification opt-in.
+4. `metrics_habit`: streak spread, notification open rate, widget adoption.
+5. `metrics_paywall`: paywall shown → purchase started → completed, by placement.
+   Revenue itself is read in RevenueCat.
+6. `invite_summary` **(live)**: invite funnel by moment.
 
 ## Rollout
 
-1. Pick the tool; update the privacy policy and store data forms.
-2. Add a tiny `track()` wrapper (one file), then the events above, iOS and Android together.
-3. Add Sentry.
-4. Build the five dashboards; review weekly for a month, then prune events no one used.
+1. Update the privacy policy and the App Store / Play data forms.
+2. Supabase: `events` table, `report_event()` and the views above (one migration).
+3. App: a small `track()` helper (one file, batched, silent on failure) and the
+   events above, iOS and Android together; set the RevenueCat attributes.
+4. Review the views weekly for a month, then drop events nobody used.
