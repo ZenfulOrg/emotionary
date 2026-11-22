@@ -1,6 +1,6 @@
-import { Platform, StyleSheet, Text, type TextStyle, View } from 'react-native';
+import { Image, StyleSheet, Text, type TextStyle, View } from 'react-native';
 
-import { descenderRoom, Grain, Planets, Wordmark } from '@/components/brand';
+import { descenderRoom, Grain, Wordmark } from '@/components/brand';
 import { wordTitleSize } from '@/components/word-title-size';
 import { pronunciationLineFor } from '@/content/part-of-speech';
 import { asEntry, displayWord } from '@/content/presentation';
@@ -20,6 +20,7 @@ export const CARD_BASE_WIDTH = 1080;
 export const CARD_BASE_HEIGHT = 1920;
 
 const PAD = 96;
+const APP_ICON = require('../../assets/images/icon.png');
 /** The word's phone size, scaled to the card's text column. */
 const WORD_SCALE = (CARD_BASE_WIDTH - PAD * 2) / 327;
 
@@ -122,9 +123,22 @@ export function ShareCard({ word, width, theme = 'ink' }: { word: Word; width: n
               <Wordmark size={px(72)} fixed />
               <Text allowFontScaling={false} style={[mono(22), { marginTop: px(12) }]}>EMOTIONARYBOOK.COM</Text>
             </View>
-            {/* Android's snapshot draws each dot's soft glow as a square, so the
-                saved card uses plain dots there. */}
-            <Planets scale={px(3)} breathing={false} glow={Platform.OS !== 'android'} />
+            {/* The app icon, so whoever sees the card knows where to find it. */}
+            <View style={styles.getApp}>
+              <Text allowFontScaling={false} style={[mono(22), styles.getAppLabel, { lineHeight: px(34), marginRight: px(28) }]}>
+                {'DOWNLOAD\nTHE APP'}
+              </Text>
+              <Image
+                source={APP_ICON}
+                style={{
+                  width: px(128),
+                  height: px(128),
+                  borderRadius: px(29),
+                  borderWidth: Math.max(1, px(2)),
+                  borderColor: ground.hairline,
+                }}
+              />
+            </View>
           </View>
         </View>
         <Grain />
@@ -144,4 +158,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   entry: { flex: 1, justifyContent: 'center' },
   footer: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+  getApp: { flexDirection: 'row', alignItems: 'center' },
+  getAppLabel: { textAlign: 'right' },
 });
