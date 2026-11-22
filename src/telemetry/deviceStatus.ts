@@ -56,7 +56,8 @@ export async function installId(): Promise<string> {
   return id;
 }
 
-async function widgetCount(): Promise<number> {
+/** Emotionary widgets placed; -1 when the OS can't tell. */
+export async function widgetCount(): Promise<number> {
   try {
     const count = await Widgets?.installedWidgetCount?.();
     return typeof count === 'number' && Number.isFinite(count) ? count : -1;

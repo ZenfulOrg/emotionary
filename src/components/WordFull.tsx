@@ -38,6 +38,7 @@ import { liveStory } from '@/content/story';
 import { useUserStore } from '@/store/userStore';
 import { useGround } from '@/theme/ground';
 import { font, layout, levelPalettes, planets, space, tracking, type } from '@/theme/tokens';
+import { track } from '@/analytics/track';
 
 const COPY_TOAST_MS = 1500;
 
@@ -123,9 +124,10 @@ export function WordFull({
   const openStory = () => {
     selectionHaptic();
     if (!hasFullAccess) {
-      router.push('/paywall' as Href);
+      router.push('/paywall?from=origin' as Href);
       return;
     }
+    track('origin_opened', { slug: word.slug });
     setFlip(true);
   };
   const frontStyle = useAnimatedStyle(() => ({
@@ -224,6 +226,7 @@ export function WordFull({
               selected={isFavorite}
               onPress={() => {
                 lightImpactHaptic();
+                track(isFavorite ? 'word_unsaved' : 'word_saved', { slug: word.slug, word_type: word.type });
                 toggleFavorite(word.slug);
               }}
             />

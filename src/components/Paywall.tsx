@@ -6,6 +6,7 @@ import { lightImpactHaptic, successHaptic } from '@/feedback/haptics';
 import { loadProducts, PRODUCT_IDS, purchasePlan, type Plan } from '@/purchases/client';
 import { GroundProvider } from '@/theme/ground';
 import { brand, space } from '@/theme/tokens';
+import { currentPaywallPlacement, track } from '@/analytics/track';
 
 
 const PLANS: Record<Plan, { title: string; body: string; eyebrow?: string }> = {
@@ -48,8 +49,15 @@ export function usePlanPurchase(onPurchased: () => void) {
     operation.current = true;
     setBusy(true);
     lightImpactHaptic();
+    const placement = currentPaywallPlacement();
+    track('purchase_started', { product: plan, placement });
     try {
       const result = await purchasePlan(plan);
+      track(result.status === 'cancelled' ? 'purchase_failed' : 'purchase_completed', {
+        product: plan,
+        placement,
+        status: result.status,
+      });
       if (result.status === 'purchased' && result.active) {
         successHaptic();
         onPurchased();
@@ -59,6 +67,7 @@ export function usePlanPurchase(onPurchased: () => void) {
         Alert.alert('Checking your purchase', 'Open Settings and use Restore purchases to refresh your purchases.');
       }
     } catch (cause) {
+      track('purchase_failed', { product: plan, placement, status: 'error' });
       Alert.alert('Purchase could not be completed', cause instanceof Error ? cause.message : 'Please try again.');
     } finally { operation.current = false; setBusy(false); }
   };

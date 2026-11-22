@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 
 import { useContentStore } from '@/content/store';
 import { useUserStore } from '@/store/userStore';
+import { track } from '@/analytics/track';
 
 /** Apply widget actions after root hydration, then open Today on the word. */
 export default function WidgetActionScreen() {
@@ -13,6 +14,7 @@ export default function WidgetActionScreen() {
       router.replace('/');
       return;
     }
+    track('widget_tapped', { action: action ?? 'open', slug });
     if (action === 'share') {
       router.replace(`/share/${slug}`);
       return;

@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 
 import { GOOGLE_IOS_CLIENT_ID, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, syncEnabled } from '@/config';
 import { useUserStore } from '@/store/userStore';
+import { track } from '@/analytics/track';
 
 const SESSION_KEY = 'emotionary.auth.session.v1';
 const APPLE_USER_KEY = 'emotionary.auth.apple-user.v1';
@@ -177,6 +178,7 @@ export async function signIn(email: string, password: string) {
   const signedIn = await saveSession(payload, email);
   if (!signedIn) throw new AuthError('Your session could not be saved securely. Please try again.');
   await SecureStore.deleteItemAsync(APPLE_USER_KEY);
+  track('signed_in', { method: 'email' });
 }
 
 /** Shown when the server rejects a code. Each new code replaces the earlier ones. */
@@ -194,6 +196,7 @@ export async function verifySignupCode(email: string, code: string): Promise<Aut
     throw new AuthError('Your session could not be saved securely. Please sign in again.');
   }
   await SecureStore.deleteItemAsync(APPLE_USER_KEY);
+  track('account_created', { method: 'email' });
   return { email: payload.user?.email ?? normalizedEmail };
 }
 
@@ -313,6 +316,7 @@ export async function signInWithApple(): Promise<{ email: string | null } | null
   const signedIn = await saveSession(payload, email);
   if (!signedIn) throw new AuthError('Your session could not be saved securely. Please try again.');
   await SecureStore.setItemAsync(APPLE_USER_KEY, credential.user);
+  track('signed_in', { method: 'apple' });
   return { email: email || null };
 }
 
@@ -364,6 +368,7 @@ async function signInWithGoogleNative(): Promise<{ email: string | null } | null
   const signedIn = await saveSession(payload, email);
   if (!signedIn) throw new AuthError('Your session could not be saved securely. Please try again.');
   await SecureStore.deleteItemAsync(APPLE_USER_KEY);
+  track('signed_in', { method: 'google' });
   return { email: email || null };
 }
 
@@ -393,6 +398,7 @@ async function signInWithGoogleBrowser(): Promise<{ email: string | null } | nul
   if (!signedIn) throw new AuthError('Your session could not be saved securely. Please try again.');
   await SecureStore.deleteItemAsync(APPLE_USER_KEY);
   await refreshComplimentaryAccess();
+  track('signed_in', { method: 'google' });
   return { email };
 }
 
@@ -513,6 +519,7 @@ export async function refreshComplimentaryAccess(): Promise<void> {
 
 /** Revokes the current session when possible and always removes it from this device. */
 export async function signOut() {
+  track('signed_out');
   signingOut = true;
   sessionRevision += 1;
   useUserStore.getState().setComplimentaryAccess(false);

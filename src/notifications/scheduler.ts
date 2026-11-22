@@ -9,6 +9,7 @@ import { dailyNotificationContent, reminderNotificationContent } from '@/notific
 import { registerForPush } from '@/notifications/push';
 import type { StreakState } from '@/store/streak';
 import { sortedNotifTimes, type NotifTime } from '@/store/userStore';
+import { track } from '@/analytics/track';
 
 export { dailyNotificationContent, notificationBody } from '@/notifications/content';
 
@@ -66,12 +67,13 @@ export async function getPermissionGranted(): Promise<boolean> {
 }
 
 /** Contextual ask (onboarding / settings). Full permission, not provisional. */
-export async function requestPermission(): Promise<boolean> {
+export async function requestPermission(where: string): Promise<boolean> {
   if (Platform.OS === 'web') return false;
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;
   if (!current.canAskAgain) return false;
   const res = await Notifications.requestPermissionsAsync();
+  track('notification_permission_answered', { granted: res.granted, where });
   return res.granted;
 }
 

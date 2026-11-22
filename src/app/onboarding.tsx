@@ -58,6 +58,7 @@ import { requestPermission } from '@/notifications/scheduler';
 import { findWord, useContentStore } from '@/content/store';
 import { sortedNotifTimes, useUserStore, type NotifTime } from '@/store/userStore';
 import { layout, levelPalettes, planets, space, type, type GroundName } from '@/theme/tokens';
+import { setPaywallPlacement, track } from '@/analytics/track';
 
 const PAGES = [
   'welcome',
@@ -114,6 +115,13 @@ export default function OnboardingScreen() {
 
   const page = PAGES[step];
   const ground = PAGE_GROUNDS[page];
+  useEffect(() => {
+    track('onboarding_step_viewed', { step: page, index: step });
+    if (page === 'paywall') {
+      setPaywallPlacement('onboarding');
+      track('paywall_shown', { placement: 'onboarding' });
+    }
+  }, [page, step]);
   const isFirst = step === 0;
 
   const goNext = () => setStep((current) => Math.min(current + 1, PAGES.length - 1));
@@ -129,13 +137,14 @@ export default function OnboardingScreen() {
 
   const finish = () => {
     successHaptic();
+    track('onboarding_completed', { reminder_count: notifTimes.length, account: accountComplete });
     completeOnboarding();
     router.replace('/');
   };
 
   const enableAndContinue = async () => {
     lightImpactHaptic();
-    const granted = await requestPermission();
+    const granted = await requestPermission('onboarding');
     setNotifEnabled(granted);
     goNext();
   };

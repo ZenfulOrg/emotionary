@@ -1,8 +1,9 @@
 # Emotionary product analytics plan
 
-Decided November 22, 2026: **no new tools.** App events go to Supabase,
+Decided and built November 22, 2026: **no new tools.** App events go to Supabase,
 revenue and customer attributes to RevenueCat, crashes to the stores' own
-reports. Nothing here is built yet except where marked **(live)**.
+reports. Built: `events` table, `report_events()`, the `metrics_*` views, the
+events below and the RevenueCat attributes (migration 20261122220000).
 
 ## Principles
 

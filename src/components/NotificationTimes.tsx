@@ -6,6 +6,7 @@ import { formatTime, TimeControl } from '@/components/TimeControl';
 import { warningHaptic } from '@/feedback/haptics';
 import { MAX_NOTIF_TIMES, sortedNotifTimes, type NotifTime } from '@/store/userStore';
 import { space } from '@/theme/tokens';
+import { track } from '@/analytics/track';
 
 /** The quick times, in the order onboarding has always shown them. */
 export const QUICK_TIMES: NotifTime[] = [
@@ -39,6 +40,10 @@ export function NotificationTimes({
   hint?: string | null;
 }) {
   const selected = sortedNotifTimes(times);
+  const change = (next: NotifTime[]) => {
+    track('reminder_times_changed', { count: next.length, earliest_hour: next[0]?.hour ?? null });
+    onChange(next);
+  };
   const [active, setActive] = useState<NotifTime>(selected[selected.length - 1] ?? QUICK_TIMES[0]);
   const [pickerOpen, setPickerOpen] = useState(picker === 'always');
   // Times of one's own (from the wheel) show as chips too, so they can be removed.
@@ -50,7 +55,7 @@ export function NotificationTimes({
       if (selected.length === 1) return; // always at least one
       const rest = selected.filter((t) => !same(t, time));
       setActive(rest[rest.length - 1]);
-      onChange(rest);
+      change(rest);
       return;
     }
     if (selected.length >= MAX_NOTIF_TIMES) {
@@ -58,7 +63,7 @@ export function NotificationTimes({
       return;
     }
     setActive(time);
-    onChange(sortedNotifTimes([...selected, time]));
+    change(sortedNotifTimes([...selected, time]));
   };
 
   // The wheel changes the time last picked into a time of one's own.

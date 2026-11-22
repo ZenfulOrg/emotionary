@@ -32,6 +32,7 @@ import { useUserStore } from '@/store/userStore';
 import { maybeAskForReview } from '@/review/prompt';
 import { GroundProvider } from '@/theme/ground';
 import { grounds, layout, scrim, space } from '@/theme/tokens';
+import { track } from '@/analytics/track';
 
 
 export default function ShareModal() {
@@ -115,6 +116,7 @@ export default function ShareModal() {
       await MediaLibrary.Asset.create(uri);
       setSaved(true);
       recordShare(word.slug, localDateString());
+      track('word_shared', { slug: word.slug, how: 'download', theme: SHARE_THEMES[themeIndex].id });
       successHaptic();
     } catch {
       warningHaptic();
@@ -139,6 +141,7 @@ export default function ShareModal() {
         await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share this word' });
       }
       recordShare(word.slug, localDateString());
+      track('word_shared', { slug: word.slug, how: 'share', theme: SHARE_THEMES[themeIndex].id });
       successHaptic();
       // Just shared a card: a good moment to ask for a rating.
       setTimeout(() => void maybeAskForReview(), 800);

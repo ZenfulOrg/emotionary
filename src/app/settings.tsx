@@ -37,7 +37,7 @@ export default function SettingsScreen() {
   const toggleNotifications = async (next: boolean) => {
     selectionHaptic();
     if (!next) return setNotifEnabled(false);
-    const granted = await requestPermission();
+    const granted = await requestPermission('settings');
     setNotifEnabled(granted);
     if (!granted && process.env.EXPO_OS !== 'web') {
       warningHaptic();
@@ -144,7 +144,7 @@ export default function SettingsScreen() {
           <SettingsRow
             label="Plan"
             value={hasFullAccess ? 'Emotionary Pro' : 'Free · Get Pro'}
-            onPress={hasFullAccess ? undefined : () => router.push('/paywall' as Href)}
+            onPress={hasFullAccess ? undefined : () => router.push('/paywall?from=settings' as Href)}
           />
           <SettingsRow label={restoring ? 'Restoring…' : 'Restore purchases'} onPress={restoring ? undefined : () => void restore()} />
           {account && (

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { track } from '@/analytics/track';
 
 /**
  * Asks for an App Store / Google Play rating at a happy moment: a streak of
@@ -45,6 +46,7 @@ export async function maybeAskForReview(): Promise<boolean> {
     if (!StoreReview || !(await StoreReview.isAvailableAsync())) return false;
     await AsyncStorage.setItem(LAST_ASKED_KEY, String(Date.now()));
     await StoreReview.requestReview();
+    track('rating_prompt_shown');
     return true;
   } catch {
     return false;

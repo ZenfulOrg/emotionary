@@ -198,7 +198,7 @@ function NotificationsSection() {
   const turnOn = async () => {
     setBusy(true);
     try {
-      const granted = await requestPermission();
+      const granted = await requestPermission('stats');
       setNotifEnabled(granted);
       if (granted) successHaptic();
       else

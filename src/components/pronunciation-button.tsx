@@ -6,6 +6,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import { Glyph } from '@/components/brand/Glyph';
 import { DEFAULT_LOCALE, resolveLocale, speechLocaleFor } from '@/content/voice';
 import { selectionHaptic } from '@/feedback/haptics';
+import { track } from '@/analytics/track';
 
 /**
  * Audio session: play pronunciations even with the ring/silent switch on
@@ -289,7 +290,10 @@ function PronunciationButtonControl({
 
   return (
     <Pressable
-      onPress={() => void toggle()}
+      onPress={() => {
+        if (playback === 'idle') track('pronunciation_played', { slug: word });
+        void toggle();
+      }}
       style={({ pressed }) => [styles.button, pressed && styles.pressed]}
       accessibilityRole="button"
       accessibilityLabel={`${action} pronunciation of ${word}`}

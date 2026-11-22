@@ -35,6 +35,7 @@ import { getPermissionGranted, requestPermission } from '@/notifications/schedul
 import { useUserStore } from '@/store/userStore';
 import { isReviewMoment, maybeAskForReview } from '@/review/prompt';
 import { brand, layout, levelPalettes, space } from '@/theme/tokens';
+import { STREAK_MILESTONES, track } from '@/analytics/track';
 
 /** How long a word's meaning must be on screen to count as read. */
 const READ_AFTER_MS = 1500;
@@ -282,7 +283,15 @@ export default function TodayScreen() {
     const item = feed.find((entry) => entry.kind === 'word' && entry.word.slug === activeAudioSlug);
     if (item?.kind !== 'word') return;
     if (wordAccess(item.word, firstFeedSlug, hasFullAccess, kept) !== 'full') return;
-    const timer = setTimeout(() => markRead(activeAudioSlug), READ_AFTER_MS);
+    const timer = setTimeout(() => {
+      markRead(activeAudioSlug);
+      track('word_viewed', {
+        slug: activeAudioSlug,
+        word_type: item.word.type,
+        is_today: activeAudioSlug === firstFeedSlug,
+        where: 'today',
+      });
+    }, READ_AFTER_MS);
     return () => clearTimeout(timer);
   }, [isFocused, activeAudioSlug, feed, firstFeedSlug, hasFullAccess, kept, markRead]);
 
@@ -349,7 +358,7 @@ export default function TodayScreen() {
   const enableNotifications = useCallback(async () => {
     setNotificationBusy(true);
     try {
-      const granted = await requestPermission();
+      const granted = await requestPermission('today');
       setNotifEnabled(granted);
       if (granted) {
         successHaptic();
@@ -393,7 +402,12 @@ export default function TodayScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      const streakBefore = useUserStore.getState().streakState.streak;
       recordOpen(today);
+      const streakAfter = useUserStore.getState().streakState.streak;
+      if (streakAfter !== streakBefore && (STREAK_MILESTONES as readonly number[]).includes(streakAfter)) {
+        track('streak_milestone', { length: streakAfter });
+      }
       // A few days in a row is a happy moment to ask for a rating; wait until
       // the reveal and streak popup have played.
       const reviewTimer = isReviewMoment(useUserStore.getState().streakState.streak)
@@ -588,7 +602,7 @@ function UpgradeSlide({ freeCount }: { freeCount: number }) {
         </View>
         <RoundCta
           label={'Get full\naccess'}
-          onPress={() => router.push('/paywall' as Href)}
+          onPress={() => router.push('/paywall?from=today' as Href)}
           accessibilityHint="Opens Emotionary full access plans"
         />
       </View>

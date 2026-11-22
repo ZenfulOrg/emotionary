@@ -117,6 +117,13 @@ export async function restorePurchases() {
   return applyEntitlements(await Purchases.restorePurchases());
 }
 
+/** Custom attributes on the RevenueCat customer (strings), for revenue by habit. */
+export async function setCustomerAttributes(attributes: Record<string, string>) {
+  if (!ready) return;
+  configure();
+  await Purchases.setAttributes(attributes);
+}
+
 export function observePurchases() {
   if (!ready) return () => {};
   configure();

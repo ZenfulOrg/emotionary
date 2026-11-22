@@ -6,6 +6,7 @@ import { UnlockSheet } from '@/components/UnlockSheet';
 import { findWord, useContentStore } from '@/content/store';
 import { useUserStore } from '@/store/userStore';
 import { brand, layout, space } from '@/theme/tokens';
+import { setPaywallPlacement, track } from '@/analytics/track';
 
 /**
  * "Unlock its meaning": a short bottom sheet over Today, where a free user
@@ -14,6 +15,10 @@ import { brand, layout, space } from '@/theme/tokens';
  * word straight away; "Not now" closes the sheet.
  */
 export default function UnlockScreen() {
+  useEffect(() => {
+    setPaywallPlacement('unlock');
+    track('paywall_shown', { placement: 'unlock' });
+  }, []);
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const words = useContentStore((s) => s.words);
   const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');

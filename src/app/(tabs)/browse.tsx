@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Keyboard, StyleSheet, View } from 'react-native';
 
 import {
@@ -21,6 +21,7 @@ import { selectionHaptic } from '@/feedback/haptics';
 import { useKeptSlugs } from '@/store/useKeptSlugs';
 import { useUserStore } from '@/store/userStore';
 import { layout, PLANET_ORDER, planets, space } from '@/theme/tokens';
+import { track } from '@/analytics/track';
 
 type TypeFilter = WordType | 'all';
 
@@ -56,6 +57,15 @@ export default function BrowseScreen() {
         return a.is_free ? compareFreeOrder(a, b) : a.word.localeCompare(b.word);
       });
   }, [words, query, typeFilter, hasFullAccess, kept]);
+  // A search counts once the typing settles (never the text itself).
+  const resultsCount = filtered.length;
+  useEffect(() => {
+    if (query.trim().length < 2) return;
+    const timer = setTimeout(() => {
+      track('search_performed', { results_count: resultsCount, length: query.trim().length });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [query, resultsCount]);
 
   const hasActiveFilters = query.length > 0 || typeFilter !== 'all';
   const chooseFilter = (next: TypeFilter) => {

@@ -11,6 +11,7 @@ import { wordAccess } from '@/entitlements';
 import { useKeptSlugs } from '@/store/useKeptSlugs';
 import { useUserStore } from '@/store/userStore';
 import { layout, levelPalettes, space } from '@/theme/tokens';
+import { track } from '@/analytics/track';
 
 export default function WordDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -28,7 +29,10 @@ export default function WordDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       // Counted only when the meaning is shown (not today's locked teaser).
-      if (word && access === 'full') markRead(word.slug);
+      if (word && access === 'full') {
+        markRead(word.slug);
+        track('word_viewed', { slug: word.slug, word_type: word.type, is_today: false, where: 'word_page' });
+      }
     }, [word, access, markRead]),
   );
 
@@ -67,7 +71,7 @@ export default function WordDetailScreen() {
           <Body tone="muted">Unlock every word and its origin (roots, history and cultural background), every widget theme, and every future update.</Body>
           <Button
             label="Unlock Emotionary"
-            onPress={() => router.push('/paywall' as Href)}
+            onPress={() => router.push('/paywall?from=word_page' as Href)}
             style={styles.unlock}
           />
         </View>

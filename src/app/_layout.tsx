@@ -29,6 +29,8 @@ import { brand } from '@/theme/tokens';
 import { notificationTarget } from '@/notifications/tap';
 import { reportDeviceStatus } from '@/telemetry/deviceStatus';
 import { refreshDailyWordWidget } from '@/widgets/timeline';
+import { track } from '@/analytics/track';
+import { syncCustomerAttributes } from '@/analytics/customer';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 configureNotificationHandler();
@@ -229,6 +231,7 @@ export default function RootLayout() {
         response.notification.request.content,
         response.notification.request.trigger,
       );
+      track('notification_opened', { kind: slug ? 'daily' : url ? 'route' : 'other', slug });
       // Whatever screen was open (a word page, settings), the tap goes back to Today.
       if (router.canDismiss()) router.dismissAll();
       router.navigate('/');
@@ -260,6 +263,29 @@ export default function RootLayout() {
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
+
+  // Every open (cold start or back from the background) counts once, and
+  // refreshes the habits RevenueCat keeps on the customer.
+  useEffect(() => {
+    if (!userHydrated) return;
+    // Wait for the purchase check so a paying member isn't counted as free.
+    const cancelLaunch = whenAccessResolved(() => {
+      track('app_opened', { source: 'launch' });
+      void syncCustomerAttributes();
+    });
+    let previous = AppState.currentState;
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && previous === 'background') {
+        track('app_opened', { source: 'resume' });
+        void syncCustomerAttributes();
+      }
+      previous = state;
+    });
+    return () => {
+      cancelLaunch();
+      sub.remove();
+    };
+  }, [userHydrated]);
 
   if (!ready) return null;
 
