@@ -27,11 +27,20 @@ const ORBIT_SIZE = 184;
 const ICON_SIZE = 76;
 
 /**
- * After two weeks of near-daily use: a pop-up asking them to share
- * Emotionary with a friend. The card springs up over a dimmed Today, the
+ * A pop-up asking them to share Emotionary with a friend (when: see
+ * invite/schedule.ts). The card springs up over a dimmed Today, the
  * app icon bobs inside the orbit, and confetti lands as it opens.
  */
-export function InvitePrompt({ onShare, onDismiss }: { onShare: () => void; onDismiss: () => void }) {
+export function InvitePrompt({
+  eyebrow,
+  onShare,
+  onDismiss,
+}: {
+  /** The line above the headline, e.g. "7 days in a row". */
+  eyebrow: string;
+  onShare: () => void;
+  onDismiss: () => void;
+}) {
   const reducedMotion = useReducedMotion();
   const bob = useSharedValue(0);
   const pulse = useSharedValue(1);
@@ -96,7 +105,7 @@ export function InvitePrompt({ onShare, onDismiss }: { onShare: () => void; onDi
             </View>
 
             <View accessibilityRole="alert" style={styles.copy}>
-              <Eyebrow>Two weeks of words</Eyebrow>
+              <Eyebrow>{eyebrow}</Eyebrow>
               <Headline size={30} style={styles.centered}>
                 Share Emotionary with a friend.
               </Headline>

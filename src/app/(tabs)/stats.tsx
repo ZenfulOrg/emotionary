@@ -30,6 +30,8 @@ import { StatsBurst } from '@/components/stats-burst';
 import { WidgetGuideModal, type WidgetGuideVariant } from '@/components/WidgetGuideModal';
 import { WidgetPreview } from '@/components/WidgetPreview';
 import { mediumImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
+import { shareInvite } from '@/invite/invite';
+import { trackInvite } from '@/invite/track';
 import { requestPermission } from '@/notifications/scheduler';
 import { STATS_OPEN_EVENT } from '@/stats/events';
 import { sortedNotifTimes, useUserStore } from '@/store/userStore';
@@ -312,6 +314,19 @@ export default function StatsScreen() {
             glyph="forward"
             onPress={() => router.push('/favorites' as Href)}
             accessibilityLabel={`Saved words, ${favorites.length} saved. Opens the list.`}
+          />
+          <LinkRow
+            eyebrow="Know someone?"
+            title="Share Emotionary with a friend"
+            glyph="leaves"
+            onPress={() =>
+              void shareInvite().then((shared) => {
+                if (!shared) return;
+                successHaptic();
+                trackInvite('shared', 'stats');
+              })
+            }
+            accessibilityLabel="Share Emotionary with a friend. Opens the share sheet."
           />
           <LinkRow
             eyebrow="Follow along"

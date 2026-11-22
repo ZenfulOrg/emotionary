@@ -21,6 +21,8 @@ import { WordFull } from '@/components/WordFull';
 import { StreakPopup } from '@/components/StreakPopup';
 import { InvitePrompt } from '@/components/InvitePrompt';
 import { shareInvite } from '@/invite/invite';
+import { INVITE_EYEBROW, nextInviteMoment, type InviteMoment } from '@/invite/schedule';
+import { trackInvite } from '@/invite/track';
 import { StatsBurst } from '@/components/stats-burst';
 import { useContentStore } from '@/content/store';
 import { freeWords, wordAccess } from '@/entitlements';
@@ -30,7 +32,7 @@ import { buildTodayFeed, type TodayFeedItem } from '@/daily/today-feed';
 import { shouldShowTodayActionCoachmark } from '@/daily/tutorial';
 import { lightImpactHaptic, mediumImpactHaptic, successHaptic } from '@/feedback/haptics';
 import { getPermissionGranted, requestPermission } from '@/notifications/scheduler';
-import { inviteEligible, useUserStore } from '@/store/userStore';
+import { useUserStore } from '@/store/userStore';
 import { isReviewMoment, maybeAskForReview } from '@/review/prompt';
 import { brand, layout, levelPalettes, space } from '@/theme/tokens';
 
@@ -48,6 +50,8 @@ const REVEAL_LAND_MS = 520;
 const REVEAL_STREAK_DELAY_MS = 1100;
 /** The sparkle fades away after this long. */
 const REVEAL_BURST_MS = 3200;
+/** Quiet time on Today before the share-with-a-friend pop-up appears. */
+const INVITE_SETTLE_MS = 700;
 
 /** The streak popup shows once per app launch, on the first open of Today. */
 let streakPopupShownThisSession = false;
@@ -402,30 +406,52 @@ export default function TodayScreen() {
     }, [recordOpen, today, feed]),
   );
 
-  // Two weeks of near-daily use: once, ask them to share Emotionary with a
-  // friend (after the streak popup and any first-visit tips), or whenever the
-  // invite notification is tapped.
-  const inviteShown = useUserStore((s) => s.inviteShown);
+  // Share with a friend: after a 7-day streak, the first word card shared and
+  // a 30-day streak, within the limits in invite/schedule.ts. It only ever
+  // shows when Today is quiet: no confetti, streak card, prompt or tip on
+  // screen, and nothing open on top. The invite link shows it on demand.
+  const invite = useUserStore((s) => s.invite);
   const inviteRequested = useUserStore((s) => s.inviteRequested);
-  const openDays = useUserStore((s) => s.openDays);
-  const inviteVisible =
+  const [inviteMoment, setInviteMoment] = useState<InviteMoment | 'requested' | null>(null);
+  const todayQuiet =
+    isFocused &&
+    !burstVisible &&
     !streakVisible &&
     !notificationPromptVisible &&
     !coachmarkVisible &&
     walkthroughDone &&
-    promptSettled &&
-    (inviteRequested || (!inviteShown && inviteEligible(openDays, today)));
+    promptSettled;
+  useEffect(() => {
+    if (!todayQuiet || inviteMoment) return;
+    const moment = inviteRequested ? 'requested' : nextInviteMoment(invite, today, welcomeDate);
+    if (!moment) return;
+    // A short breath once Today settles, so it never lands on top of the
+    // last thing that just closed.
+    const timer = setTimeout(() => {
+      setInviteMoment(moment);
+      if (moment !== 'requested') useUserStore.getState().markInviteShown(moment, today);
+      trackInvite('shown', moment);
+    }, INVITE_SETTLE_MS);
+    return () => clearTimeout(timer);
+  }, [todayQuiet, inviteMoment, inviteRequested, invite, today, welcomeDate]);
   const closeInvite = useCallback(() => {
-    const store = useUserStore.getState();
-    store.markInviteShown();
-    store.clearInviteRequest();
+    setInviteMoment(null);
+    useUserStore.getState().clearInviteRequest();
   }, []);
+  const dismissInvite = useCallback(() => {
+    if (inviteMoment && inviteMoment !== 'requested') useUserStore.getState().dismissInvite();
+    if (inviteMoment) trackInvite('dismissed', inviteMoment);
+    closeInvite();
+  }, [closeInvite, inviteMoment]);
   const sendInvite = useCallback(() => {
+    const source = inviteMoment;
     closeInvite();
     void shareInvite().then((shared) => {
-      if (shared) successHaptic();
+      if (!shared) return;
+      successHaptic();
+      if (source) trackInvite('shared', source);
     });
-  }, [closeInvite]);
+  }, [closeInvite, inviteMoment]);
 
   if (feed.length === 0) {
     return (
@@ -453,7 +479,9 @@ export default function TodayScreen() {
         />
       )}
       {coachmarkVisible && <TodayCoachmark onOpenShare={openCoachmarkShare} />}
-      {inviteVisible && <InvitePrompt onShare={sendInvite} onDismiss={closeInvite} />}
+      {inviteMoment && (
+        <InvitePrompt eyebrow={INVITE_EYEBROW[inviteMoment]} onShare={sendInvite} onDismiss={dismissInvite} />
+      )}
       {/* First visit: after the streak popup and the notification prompt, never on top of them. */}
       {!walkthroughDone && promptSettled && !streakVisible && !notificationPromptVisible && (
         <TodayWalkthrough onDone={completeWalkthrough} />

@@ -21,11 +21,9 @@ import { UpdateAvailableDialog, UpdateRequiredScreen } from '@/components/Update
 import { findWord, useContentStore } from '@/content/store';
 import { canBrowseWord, slugsToKeep } from '@/entitlements';
 import { configureNotificationHandler, rebuildQueue } from '@/notifications/scheduler';
-import { inviteNotificationDate } from '@/invite/invite';
 import { linkPurchasesToAccount } from '@/purchases/account';
 import { observePurchases, refreshPurchases } from '@/purchases/client';
-import { inviteEligible, useUserStore, whenAccessResolved } from '@/store/userStore';
-import { localDateString } from '@/daily/engine';
+import { useUserStore, whenAccessResolved } from '@/store/userStore';
 import { brand } from '@/theme/tokens';
 import { notificationTarget } from '@/notifications/tap';
 import { reportDeviceStatus } from '@/telemetry/deviceStatus';
@@ -55,8 +53,6 @@ export default function RootLayout() {
   const welcomeDate = useUserStore((s) => s.welcomeDate);
   const notifTime = useUserStore((s) => s.notifTime);
   const extraNotifTimes = useUserStore((s) => s.extraNotifTimes);
-  const openDays = useUserStore((s) => s.openDays);
-  const inviteNotifyAt = useUserStore((s) => s.inviteNotifyAt);
   const notifEnabled = useUserStore((s) => s.notifEnabled);
   const streakState = useUserStore((s) => s.streakState);
   const favorites = useUserStore((s) => s.favorites);
@@ -161,11 +157,6 @@ export default function RootLayout() {
   useEffect(() => {
     // Wait for this launch's purchase check so paid users never get teasers.
     if (!userHydrated || !contentHydrated || !onboarded || !accessResolved) return;
-    // Two weeks of near-daily use: one share-with-a-friend notification, the next evening.
-    if (!inviteNotifyAt && inviteEligible(openDays, localDateString())) {
-      useUserStore.getState().setInviteNotifyAt(inviteNotificationDate().toISOString());
-      return; // the store change re-runs this effect with the date set
-    }
     const args = {
       words,
       time: notifTime,
@@ -175,14 +166,13 @@ export default function RootLayout() {
       hasFullAccess,
       kept: keptSlugs,
       welcomeDate,
-      inviteAt: inviteNotifyAt,
     };
     void rebuildQueue(args);
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') void rebuildQueue(args);
     });
     return () => sub.remove();
-  }, [userHydrated, contentHydrated, onboarded, accessResolved, words, notifTime, extraNotifTimes, notifEnabled, streakState, hasFullAccess, keptSlugs, welcomeDate, openDays, inviteNotifyAt]);
+  }, [userHydrated, contentHydrated, onboarded, accessResolved, words, notifTime, extraNotifTimes, notifEnabled, streakState, hasFullAccess, keptSlugs, welcomeDate]);
 
   // Keep the widget timeline current — including the like state on today's
   // word, so the widget heart fills as soon as a word is favorited.

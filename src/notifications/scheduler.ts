@@ -86,8 +86,6 @@ interface RebuildArgs {
   time: NotifTime;
   /** Later reminders of the same word, the same day. */
   extraTimes?: readonly NotifTime[];
-  /** The one share-with-a-friend notification (ISO time), if earned. */
-  inviteAt?: string | null;
   enabled: boolean;
   streakState: StreakState;
   hasFullAccess: boolean;
@@ -106,7 +104,6 @@ async function doRebuild({
   words,
   time,
   extraTimes = [],
-  inviteAt = null,
   enabled,
   streakState,
   hasFullAccess,
@@ -131,22 +128,6 @@ async function doRebuild({
   });
   await Notifications.cancelAllScheduledNotificationsAsync();
   const now = new Date();
-
-  // The share-with-a-friend nudge is local even with server push: it's one
-  // notification per person, ever, decided on the device.
-  const inviteDate = inviteAt ? new Date(inviteAt) : null;
-  if (enabled && granted && inviteDate && inviteDate.getTime() > now.getTime()) {
-    await ensureChannel();
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Know someone who would love this?',
-        body: 'Share Emotionary with a friend, a new word for a feeling every day.',
-        data: { url: '/invite', reason: 'invite' },
-        sound: NOTIFICATION_SOUND,
-      },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: inviteDate, channelId: CHANNEL_ID },
-    });
-  }
 
   if (serverPush || !enabled || !granted || words.length === 0) return;
 
