@@ -97,6 +97,7 @@ function LinkRow({
   onPress,
   accessibilityLabel,
   accessibilityRole = 'button',
+  compact = false,
 }: {
   eyebrow: string;
   title: string;
@@ -105,6 +106,8 @@ function LinkRow({
   onPress: () => void;
   accessibilityLabel: string;
   accessibilityRole?: 'button' | 'link';
+  /** Half width, side by side with another compact row. */
+  compact?: boolean;
 }) {
   return (
     <Pressable
@@ -114,17 +117,17 @@ function LinkRow({
       }}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
-      style={({ pressed }) => [pressed && styles.pressed]}
+      style={({ pressed }) => [compact && styles.compact, pressed && styles.pressed]}
     >
-      <Panel style={styles.linkRow}>
+      <Panel style={[styles.linkRow, compact && styles.linkRowCompact]}>
         <View style={styles.linkCopy}>
           <Eyebrow style={styles.centeredText}>{eyebrow}</Eyebrow>
-          <Headline accessibilityRole="text" size={26} style={styles.centeredText}>
+          <Headline accessibilityRole="text" size={compact ? 19 : 26} style={styles.centeredText}>
             {title}
           </Headline>
         </View>
         {aside !== undefined && <Headline accessibilityRole="text" size={26} style={styles.centeredText}>{aside}</Headline>}
-        <Glyph name={glyph} size={20} />
+        <Glyph name={glyph} size={compact ? 16 : 20} />
       </Panel>
     </Pressable>
   );
@@ -315,27 +318,31 @@ export default function StatsScreen() {
             onPress={() => router.push('/favorites' as Href)}
             accessibilityLabel={`Saved words, ${favorites.length} saved. Opens the list.`}
           />
-          <LinkRow
-            eyebrow="Know someone?"
-            title="Share Emotionary with a friend"
-            glyph="leaves"
-            onPress={() =>
-              void shareInvite().then((shared) => {
-                if (!shared) return;
-                successHaptic();
-                trackInvite('shared', 'stats');
-              })
-            }
-            accessibilityLabel="Share Emotionary with a friend. Opens the share sheet."
-          />
-          <LinkRow
-            eyebrow="Follow along"
-            title="@emotionarybook"
-            glyph="leaves"
-            accessibilityRole="link"
-            onPress={() => void Linking.openURL(INSTAGRAM_URL)}
-            accessibilityLabel="Follow Emotionary on Instagram. Opens Instagram."
-          />
+          <View style={styles.linkPair}>
+            <LinkRow
+              compact
+              eyebrow="Know someone?"
+              title="Share with a friend"
+              glyph="leaves"
+              onPress={() =>
+                void shareInvite().then((shared) => {
+                  if (!shared) return;
+                  successHaptic();
+                  trackInvite('shared', 'stats');
+                })
+              }
+              accessibilityLabel="Share Emotionary with a friend. Opens the share sheet."
+            />
+            <LinkRow
+              compact
+              eyebrow="Follow along"
+              title="@emotionarybook"
+              glyph="leaves"
+              accessibilityRole="link"
+              onPress={() => void Linking.openURL(INSTAGRAM_URL)}
+              accessibilityLabel="Follow Emotionary on Instagram. Opens Instagram."
+            />
+          </View>
         </View>
 
         <WidgetShowcase
@@ -405,6 +412,9 @@ const styles = StyleSheet.create({
   },
   linkCopy: { gap: 2, alignItems: 'center' },
   pressed: { opacity: 0.7 },
+  linkPair: { flexDirection: 'row', gap: space.s },
+  compact: { flex: 1 },
+  linkRowCompact: { minHeight: 0, flex: 1, paddingHorizontal: space.s, paddingVertical: space.m },
   widgetCards: { flexDirection: 'row', gap: space.s, marginTop: space.m },
   widgetCard: { flex: 1, borderWidth: 1, alignItems: 'center', paddingVertical: space.l, gap: 4 },
   widgetLabel: { marginTop: space.m },

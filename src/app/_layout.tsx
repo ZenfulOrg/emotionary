@@ -1,11 +1,12 @@
-import {
-  CormorantGaramond_400Regular,
-  CormorantGaramond_400Regular_Italic,
-  CormorantGaramond_500Medium,
-  CormorantGaramond_500Medium_Italic,
-  CormorantGaramond_600SemiBold,
-} from '@expo-google-fonts/cormorant-garamond';
-import { DMMono_300Light, DMMono_400Regular } from '@expo-google-fonts/dm-mono';
+// Each weight from its own file: the package index bundles every weight
+// (about 2.5 MB of fonts the app never uses).
+import { CormorantGaramond_400Regular } from '@expo-google-fonts/cormorant-garamond/400Regular';
+import { CormorantGaramond_400Regular_Italic } from '@expo-google-fonts/cormorant-garamond/400Regular_Italic';
+import { CormorantGaramond_500Medium } from '@expo-google-fonts/cormorant-garamond/500Medium';
+import { CormorantGaramond_500Medium_Italic } from '@expo-google-fonts/cormorant-garamond/500Medium_Italic';
+import { CormorantGaramond_600SemiBold } from '@expo-google-fonts/cormorant-garamond/600SemiBold';
+import { DMMono_300Light } from '@expo-google-fonts/dm-mono/300Light';
+import { DMMono_400Regular } from '@expo-google-fonts/dm-mono/400Regular';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import { type Href, router, Stack } from 'expo-router';

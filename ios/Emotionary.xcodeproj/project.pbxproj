@@ -10,7 +10,6 @@
 		04D2B324004842B691E22B26 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8DA8F8BB8BD3430FB7924A7D /* Assets.xcassets */; };
 		11E905EA12E76AA3E5523D5C /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DEDB012FE788F864C07E1FC /* SceneDelegate.swift */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		EA2859004CE24E7FA3A88CA7 /* CormorantGaramond_400Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A34304F6A3C4442798CBC7E8 /* CormorantGaramond_400Regular.ttf */; };
 		14E50722BA0A41F0B458252B /* CormorantGaramond_500Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C39F19C64DCA4311B67B822A /* CormorantGaramond_500Medium.ttf */; };
 		34C6B90573CF4396868BC6EE /* index.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D0F6445D814B139CA0DB1C /* index.swift */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
@@ -20,6 +19,7 @@
 		A3970274E37DC40D49E3C017 /* libPods-ExpoWidgetsTarget.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CE12CF47335D3624AAB02591 /* libPods-ExpoWidgetsTarget.a */; };
 		A642EB91D35D430ABA8B03E9 /* ExpoWidgetsTarget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 06A6888022744CDB92EA42D1 /* ExpoWidgetsTarget.appex */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		EA2859004CE24E7FA3A88CA7 /* CormorantGaramond_400Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A34304F6A3C4442798CBC7E8 /* CormorantGaramond_400Regular.ttf */; };
 		EC9AF9461BC6635CE9681028 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8187C41EF0229A7BC56F6A0B /* ExpoModulesProvider.swift */; };
 		EE3BA2ABF7594A40B2AA00B1 /* DMMono_400Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A11FE4BA160A4A6D957C03E8 /* DMMono_400Regular.ttf */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
@@ -67,10 +67,10 @@
 		95AF43064C9244A7A52E5601 /* DailyWord.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; path = DailyWord.swift; sourceTree = "<group>"; };
 		96C93C7234D33F9144DAA2B9 /* libPods-Emotionary.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Emotionary.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A11FE4BA160A4A6D957C03E8 /* DMMono_400Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = DMMono_400Regular.ttf; path = ExpoWidgetsTarget/DMMono_400Regular.ttf; sourceTree = "<group>"; };
+		A34304F6A3C4442798CBC7E8 /* CormorantGaramond_400Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CormorantGaramond_400Regular.ttf; path = ExpoWidgetsTarget/CormorantGaramond_400Regular.ttf; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Emotionary/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		C297FDEBA74421FCB5BEB465 /* Pods-Emotionary.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Emotionary.release.xcconfig"; path = "Target Support Files/Pods-Emotionary/Pods-Emotionary.release.xcconfig"; sourceTree = "<group>"; };
-		A34304F6A3C4442798CBC7E8 /* CormorantGaramond_400Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CormorantGaramond_400Regular.ttf; path = ExpoWidgetsTarget/CormorantGaramond_400Regular.ttf; sourceTree = "<group>"; };
 		C39F19C64DCA4311B67B822A /* CormorantGaramond_500Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CormorantGaramond_500Medium.ttf; path = ExpoWidgetsTarget/CormorantGaramond_500Medium.ttf; sourceTree = "<group>"; };
 		CE12CF47335D3624AAB02591 /* libPods-ExpoWidgetsTarget.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ExpoWidgetsTarget.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEFBE20B68126AD6734141AC /* Pods-ExpoWidgetsTarget.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ExpoWidgetsTarget.debug.xcconfig"; path = "Target Support Files/Pods-ExpoWidgetsTarget/Pods-ExpoWidgetsTarget.debug.xcconfig"; sourceTree = "<group>"; };
@@ -386,12 +386,6 @@
 				"${PODS_ROOT}/Target Support Files/Pods-Emotionary/Pods-Emotionary-frameworks.sh",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem.framework/ExpoFileSystem",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoFont/ExpoFont.framework/ExpoFont",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoImage/ExpoImage.framework/ExpoImage",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoImage/SDWebImage.framework/SDWebImage",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoImage/SDWebImageAVIFCoder.framework/SDWebImageAVIFCoder",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoImage/SDWebImageSVGCoder.framework/SDWebImageSVGCoder",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoImage/SDWebImageWebPCoder.framework/SDWebImageWebPCoder",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoImage/libavif.framework/libavif",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoMediaLibrary/ExpoMediaLibrary.framework/ExpoMediaLibrary",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoModulesCore/ExpoModulesCore.framework/ExpoModulesCore",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoModulesJSI/ExpoModulesJSI.framework/ExpoModulesJSI",
@@ -404,12 +398,6 @@
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoFileSystem.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoFont.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoImage.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SDWebImage.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SDWebImageAVIFCoder.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SDWebImageSVGCoder.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SDWebImageWebPCoder.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/libavif.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoMediaLibrary.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoModulesCore.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoModulesJSI.framework",
