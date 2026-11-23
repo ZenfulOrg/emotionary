@@ -41,6 +41,9 @@ US consumer app sold worldwide.
    is not affected by account deletion" would be false.
    **Fix:** stop sending `install_id` to RevenueCat (the habit attributes
    still work without it). Then the sentence becomes true.
+   **Done in code** (`src/analytics/customer.ts`): sends an empty `install_id`,
+   which removes the value from customers that already have it. Ships with
+   the next build.
 3. **Account deletion only deletes the sign-in record.** The `delete-account`
    function calls `auth.admin.deleteUser` and nothing else. It does not
    delete the RevenueCat customer or its attributes, and it does not clear
@@ -50,6 +53,13 @@ US consumer app sold worldwide.
    side) and any account-linked rows in the same function. Purchase records
    that must be kept for tax or accounting can be kept, and the policy should
    say so.
+   **Done in code** (`supabase/functions/delete-account`): deletes the
+   RevenueCat customer before the account, and stops with "try again" if
+   RevenueCat fails. No app table links to the account, so nothing else to
+   delete. Needs the function deployed and a `REVENUECAT_SECRET_KEY` secret
+   in Supabase; until then it deletes the account only, as before. Deleting
+   the customer does not cancel a store subscription; people cancel that in
+   the App Store or Google Play, and the policy should say so.
 4. **EU and UK consent for analytics.** The ePrivacy rules (Article 5(3)) and
    the UK equivalent (PECR) require consent before an app stores or reads an
    identifier on the device for analytics, unless the analytics is strictly

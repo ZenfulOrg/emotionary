@@ -39,6 +39,27 @@ Deno.serve(async (request) => {
     });
   }
 
+  // The RevenueCat customer (purchase history and habit attributes) goes with
+  // the account; its app user id is the Supabase user id. Store purchase
+  // records stay with Apple and Google. If RevenueCat is down, stop so the
+  // person can try again rather than leave a customer record behind.
+  const revenueCatKey = Deno.env.get('REVENUECAT_SECRET_KEY');
+  if (revenueCatKey) {
+    const rc = await fetch(
+      `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(data.user.id)}`,
+      { method: 'DELETE', headers: { Authorization: `Bearer ${revenueCatKey}` } },
+    ).catch(() => null);
+    if (!rc || (!rc.ok && rc.status !== 404)) {
+      console.error('RevenueCat customer delete failed', rc?.status ?? 'network');
+      return new Response(JSON.stringify({ error: 'Your account could not be deleted. Please try again.' }), {
+        status: 502,
+        headers: corsHeaders,
+      });
+    }
+  } else {
+    console.warn('REVENUECAT_SECRET_KEY is not set; RevenueCat customer not deleted');
+  }
+
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
   });
