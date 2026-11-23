@@ -5,6 +5,7 @@ import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 
 
 import { deleteAccount, getAuthAccount, signOut, type AuthAccount } from '@/auth/client';
 import { syncMarketingConsent } from '@/auth/marketing';
+import { DeleteAccountDialog } from '@/components/DeleteAccountDialog';
 import { Body, Eyebrow, Glyph, Headline, Mono, Panel, Screen, ScreenHeader, Wordmark } from '@/components/brand';
 import { selectionHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
 import { requestPermission } from '@/notifications/scheduler';
@@ -27,6 +28,7 @@ export default function SettingsScreen() {
   const [restoring, setRestoring] = useState(false);
   const [account, setAccount] = useState<AuthAccount | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -90,35 +92,28 @@ export default function SettingsScreen() {
     ]);
   };
 
-  const confirmDeleteAccount = () => {
+  const openDeleteAccount = () => {
     warningHaptic();
-    Alert.alert(
-      'Delete your account?',
-      'This permanently deletes your Emotionary account. Favorites and progress saved on this device will remain. Deleting your account does not cancel a store subscription. Cancel it first in your App Store or Google Play subscriptions.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Account',
-          style: 'destructive',
-          onPress: () => {
-            setAccountBusy(true);
-            void deleteAccount()
-              .then(() => {
-                void leaveToSignIn();
-                Alert.alert('Account deleted', 'Your Emotionary account has been permanently deleted. If you used Sign in with Apple, also remove Emotionary from your Apple Account using Apple’s instructions.', [
-                  { text: 'Done', style: 'cancel' },
-                  { text: 'Apple access instructions', onPress: () => void Linking.openURL('https://support.apple.com/en-us/102571') },
-                ]);
-              })
-              .catch((error) => {
-                warningHaptic();
-                Alert.alert('Could not delete account', error instanceof Error ? error.message : 'Try again.');
-              })
-              .finally(() => setAccountBusy(false));
-          },
-        },
-      ],
-    );
+    setDeleteOpen(true);
+  };
+
+  // Runs only after the phrase is typed in DeleteAccountDialog.
+  const confirmDeleteAccount = () => {
+    setAccountBusy(true);
+    void deleteAccount()
+      .then(() => {
+        setDeleteOpen(false);
+        void leaveToSignIn();
+        Alert.alert('Account deleted', 'Your Emotionary account has been permanently deleted. If you used Sign in with Apple, also remove Emotionary from your Apple Account using Apple’s instructions.', [
+          { text: 'Done', style: 'cancel' },
+          { text: 'Apple access instructions', onPress: () => void Linking.openURL('https://support.apple.com/en-us/102571') },
+        ]);
+      })
+      .catch((error) => {
+        warningHaptic();
+        Alert.alert('Could not delete account', error instanceof Error ? error.message : 'Try again.');
+      })
+      .finally(() => setAccountBusy(false));
   };
 
   return (
@@ -152,7 +147,7 @@ export default function SettingsScreen() {
               <SettingsRow label="Sign out" onPress={accountBusy ? undefined : confirmSignOut} />
               <SettingsRow
                 label={accountBusy ? 'Working…' : 'Delete account'}
-                onPress={accountBusy ? undefined : confirmDeleteAccount}
+                onPress={accountBusy ? undefined : openDeleteAccount}
                 danger
               />
             </>
@@ -254,6 +249,12 @@ export default function SettingsScreen() {
           </Mono>
         </View>
       </ScrollView>
+      <DeleteAccountDialog
+        visible={deleteOpen}
+        busy={accountBusy}
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={confirmDeleteAccount}
+      />
     </Screen>
   );
 }

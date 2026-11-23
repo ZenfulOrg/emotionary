@@ -3,7 +3,9 @@ import { setStatusBarStyle } from 'expo-status-bar';
 import { useCallback, type ReactNode } from 'react';
 import {
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   View,
@@ -180,9 +182,14 @@ export function Dialog({
       statusBarTranslucent
     >
       <GroundProvider ground="cream">
-        <View style={styles.scrim}>
+        {/* Lifts the sheet above the keyboard when a dialog has a text field. */}
+        <KeyboardAvoidingView style={styles.scrim} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.dialog} accessibilityViewIsModal>
-            <ScrollView contentContainerStyle={styles.dialogScroll} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              contentContainerStyle={styles.dialogScroll}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
               {children}
             </ScrollView>
             <Grain />
@@ -193,7 +200,7 @@ export function Dialog({
               style={styles.dialogClose}
             />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </GroundProvider>
     </Modal>
   );
