@@ -73,9 +73,14 @@ export default function ShareModal() {
   // Fit the 9:16 preview inside the window with room for the buttons.
   const previewHeight = Math.max(160, winH - insets.top - insets.bottom - 300);
   const cardWidth = Math.min(winW * 0.7, (previewHeight * CARD_BASE_WIDTH) / CARD_BASE_HEIGHT);
+  // The saved PNG is 2× the 1080×1920 story size (2160×3840): at 1×, phones
+  // whose screens are wider than 1080px stretch it and the text looks soft.
+  // Instagram and other apps scale it down cleanly.
   const pixelRatio = PixelRatio.get();
-  const captureWidth = CARD_BASE_WIDTH / pixelRatio;
-  const captureHeight = CARD_BASE_HEIGHT / pixelRatio;
+  const exportWidth = CARD_BASE_WIDTH * EXPORT_SCALE;
+  const exportHeight = CARD_BASE_HEIGHT * EXPORT_SCALE;
+  const captureWidth = exportWidth / pixelRatio;
+  const captureHeight = exportHeight / pixelRatio;
 
   // Native-only modules are imported lazily inside the handlers — a static
   // import of expo-media-library breaks web/server rendering (its classes
@@ -83,7 +88,7 @@ export default function ShareModal() {
   //
   // captureRef measures width/height in logical points and then multiplies by
   // the device scale. Render a dedicated full-size capture surface so the PNG
-  // lands at a sharp, exact 1080×1920 pixels instead of enlarging the preview.
+  // lands at a sharp, exact 2160×3840 pixels instead of enlarging the preview.
   const capture = async () => {
     const { captureRef } = await import('react-native-view-shot');
     // iOS reads width/height in points; Android reads them as pixels (and
@@ -91,7 +96,7 @@ export default function ShareModal() {
     // ~384px card. Ask Android for the exact pixel size.
     const size =
       Platform.OS === 'android'
-        ? { width: CARD_BASE_WIDTH, height: CARD_BASE_HEIGHT }
+        ? { width: exportWidth, height: exportHeight }
         : { width: captureWidth, height: captureHeight };
     return captureRef(shotRef, { format: 'png', quality: 1, ...size });
   };
@@ -313,6 +318,9 @@ export default function ShareModal() {
     </GroundProvider>
   );
 }
+
+/** Saved cards are this many times the 1080×1920 story size. */
+const EXPORT_SCALE = 2;
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: scrim },

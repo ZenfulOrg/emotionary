@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Glyph, type GlyphName } from '@/components/brand';
 import { selectionHaptic } from '@/feedback/haptics';
+import { TODAY_SCROLL_TOP_EVENT } from '@/daily/events';
 import { STATS_OPEN_EVENT } from '@/stats/events';
 import { useUserStore } from '@/store/userStore';
 import { brand, font, grounds, tracking } from '@/theme/tokens';
@@ -30,9 +31,13 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      screenListeners={({ route }) => ({
+      screenListeners={({ route, navigation }) => ({
         tabPress: () => {
           selectionHaptic();
+          // Tapping Today while already on Today goes back to the top word.
+          if (route.name === 'index' && navigation.isFocused()) {
+            DeviceEventEmitter.emit(TODAY_SCROLL_TOP_EVENT);
+          }
           if (route.name === 'stats') {
             DeviceEventEmitter.emit(STATS_OPEN_EVENT);
           }

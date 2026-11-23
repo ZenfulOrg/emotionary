@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Animated, { FadeOut } from 'react-native-reanimated';
 import {
   AppState,
+  DeviceEventEmitter,
   FlatList,
   Linking,
   Platform,
@@ -28,6 +29,7 @@ import { useContentStore } from '@/content/store';
 import { freeWords, wordAccess } from '@/entitlements';
 import { useKeptSlugs } from '@/store/useKeptSlugs';
 import { localDateString } from '@/daily/engine';
+import { TODAY_SCROLL_TOP_EVENT } from '@/daily/events';
 import { buildTodayFeed, type TodayFeedItem } from '@/daily/today-feed';
 import { shouldShowTodayActionCoachmark } from '@/daily/tutorial';
 import { lightImpactHaptic, mediumImpactHaptic, successHaptic } from '@/feedback/haptics';
@@ -258,6 +260,13 @@ export default function TodayScreen() {
 
   const scrollToNext = useCallback(() => {
     listRef.current?.scrollToIndex({ index: 1, animated: true });
+  }, []);
+  // Tapping the Today tab while already on Today returns to the top word.
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(TODAY_SCROLL_TOP_EVENT, () => {
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+    return () => sub.remove();
   }, []);
   const activeAudioSlug = feed.some(
     (item) => item.kind === 'word' && item.word.slug === visibleSlug,
