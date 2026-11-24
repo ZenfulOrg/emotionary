@@ -29,7 +29,7 @@ export function NotificationPermissionPrompt({
           <Eyebrow>A word, every day</Eyebrow>
           <Headline size={26}>Never miss your word.</Headline>
           <Body size={16} tone="muted">
-            One gentle reminder a day, at the time you chose.
+            Gentle reminders at the times you chose.
           </Body>
         </View>
         <View style={styles.actions}>

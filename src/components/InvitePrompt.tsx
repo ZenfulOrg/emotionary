@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BackHandler, Image, Pressable, StyleSheet, View } from 'react-native';
+import { BackHandler, Image, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
@@ -45,6 +45,9 @@ export function InvitePrompt({
   const reducedMotion = useReducedMotion();
   // Keep the card clear of the status bar and the gesture bar on short screens.
   const insets = useSafeAreaInsets();
+  // On short screens the orbit art is left out so the whole card fits.
+  const { height: windowHeight } = useWindowDimensions();
+  const showArt = windowHeight >= 760;
   const bob = useSharedValue(0);
   const pulse = useSharedValue(1);
 
@@ -109,12 +112,14 @@ export function InvitePrompt({
           style={styles.cardWrap}
         >
           <FloatingCard style={styles.card}>
-            <View style={styles.art} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-              <Orbit size={ORBIT_SIZE} style={StyleSheet.absoluteFill} />
-              <Animated.View style={[styles.iconWrap, iconStyle]}>
-                <Image source={APP_ICON} style={styles.icon} />
-              </Animated.View>
-            </View>
+            {showArt && (
+              <View style={styles.art} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                <Orbit size={ORBIT_SIZE} style={StyleSheet.absoluteFill} />
+                <Animated.View style={[styles.iconWrap, iconStyle]}>
+                  <Image source={APP_ICON} style={styles.icon} />
+                </Animated.View>
+              </View>
+            )}
 
             <View accessibilityRole="alert" style={styles.copy}>
               <Eyebrow>{eyebrow}</Eyebrow>

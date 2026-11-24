@@ -6,7 +6,7 @@ import { WordCard } from '@/components/WordCard';
 import { findWord, useContentStore } from '@/content/store';
 import { localDateString } from '@/daily/engine';
 import { useTodaysWord } from '@/daily/useTodaysWord';
-import { canViewWord } from '@/entitlements';
+import { wordAccess } from '@/entitlements';
 import { useKeptSlugs } from '@/store/useKeptSlugs';
 import { useUserStore } from '@/store/userStore';
 import { layout, space } from '@/theme/tokens';
@@ -36,7 +36,8 @@ export default function FavoritesScreen() {
         data={favoriteWords}
         keyExtractor={(w) => w.slug}
         renderItem={({ item }) => (
-          <WordCard word={item} locked={!canViewWord(item, todaysSlug, hasFullAccess, kept)} />
+          // Today's word stays a teaser here too, as on Today.
+          <WordCard word={item} locked={wordAccess(item, todaysSlug, hasFullAccess, kept) !== 'full'} />
         )}
         ListHeaderComponent={
           <PageTitle

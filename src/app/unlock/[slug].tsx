@@ -1,6 +1,7 @@
 import { router, type Href, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { UnlockSheet } from '@/components/UnlockSheet';
 import { findWord, useContentStore } from '@/content/store';
@@ -20,6 +21,7 @@ export default function UnlockScreen() {
     track('paywall_shown', { placement: 'unlock' });
   }, []);
   const { slug } = useLocalSearchParams<{ slug: string }>();
+  const insets = useSafeAreaInsets();
   const words = useContentStore((s) => s.words);
   const hasFullAccess = useUserStore((s) => s.accessLevel === 'full');
   const word = slug ? findWord(words, slug) : undefined;
@@ -39,7 +41,7 @@ export default function UnlockScreen() {
   if (!word) return null;
 
   return (
-    <View style={styles.sheet}>
+    <View style={[styles.sheet, { paddingBottom: space.s + (Platform.OS === 'android' ? insets.bottom : 0) }]}>
       <UnlockSheet
         // Purchase success flips hasFullAccess; the effect above reveals the word.
         onPurchased={() => router.replace(`/word/${word.slug}` as Href)}
@@ -54,7 +56,8 @@ const styles = StyleSheet.create({
     backgroundColor: brand.cream,
     paddingHorizontal: layout.gutter,
     paddingTop: space.xl,
-    // The sheet already sits above the home indicator.
+    // iOS: the sheet already sits above the home indicator. Android adds the
+    // bottom inset, since it draws edge to edge under the nav bar.
     paddingBottom: space.s,
   },
 });

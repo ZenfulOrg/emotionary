@@ -61,7 +61,7 @@ export function TodayWalkthrough({ onDone }: { onDone: () => void }) {
       <FloatingCard style={styles.card}>
         <Animated.View key={index} entering={reducedMotion ? undefined : FadeIn.duration(200)}>
           <View style={styles.head}>
-            <Eyebrow style={{ flexShrink: 1 }}>A little tip · {index + 1} of {WALKTHROUGH_STEPS.length}</Eyebrow>
+            <Eyebrow style={{ flexShrink: 1 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>A little tip · {index + 1} of {WALKTHROUGH_STEPS.length}</Eyebrow>
             <Pressable
               onPress={onDone}
               accessibilityRole="button"

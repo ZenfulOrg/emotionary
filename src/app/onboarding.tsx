@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -127,6 +128,19 @@ export default function OnboardingScreen() {
 
   const goNext = () => setStep((current) => Math.min(current + 1, PAGES.length - 1));
   const goBack = () => setStep((current) => Math.max(current - 1, 0));
+
+  // Android Back steps back through onboarding like the on-screen arrow,
+  // instead of leaving the app (which started onboarding over).
+  // Same rule as the on-screen arrow: once signed in, no going back to sign-in.
+  const backLocked = accountComplete && step >= PAGES.indexOf('account');
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (step === 0) return false;
+      if (!backLocked) setStep((current) => Math.max(current - 1, 0));
+      return true;
+    });
+    return () => subscription.remove();
+  }, [step, backLocked]);
 
   const authForm = useAuthForm({
     initialMode: 'create',

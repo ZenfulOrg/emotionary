@@ -127,7 +127,7 @@ function LinkRow({
             accessibilityRole="text"
             size={compact ? 19 : 26}
             style={styles.centeredText}
-            numberOfLines={compact ? 2 : undefined}
+            numberOfLines={compact ? 1 : undefined}
             adjustsFontSizeToFit={compact}
             minimumFontScale={0.7}
           >
