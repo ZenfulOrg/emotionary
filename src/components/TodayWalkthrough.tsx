@@ -61,7 +61,7 @@ export function TodayWalkthrough({ onDone }: { onDone: () => void }) {
       <FloatingCard style={styles.card}>
         <Animated.View key={index} entering={reducedMotion ? undefined : FadeIn.duration(200)}>
           <View style={styles.head}>
-            <Eyebrow>A little tip · {index + 1} of {WALKTHROUGH_STEPS.length}</Eyebrow>
+            <Eyebrow style={{ flexShrink: 1 }}>A little tip · {index + 1} of {WALKTHROUGH_STEPS.length}</Eyebrow>
             <Pressable
               onPress={onDone}
               accessibilityRole="button"
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     zIndex: 19,
   },
   card: { padding: space.l },
-  head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: space.s, marginTop: space.m },
   title: { flexShrink: 1 },
   body: { marginTop: space.xs },

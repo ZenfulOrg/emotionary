@@ -177,5 +177,5 @@ const styles = StyleSheet.create({
   price: { marginTop: space.xs },
   terms: { marginTop: space.m },
   cta: { marginTop: space.l },
-  links: { flexDirection: 'row', justifyContent: 'space-between', marginTop: space.m },
+  links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', columnGap: space.m, marginTop: space.m },
 });

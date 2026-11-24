@@ -99,7 +99,8 @@ export default function ShareModal() {
       Platform.OS === 'android'
         ? { width: exportWidth, height: exportHeight }
         : { width: captureWidth, height: captureHeight };
-    return captureRef(shotRef, { format: 'png', quality: 1, ...size });
+    // A readable name in the gallery instead of ReactNative-snapshot-image….
+    return captureRef(shotRef, { format: 'png', quality: 1, fileName: `Emotionary-${word.slug}-${Date.now()}`, ...size });
   };
 
   const notAvailableOnWeb = () =>
@@ -317,7 +318,7 @@ export default function ShareModal() {
             />
           </View>
           <Mono size={11} tone="faint" style={styles.caption}>
-            SIZED FOR STORIES · 1080 × 1920
+            SIZED FOR STORIES · 9:16
           </Mono>
         </View>
       </View>

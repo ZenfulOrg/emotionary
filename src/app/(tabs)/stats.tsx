@@ -122,8 +122,15 @@ function LinkRow({
     >
       <Panel style={[styles.linkRow, compact && styles.linkRowCompact]}>
         <View style={styles.linkCopy}>
-          <Eyebrow style={styles.centeredText}>{eyebrow}</Eyebrow>
-          <Headline accessibilityRole="text" size={compact ? 19 : 26} style={styles.centeredText}>
+          <Eyebrow style={styles.centeredText} numberOfLines={1} adjustsFontSizeToFit>{eyebrow}</Eyebrow>
+          <Headline
+            accessibilityRole="text"
+            size={compact ? 19 : 26}
+            style={styles.centeredText}
+            numberOfLines={compact ? 2 : undefined}
+            adjustsFontSizeToFit={compact}
+            minimumFontScale={0.7}
+          >
             {title}
           </Headline>
         </View>

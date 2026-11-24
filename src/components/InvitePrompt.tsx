@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { BackHandler, Image, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
   FadeIn,
@@ -42,6 +43,8 @@ export function InvitePrompt({
   onDismiss: () => void;
 }) {
   const reducedMotion = useReducedMotion();
+  // Keep the card clear of the status bar and the gesture bar on short screens.
+  const insets = useSafeAreaInsets();
   const bob = useSharedValue(0);
   const pulse = useSharedValue(1);
 
@@ -99,7 +102,7 @@ export function InvitePrompt({
         />
       </Animated.View>
 
-      <View style={styles.center} pointerEvents="box-none">
+      <View style={[styles.center, { paddingTop: insets.top + space.m, paddingBottom: insets.bottom + space.m }]} pointerEvents="box-none">
         <Animated.View
           entering={reducedMotion ? undefined : ZoomIn.delay(80).springify().damping(13).stiffness(140)}
           exiting={reducedMotion ? undefined : ZoomOut.duration(200)}

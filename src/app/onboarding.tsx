@@ -234,7 +234,7 @@ export default function OnboardingScreen() {
               {/* Emulators and simulators only (never a real phone): lets
                   automated beta testing reach the app without an account. */}
               {isSimulator && !accountComplete && (
-                <Button label="Skip (test device)" variant="link" onPress={goNext} />
+                <Button label="Skip (test)" variant="link" onPress={goNext} />
               )}
               </>
             ) : page === 'widget' ? (

@@ -1,9 +1,10 @@
+import { router, type Href } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Platform, StyleSheet, View } from 'react-native';
 
 import { Body, Button, Eyebrow, Headline, OptionRow, Planets, RoundCta } from '@/components/brand';
 import { lightImpactHaptic, successHaptic } from '@/feedback/haptics';
-import { loadProducts, PRODUCT_IDS, purchasePlan, type Plan } from '@/purchases/client';
+import { loadProducts, PRODUCT_IDS, purchasePlan, restorePurchases, type Plan } from '@/purchases/client';
 import { GroundProvider } from '@/theme/ground';
 import { brand, space } from '@/theme/tokens';
 import { currentPaywallPlacement, track } from '@/analytics/track';
@@ -95,6 +96,21 @@ export function Paywall({
 }) {
   const { plan, setPlan, prices, trialDays, yearlyTrial, store, loading, busy, error, reload, unlock } =
     usePlanPurchase(onContinue);
+  const [restoring, setRestoring] = useState(false);
+
+  const restore = async () => {
+    if (restoring || busy) return;
+    setRestoring(true);
+    try {
+      const active = await restorePurchases();
+      if (active) onContinue();
+      else Alert.alert('No purchases found', 'This store account has no Emotionary purchase to restore.');
+    } catch {
+      Alert.alert('Could not restore', 'Check your connection and store account, then try again.');
+    } finally {
+      setRestoring(false);
+    }
+  };
 
   return (
     <View style={styles.wrap}>
@@ -152,6 +168,16 @@ export function Paywall({
           accessibilityHint={`Unlocks ${plan} full access`}
         />
       </View>
+      <View style={styles.legal}>
+        <Button
+          label={restoring ? 'Restoring…' : 'Restore'}
+          variant="link"
+          disabled={busy || restoring}
+          onPress={() => void restore()}
+        />
+        <Button label="Terms" variant="link" onPress={() => router.push('/legal/terms' as Href)} />
+        <Button label="Privacy" variant="link" onPress={() => router.push('/legal/privacy' as Href)} />
+      </View>
     </View>
   );
 }
@@ -166,6 +192,13 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: space.m, maxWidth: 320, alignSelf: 'center', textAlign: 'center' },
   options: { gap: space.s, marginTop: space.l },
   notice: { marginTop: space.m, lineHeight: 19 },
+  legal: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    columnGap: space.l,
+    marginTop: space.m,
+  },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
