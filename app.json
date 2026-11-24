@@ -99,7 +99,7 @@
         "android.permission.READ_MEDIA_AUDIO"
       ],
       "predictiveBackGestureEnabled": false,
-      "versionCode": 7,
+      "versionCode": 8,
       "googleServicesFile": "./google-services.json"
     },
     "web": {
