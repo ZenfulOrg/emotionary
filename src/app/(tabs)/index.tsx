@@ -66,6 +66,9 @@ const CELEBRATION_STREAK_MOUNT_MS = 600;
 /** The last notification/widget celebration Today played (one per tap). */
 let handledCelebrationRun = 0;
 
+/** Away at least this long before a return counts as opening the app again. */
+const REOPEN_AWAY_MS = 30_000;
+
 export default function TodayScreen() {
   const words = useContentStore((s) => s.words);
   const recordOpen = useUserStore((s) => s.recordOpen);
@@ -149,10 +152,21 @@ export default function TodayScreen() {
   useFocusEffect(checkReveal);
   useEffect(() => {
     let previous = AppState.currentState;
+    let leftAt = 0;
     const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'background') leftAt = Date.now();
       // Back from the background counts as an open; a pulled-down
-      // notification centre ('inactive') does not.
-      if (state === 'active' && previous === 'background' && todayFocused.current) playBurst();
+      // notification centre ('inactive') does not. Android also reports
+      // 'background' behind system dialogs and the share sheet, so a quick
+      // return (under 30 seconds) is not a new open.
+      if (
+        state === 'active' &&
+        previous === 'background' &&
+        Date.now() - leftAt >= REOPEN_AWAY_MS &&
+        todayFocused.current
+      ) {
+        playBurst();
+      }
       if (state === 'active') checkReveal();
       previous = state;
     });

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { BackHandler, Image, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
@@ -44,6 +44,15 @@ export function InvitePrompt({
   const reducedMotion = useReducedMotion();
   const bob = useSharedValue(0);
   const pulse = useSharedValue(1);
+
+  // Android Back closes the pop-up instead of leaving the app.
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      onDismiss();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [onDismiss]);
 
   useEffect(() => {
     successHaptic();

@@ -62,7 +62,7 @@ export function LegalDocument({
           </View>
         ))}
         <Body tone="muted" style={styles.footer}>
-          Questions? hello@emotionarybook.com
+          Questions? support@emotionarybook.com
         </Body>
       </ScrollView>
     </Screen>

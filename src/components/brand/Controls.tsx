@@ -129,7 +129,7 @@ export function RoundCta({
       {/* One word per line (unless the label sets its own lines), so a word
           never breaks in the middle ("BUY LIF / ETIME") at large font sizes.
           No shrink-to-fit: on Android it made "Get full access" tiny. */}
-      <Text maxFontSizeMultiplier={1.2} style={[styles.label, styles.roundLabel]}>
+      <Text maxFontSizeMultiplier={1} style={[styles.label, styles.roundLabel]}>
         {(label.includes('\n') ? label : label.split(' ').join('\n'))}
       </Text>
       <View style={[styles.roundArrow, { right: size * 0.2, bottom: size * 0.17 }]}>

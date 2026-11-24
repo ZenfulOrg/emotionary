@@ -54,6 +54,7 @@ import { WidgetPreview } from '@/components/WidgetPreview';
 import { WordTitle } from '@/components/WordFull';
 import { WordKey } from '@/components/WordKey';
 import { lightImpactHaptic, selectionHaptic, successHaptic } from '@/feedback/haptics';
+import { isSimulator } from '@/dev/simulator';
 import { requestPermission } from '@/notifications/scheduler';
 import { findWord, useContentStore } from '@/content/store';
 import { sortedNotifTimes, useUserStore, type NotifTime } from '@/store/userStore';
@@ -179,7 +180,7 @@ export default function OnboardingScreen() {
 
   return (
     <Screen ground={ground} edges={['top', 'bottom']}>
-      {ground === 'ink' && <OrbitBackdrop top="4%" />}
+      {ground === 'ink' && windowHeight >= 700 && <OrbitBackdrop top="4%" />}
       {page === 'first-word' && <StatsBurst burstKey={step + 1} />}
 
       <KeyboardAvoidingView
@@ -220,6 +221,7 @@ export default function OnboardingScreen() {
                 <Button label="Not now" variant="link" onPress={goNext} />
               </>
             ) : page === 'account' ? (
+              <>
               <Button
                 label={
                   accountComplete
@@ -229,6 +231,12 @@ export default function OnboardingScreen() {
                 onPress={accountComplete ? goNext : () => void authForm.submit()}
                 busy={authForm.busy}
               />
+              {/* Emulators and simulators only (never a real phone): lets
+                  automated beta testing reach the app without an account. */}
+              {isSimulator && !accountComplete && (
+                <Button label="Skip (test device)" variant="link" onPress={goNext} />
+              )}
+              </>
             ) : page === 'widget' ? (
               <Button label="How to add the widget" onPress={() => setWidgetGuide('home')} />
             ) : page !== 'paywall' ? (
@@ -243,6 +251,8 @@ export default function OnboardingScreen() {
             <Mono
               size={11}
               tone="muted"
+              numberOfLines={1}
+              maxFontSizeMultiplier={1}
               accessibilityLabel={`Step ${step + 1} of ${PAGES.length}`}
             >
               {pad(step + 1)} / {pad(PAGES.length)}
@@ -366,7 +376,8 @@ function ReminderPage({
   times: NotifTime[];
   setTimes: (times: NotifTime[]) => void;
 }) {
-  const label = times.map((time) => formatTime(time).toLowerCase()).join(' · ');
+  // Non-breaking spaces keep "9:00 pm" together when the line wraps.
+  const label = times.map((time) => formatTime(time).toLowerCase().replace(/ /g, '\u00a0')).join(' · ');
   return (
     <PageCopy title="Never miss your word." body="Add a time for every part of your day: morning coffee, a lunch break, a quiet night.">
       <Headline
@@ -393,7 +404,7 @@ function WidgetPage({
     <PageCopy
       eyebrow="Widgets"
       title="Add the daily widget."
-      body={Platform.OS === 'android' ? "Keep today's word nearby on your Home Screen. Tap the widget to see how." : "Keep today's word nearby on your Home or Lock Screen. Tap a widget to see how."}
+      body={Platform.OS === 'android' ? "Keep today's word nearby on your home screen. Tap the widget to see how." : "Keep today's word nearby on your Home or Lock Screen. Tap a widget to see how."}
     >
       <View style={styles.widgets}>
         {(Platform.OS === 'android' ? ['home'] as const : ['home', 'lock'] as const).map((variant) => (
@@ -405,7 +416,7 @@ function WidgetPage({
             }}
             accessibilityRole="button"
             accessibilityLabel={
-              variant === 'home' ? 'How to add the Home Screen widget' : 'How to add the Lock Screen widget'
+              variant === 'home' ? (Platform.OS === 'android' ? 'How to add the home screen widget' : 'How to add the Home Screen widget') : 'How to add the Lock Screen widget'
             }
             style={({ pressed }) => pressed && styles.pressed}
           >

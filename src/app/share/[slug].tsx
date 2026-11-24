@@ -303,7 +303,7 @@ export default function ShareModal() {
               onPress={() => void onDownload()}
               disabled={!ready}
               haptic={false}
-              accessibilityLabel={saved ? 'Saved to Photos' : 'Download to Photos'}
+              accessibilityLabel={Platform.OS === 'android' ? (saved ? 'Saved to gallery' : 'Save to gallery') : saved ? 'Saved to Photos' : 'Download to Photos'}
               style={styles.button}
             />
             <Button

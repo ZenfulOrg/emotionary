@@ -112,7 +112,7 @@ export function Paywall({
       <View style={styles.options} accessibilityRole="radiogroup">
         {(Object.keys(PLANS) as Plan[]).map((key) => {
           const option = PLANS[key];
-          const price = prices[PRODUCT_IDS[key]] ?? (loading ? '…' : '—');
+          const price = prices[PRODUCT_IDS[key]] ?? '…';
           const body = key === 'yearly' && (Platform.OS === 'android' || yearlyTrial)
             ? yearlyTrial ? `${trialDays} days free, then ${price}/year. Auto-renews; cancel anytime.` : `${price}/year. Auto-renews; cancel anytime.`
             : option.body;

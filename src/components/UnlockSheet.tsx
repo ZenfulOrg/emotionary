@@ -23,7 +23,7 @@ export function UnlockSheet({
   const { plan, setPlan, prices, trialDays, yearlyTrial, store, loading, busy, error, reload, unlock } =
     usePlanPurchase(onPurchased);
   const [restoring, setRestoring] = useState(false);
-  const price = (key: Plan) => prices[PRODUCT_IDS[key]] ?? (loading ? '…' : '—');
+  const price = (key: Plan) => prices[PRODUCT_IDS[key]] ?? '…';
   const ready = !loading && Boolean(prices[PRODUCT_IDS[plan]]);
 
   const restore = async () => {
