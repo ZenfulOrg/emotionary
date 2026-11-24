@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { DELETE_PHRASE, matchesDeletePhrase } from '@/account/deletePhrase';
 import { Body, Button, Dialog, Eyebrow, Headline, Mono, TextField } from '@/components/brand';
@@ -36,7 +36,7 @@ export function DeleteAccountDialog({
       </Headline>
       <Body tone="muted">
         Your Emotionary account is deleted for good. Favorites and progress on this device stay. Deleting your account
-        does not cancel a subscription: cancel it first in your App Store or Google Play subscriptions.
+        does not cancel a subscription: cancel it first in your {Platform.OS === 'ios' ? 'App Store' : 'Google Play'} subscriptions.
       </Body>
 
       <View style={styles.field}>

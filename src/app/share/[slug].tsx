@@ -27,6 +27,7 @@ import { wordAccess } from '@/entitlements';
 import { lightImpactHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
 import { CARD_BASE_HEIGHT, CARD_BASE_WIDTH, ShareCard, SHARE_THEMES } from '@/share/ShareCard';
 import { CARD_SHARE_MESSAGE } from '@/invite/invite';
+import EmotionaryWidgets from '../../../modules/emotionary-widgets/src/EmotionaryWidgetsModule';
 import { useKeptSlugs } from '@/store/useKeptSlugs';
 import { useUserStore } from '@/store/userStore';
 import { maybeAskForReview } from '@/review/prompt';
@@ -141,6 +142,11 @@ export default function ShareModal() {
         // The card plus a line about the app, so a message arrives with a link.
         const result = await Share.share({ url: uri, message: CARD_SHARE_MESSAGE });
         if (result.action !== Share.sharedAction) return;
+      } else if (EmotionaryWidgets?.shareImageWithText) {
+        // Android: the card and the same line with the link. Backing out of
+        // the share sheet resolves false and is not counted as a share.
+        const shared = await EmotionaryWidgets.shareImageWithText(uri, CARD_SHARE_MESSAGE, 'Share this word');
+        if (!shared) return;
       } else {
         const Sharing = await import('expo-sharing');
         await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share this word' });

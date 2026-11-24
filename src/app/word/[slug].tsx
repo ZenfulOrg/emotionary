@@ -1,6 +1,6 @@
 import { router, type Href, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { Body, Button, Eyebrow, Headline, Screen, ScreenHeader } from '@/components/brand';
 import { WordFull, WordTitle } from '@/components/WordFull';
@@ -68,7 +68,11 @@ export default function WordDetailScreen() {
         <View style={styles.message}>
           <Eyebrow>Full access</Eyebrow>
           <WordTitle word={word} />
-          <Body tone="muted">Unlock every word and its origin (roots, history and cultural background), every widget theme, and every future update.</Body>
+          <Body tone="muted">
+            {Platform.OS === 'ios'
+              ? 'Unlock every word and its origin (roots, history and cultural background), every widget theme, and every future update.'
+              : 'Unlock every word and its origin (roots, history and cultural background), and every future update.'}
+          </Body>
           <Button
             label="Unlock Emotionary"
             onPress={() => router.push('/paywall?from=word_page' as Href)}

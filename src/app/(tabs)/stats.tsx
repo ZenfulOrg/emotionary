@@ -4,6 +4,7 @@ import {
   Alert,
   DeviceEventEmitter,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -140,7 +141,7 @@ function WidgetShowcase({ onOpen }: { onOpen: (variant: WidgetGuideVariant) => v
       <Eyebrow tone="muted" style={styles.centeredText}>03 / Widgets</Eyebrow>
       <Rule style={styles.sectionRule} />
       <View style={styles.widgetCards}>
-        {(['home', 'lock'] as const).map((variant) => (
+        {(Platform.OS === 'ios' ? (['home', 'lock'] as const) : (['home'] as const)).map((variant) => (
           <Pressable
             key={variant}
             onPress={() => onOpen(variant)}
@@ -163,7 +164,7 @@ function WidgetShowcase({ onOpen }: { onOpen: (variant: WidgetGuideVariant) => v
       <Panel style={styles.widgetSettings}>
         {[
           ['Topics', 'Mix'],
-          ['Themes', 'Word color · Night sky · Rose · Nature'],
+          ...(Platform.OS === 'ios' ? [['Themes', 'Word color · Night sky · Rose · Nature']] : []),
           ['Refresh', 'Daily at midnight'],
         ].map(([label, value], index) => (
           <View

@@ -1,4 +1,6 @@
-import { Share } from 'react-native';
+import { Platform, Share } from 'react-native';
+
+import Widgets from '../../modules/emotionary-widgets/src/EmotionaryWidgetsModule';
 
 /** The page that sends friends to the right store for their phone. */
 const APP_PAGE = 'https://emotionarybook.com/app';
@@ -20,6 +22,11 @@ export const CARD_SHARE_MESSAGE = `${INVITE_MESSAGE} ${inviteUrl('card')}`;
 export async function shareInvite(): Promise<boolean> {
   const url = inviteUrl('invite');
   try {
+    // Android's Share.share reports "shared" even when cancelled; the native
+    // share sheet tells us whether an app was actually picked.
+    if (Platform.OS === 'android' && Widgets?.shareImageWithText) {
+      return await Widgets.shareImageWithText('', `${INVITE_MESSAGE} ${url}`, 'Share Emotionary');
+    }
     const result = await Share.share({ message: `${INVITE_MESSAGE} ${url}`, url });
     return result.action === Share.sharedAction;
   } catch {

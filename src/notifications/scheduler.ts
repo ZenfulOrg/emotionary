@@ -131,9 +131,11 @@ async function doRebuild({
   await Notifications.cancelAllScheduledNotificationsAsync();
   const now = new Date();
 
-  if (serverPush || !enabled || !granted || words.length === 0) return;
-
+  // Server pushes name the "Daily word" channel too, so it must exist (with
+  // the chime) whether the app or the server sends the notifications.
   await ensureChannel();
+
+  if (serverPush || !enabled || !granted || words.length === 0) return;
 
   const rescueDate = streakRescueDate(streakState);
   if (rescueDate && rescueDate.getTime() > now.getTime()) {

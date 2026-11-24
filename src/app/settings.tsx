@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { deleteAccount, getAuthAccount, signOut, type AuthAccount } from '@/auth/client';
 import { syncMarketingConsent } from '@/auth/marketing';
@@ -11,6 +11,7 @@ import { selectionHaptic, successHaptic, warningHaptic } from '@/feedback/haptic
 import { requestPermission } from '@/notifications/scheduler';
 import { forgetPurchaser, restorePurchases } from '@/purchases/client';
 import { isSimulator } from '@/dev/simulator';
+import { STORE_URL } from '@/app-config/store';
 import { useUserStore } from '@/store/userStore';
 import { useGround } from '@/theme/ground';
 import { brand, grounds, layout, space } from '@/theme/tokens';
@@ -104,10 +105,14 @@ export default function SettingsScreen() {
       .then(() => {
         setDeleteOpen(false);
         void leaveToSignIn();
-        Alert.alert('Account deleted', 'Your Emotionary account has been permanently deleted. If you used Sign in with Apple, also remove Emotionary from your Apple Account using Apple’s instructions.', [
-          { text: 'Done', style: 'cancel' },
-          { text: 'Apple access instructions', onPress: () => void Linking.openURL('https://support.apple.com/en-us/102571') },
-        ]);
+        if (Platform.OS === 'ios') {
+          Alert.alert('Account deleted', 'Your Emotionary account has been permanently deleted. If you used Sign in with Apple, also remove Emotionary from your Apple Account using Apple’s instructions.', [
+            { text: 'Done', style: 'cancel' },
+            { text: 'Apple access instructions', onPress: () => void Linking.openURL('https://support.apple.com/en-us/102571') },
+          ]);
+        } else {
+          Alert.alert('Account deleted', 'Your Emotionary account has been permanently deleted.');
+        }
       })
       .catch((error) => {
         warningHaptic();
@@ -211,7 +216,8 @@ export default function SettingsScreen() {
         <SettingsGroup index="03" title="More">
           <SettingsRow
             label="Rate Emotionary"
-            onPress={() => Alert.alert('Thank you', 'Rating will be available when Emotionary is public on the App Store.')}
+            onPress={() => void Linking.openURL(STORE_URL)}
+            leaves
           />
           <SettingsRow
             label="Send feedback"
