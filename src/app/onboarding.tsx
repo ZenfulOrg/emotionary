@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   BackHandler,
   KeyboardAvoidingView,
@@ -133,14 +133,17 @@ export default function OnboardingScreen() {
   // instead of leaving the app (which started onboarding over).
   // Same rule as the on-screen arrow: once signed in, no going back to sign-in.
   const backLocked = accountComplete && step >= PAGES.indexOf('account');
-  useEffect(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (step === 0) return false;
-      if (!backLocked) setStep((current) => Math.max(current - 1, 0));
-      return true;
-    });
-    return () => subscription.remove();
-  }, [step, backLocked]);
+  // Only while onboarding is on screen: on Terms or Privacy, Back closes them.
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        if (step === 0) return false;
+        if (!backLocked) setStep((current) => Math.max(current - 1, 0));
+        return true;
+      });
+      return () => subscription.remove();
+    }, [step, backLocked]),
+  );
 
   const authForm = useAuthForm({
     initialMode: 'create',
@@ -172,8 +175,12 @@ export default function OnboardingScreen() {
   const pageView = (
     <Animated.View
       key={page}
-      entering={reducedMotion ? undefined : FadeInDown.duration(280).easing(Easing.bezier(0.23, 1, 0.32, 1))}
-      exiting={reducedMotion ? undefined : FadeOutUp.duration(160)}
+      // No layout animation on the paywall: on Android an entering animation
+      // kept the page at its first height, so rows added once the store
+      // answered (the error, Try again) pushed the links outside and they
+      // stopped taking taps.
+      entering={reducedMotion || page === 'paywall' ? undefined : FadeInDown.duration(280).easing(Easing.bezier(0.23, 1, 0.32, 1))}
+      exiting={reducedMotion || page === 'paywall' ? undefined : FadeOutUp.duration(160)}
       style={styles.page}
     >
       {page === 'welcome' && <WelcomePage />}
