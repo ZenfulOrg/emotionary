@@ -21,7 +21,7 @@
     "ios": {
       "appleTeamId": "GRM466YG9B",
       "bundleIdentifier": "com.nowdrops.emotionary",
-      "buildNumber": "2026112302",
+      "buildNumber": "2026112303",
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "privacyManifests": {

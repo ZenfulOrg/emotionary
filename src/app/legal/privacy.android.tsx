@@ -4,15 +4,15 @@ export default function PrivacyPolicyScreen() {
   return (
     <LegalDocument
       title="Privacy Policy"
-      effectiveDate="November 13, 2026"
+      effectiveDate="November 23, 2026"
       intro="Emotionary is designed as a quiet, private daily ritual. This policy explains the limited information the app handles and the choices available to you."
       sections={[
         {
           heading: 'Information we collect',
           paragraphs: [
             'If you create an account, we process your name when supplied by your sign-in provider, your email address, and the account identifier supplied by Apple, Google, or email sign-in. Our authentication provider may also process routine technical information, such as IP address and device or browser details, to operate and protect sign-in.',
-            'Your favorite words, streak, reminder time, app preferences, and reading activity are stored on your device. Emotionary does not currently use advertising, third-party analytics, or cross-app tracking.',
-            'To understand how features are used, the app sends an anonymous status to our Supabase database about once a day: device platform, app version, whether you are on the free or paid plan, whether notifications and the daily reminder are on, and how many Emotionary widgets are installed. It uses a random identifier created on your device, is not linked to your account, name, or email, and is not used for advertising or tracking.',
+            'Your favorite words, progress, and app preferences are stored on your device. To send your daily word and reminders, we also store a notification token for your device with your reminder times, time zone, streak, plan, and the words you keep, so the right notification arrives at the right time.',
+            'To understand how Emotionary is used and improve it, the app sends usage information to our own database: for example, that the app was opened, a word was viewed, saved, or shared, a notification or widget was tapped, a streak was reached, or the paywall was shown. It also sends a short daily status (app version, free or paid plan, whether notifications are on, and how many widgets are installed). This information uses a random identifier created on your device, is not linked to your name or email, never includes what you type, and is not used for advertising or for tracking you across other apps or websites. Emotionary does not use advertising or third-party analytics, and we do not sell or share personal information.',
           ],
         },
         {
@@ -20,27 +20,27 @@ export default function PrivacyPolicyScreen() {
           paragraphs: [
             'Account information is used to create, secure, and manage your Emotionary account, and to send you occasional emails about Emotionary, such as new words, features, and offers. Local app data is used to provide favorites, progress, reminders, and your daily-word experience.',
             'You can stop marketing emails at any time with the unsubscribe link in any email or the Marketing emails switch in Settings. We will still send messages needed to operate your account, such as sign-in codes. We do not sell or share your email address for others to market to you.',
-            'When you choose to download a word card, the app requests write-only photo-library access to save that image. Notifications are scheduled on your device after you grant permission. You can change either permission in Android Settings.',
+            'When you choose to download a word card, the app requests write-only photo-library access to save that image. Notifications are sent from our server through Firebase Cloud Messaging after you grant permission. You can change either permission in Android Settings.',
           ],
         },
         {
           heading: 'Service providers and sharing',
           paragraphs: [
-            'Emotionary uses Supabase to provide authentication and deliver published word content. We do not sell personal information. We disclose information only to service providers needed to operate the app, when you direct us to, or when required by law.',
+            'Emotionary uses Supabase to provide authentication, deliver word content, send notifications, and store the usage information described above. RevenueCat verifies purchases and manages access; it receives your purchase records from Google Play and a few usage details (such as your streak, whether notifications are on, and how many words you have saved). Notifications are delivered through Firebase Cloud Messaging. We do not sell personal information. We disclose information only to service providers needed to operate the app, when you direct us to, or when required by law.',
           ],
           link: { label: 'Read Supabase’s privacy policy', url: 'https://supabase.com/privacy' },
         },
         {
           heading: 'Google Play purchases',
           paragraphs: [
-            'Google Play processes payments and manages subscriptions under its own privacy policy. Emotionary uses Google Play purchase status on your device to enable full access. We do not receive your payment card details or send your transaction history to our servers.',
+            'Google Play processes payments and manages subscriptions under its own privacy policy. Emotionary uses RevenueCat to verify your purchase and enable full access. We do not receive your payment card details.',
           ],
           link: { label: 'Google privacy policy', url: 'https://policies.google.com/privacy' },
         },
         {
           heading: 'Retention and deletion',
           paragraphs: [
-            'Account information is retained while your account remains active. You can permanently delete your account at any time in Emotionary under Settings → Delete account. Deleting the account removes the authentication record from our service. If you used Sign in with Apple, the app links to Apple’s instructions to manually revoke access after deletion. Local favorites and progress remain on that device unless you delete the app or clear its data.',
+            'Account information is retained while your account remains active. You can permanently delete your account at any time in Emotionary under Settings → Delete account. Deleting the account removes the authentication record from our service. If you used Sign in with Apple, the app links to Apple’s instructions to manually revoke access after deletion. Local favorites and progress remain on that device unless you delete the app or clear its data. Usage information is not linked to your account. Cancelling a subscription is done in your store account settings.',
           ],
         },
         {
@@ -52,7 +52,7 @@ export default function PrivacyPolicyScreen() {
         {
           heading: 'Contact',
           paragraphs: [
-            'For privacy questions or deletion help, email support@emotionarybook.com.',
+            'Emotionary is operated by NowDrops LLC. For privacy questions, requests to access or delete your information, or deletion help, email support@emotionarybook.com.',
           ],
         },
       ]}
