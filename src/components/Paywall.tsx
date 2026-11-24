@@ -104,9 +104,9 @@ export function Paywall({
     try {
       const active = await restorePurchases();
       if (active) onContinue();
-      else Alert.alert('No purchases found', 'This store account has no Emotionary purchase to restore.');
+      else Alert.alert('No purchases found', 'This store account has no Emotionary purchase to restore.', undefined, { cancelable: true });
     } catch {
-      Alert.alert('Could not restore', 'Check your connection and store account, then try again.');
+      Alert.alert('Could not restore', 'Check your connection and store account, then try again.', undefined, { cancelable: true });
     } finally {
       setRestoring(false);
     }

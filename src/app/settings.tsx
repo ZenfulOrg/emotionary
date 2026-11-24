@@ -62,7 +62,7 @@ export default function SettingsScreen() {
         ? 'Your purchase is active on this device.'
         : 'No active Emotionary purchase was found for this store account.');
     } catch {
-      Alert.alert('Could not restore', 'Check your connection and store account, then try again.');
+      Alert.alert('Could not restore', 'Check your connection and store account, then try again.', undefined, { cancelable: true });
     } finally { setRestoring(false); }
   };
 
