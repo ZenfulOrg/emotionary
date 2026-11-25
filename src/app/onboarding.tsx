@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from 'expo-router';
+import { type Href, router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   BackHandler,
@@ -24,6 +24,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { SHARE_DEMO_SLUG } from '@/entitlements';
 import { useAuthForm } from '@/auth/useAuthForm';
 import { AuthForm } from '@/components/AuthForm';
 import {
@@ -484,7 +485,7 @@ function ShakingNext({ onPress }: { onPress: () => void }) {
 function FirstWordPage({ reducedMotion }: { reducedMotion: boolean }) {
   const isSaved = useUserStore((state) => state.favorites.includes('meraki'));
   const toggleFavorite = useUserStore((state) => state.toggleFavorite);
-  const openShare = () => router.push('/share/meraki?demo=1');
+  const openShare = () => router.push(`/share/${SHARE_DEMO_SLUG}?demo=1` as Href);
   // The same recording Today plays. Without it the button fell back to the
   // phone's text-to-speech, which is silent on many Android phones.
   const audioUrl = useContentStore((state) => findWord(state.words, 'meraki')?.audio_url ?? null);

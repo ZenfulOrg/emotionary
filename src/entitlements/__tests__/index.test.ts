@@ -1,5 +1,7 @@
 import type { Word } from '@/content/types';
 import {
+  isShareDemo,
+  SHARE_DEMO_SLUG,
   canBrowseWord,
   canViewWord,
   compareFreeOrder,
@@ -131,5 +133,14 @@ describe('kept words', () => {
   test('never re-adds what is already kept', () => {
     const result = slugsToKeep({ ...base, readSlugs: ['acedia'], kept: ['acedia'] });
     expect(result.add).toEqual([]);
+  });
+});
+
+describe('isShareDemo', () => {
+  test('only onboarding\'s demo word skips the share card lock', () => {
+    expect(isShareDemo(SHARE_DEMO_SLUG, '1')).toBe(true);
+    expect(isShareDemo('petrichor', '1')).toBe(false);
+    expect(isShareDemo(SHARE_DEMO_SLUG, undefined)).toBe(false);
+    expect(isShareDemo(undefined, '1')).toBe(false);
   });
 });

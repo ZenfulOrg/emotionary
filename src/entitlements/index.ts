@@ -118,3 +118,15 @@ export function compareFreeOrder(a: Word, b: Word): number {
 export function freeWords(words: readonly Word[]): Word[] {
   return words.filter((w) => w.is_free === true).sort(compareFreeOrder);
 }
+
+/** The word onboarding uses to show the share card before the user has any access. */
+export const SHARE_DEMO_SLUG = 'meraki';
+
+/**
+ * Whether a share card link may skip the access check. Only onboarding's
+ * demo of its own word does: any other slug with ?demo=1 (for example from a
+ * typed deep link) would otherwise show a locked word's meaning for free.
+ */
+export function isShareDemo(slug: string | undefined, demo: string | undefined): boolean {
+  return demo === '1' && slug === SHARE_DEMO_SLUG;
+}

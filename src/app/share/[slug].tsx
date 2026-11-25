@@ -23,7 +23,7 @@ import {
 } from '@/components/brand';
 import { localDateString } from '@/daily/engine';
 import { useTodaysWord } from '@/daily/useTodaysWord';
-import { wordAccess } from '@/entitlements';
+import { isShareDemo, wordAccess } from '@/entitlements';
 import { lightImpactHaptic, successHaptic, warningHaptic } from '@/feedback/haptics';
 import { CARD_BASE_HEIGHT, CARD_BASE_WIDTH, ShareCard, SHARE_THEMES } from '@/share/ShareCard';
 import { CARD_SHARE_MESSAGE } from '@/invite/invite';
@@ -58,7 +58,7 @@ export default function ShareModal() {
   const todaysSlug = useTodaysWord(localDateString())?.slug ?? null;
   // Share cards show the meaning, so they need full access to the word.
   const access = word ? wordAccess(word, todaysSlug, hasFullAccess, kept) : 'full';
-  const locked = demo !== '1' && access !== 'full';
+  const locked = !isShareDemo(slug, demo) && access !== 'full';
 
   useEffect(() => {
     if (locked)
