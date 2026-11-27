@@ -10,6 +10,8 @@ import {
   signIn,
   signInWithApple,
   signInWithGoogle,
+  GOOGLE_INCOMPLETE,
+  isOAuthReturnLink,
   signOut,
   resendSignupCode,
   refreshComplimentaryAccess,
@@ -38,6 +40,7 @@ jest.mock('@react-native-google-signin/google-signin', () => ({
     configure: jest.fn(),
     signOut: jest.fn(async () => null),
     signIn: jest.fn(),
+    hasPlayServices: jest.fn(async () => true),
     getTokens: jest.fn(async () => ({ idToken: 'google-id-token', accessToken: 'google-access-token' })),
   },
   isSuccessResponse: (r: { type: string }) => r.type === 'success',
@@ -46,6 +49,7 @@ jest.mock('@react-native-google-signin/google-signin', () => ({
 }));
 jest.mock('@/config', () => ({
   GOOGLE_IOS_CLIENT_ID: 'ios-client.apps.googleusercontent.com',
+  GOOGLE_WEB_CLIENT_ID: 'web-client.apps.googleusercontent.com',
   SUPABASE_URL: 'https://example.supabase.co',
   SUPABASE_PUBLISHABLE_KEY: 'publishable-test-key',
   syncEnabled: true,
@@ -289,9 +293,50 @@ describe('auth client', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  test('Android: completes Google OAuth from the native callback fragment', async () => {
+  test('Android: uses the native Google sheet with the web client, never the browser', async () => {
     const { Platform } = jest.requireActual('react-native') as typeof import('react-native');
     const restoreOs = jest.replaceProperty(Platform, 'OS', 'android');
+    const { GoogleSignin } = jest.requireMock('@react-native-google-signin/google-signin') as {
+      GoogleSignin: { configure: jest.Mock; signIn: jest.Mock };
+    };
+    GoogleSignin.signIn.mockResolvedValue({
+      type: 'success',
+      data: { idToken: 'google-id-token', user: { email: 'google@example.com' } },
+    });
+    mockFetch.mockResolvedValue(
+      response({ access_token: 'google-access', refresh_token: 'google-refresh', user: { email: 'google@example.com' } }),
+    );
+    await expect(signInWithGoogle()).resolves.toEqual({ email: 'google@example.com' });
+    expect(GoogleSignin.configure).toHaveBeenCalledWith({ webClientId: 'web-client.apps.googleusercontent.com' });
+    expect(mockOpenAuthSession).not.toHaveBeenCalled();
+    restoreOs.restore();
+  });
+
+  test('Android: a Google failure in the browser shows a plain sentence, not Supabase\'s code', async () => {
+    const { Platform } = jest.requireActual('react-native') as typeof import('react-native');
+    const restoreOs = jest.replaceProperty(Platform, 'OS', 'android');
+    const { GoogleSignin } = jest.requireMock('@react-native-google-signin/google-signin') as {
+      GoogleSignin: { signIn: jest.Mock };
+    };
+    GoogleSignin.signIn.mockRejectedValue(Object.assign(new Error('dev'), { code: 'DEVELOPER_ERROR' }));
+    mockOpenAuthSession.mockResolvedValue({
+      type: 'success',
+      url: 'emotionary://auth-callback#error=server_error&error_description=Unable+to+exchange+external+code%253A+4%252F0A',
+    });
+    await expect(signInWithGoogle()).rejects.toThrow(GOOGLE_INCOMPLETE);
+    // The same return link also reaches the app; the confirmation screen must ignore it.
+    expect(isOAuthReturnLink()).toBe(true);
+    expect(isOAuthReturnLink(Date.now() + 60_000)).toBe(false);
+    restoreOs.restore();
+  });
+
+  test('Android: falls back to the browser when the native Google sheet cannot start', async () => {
+    const { Platform } = jest.requireActual('react-native') as typeof import('react-native');
+    const restoreOs = jest.replaceProperty(Platform, 'OS', 'android');
+    const { GoogleSignin } = jest.requireMock('@react-native-google-signin/google-signin') as {
+      GoogleSignin: { signIn: jest.Mock };
+    };
+    GoogleSignin.signIn.mockRejectedValue(Object.assign(new Error('dev'), { code: 'DEVELOPER_ERROR' }));
     const jwtPayload = 'eyJlbWFpbCI6Imdvb2dsZUBleGFtcGxlLmNvbSJ9';
     const accessToken = `header.${jwtPayload}.signature`;
     mockOpenAuthSession.mockResolvedValue({
@@ -378,7 +423,7 @@ describe('auth client', () => {
   });
 
   test('rejects expired, foreign and unsupported links without accepting tokens', async () => {
-    await expect(completeAuthCallback('emotionary://auth-callback#error=access_denied&error_description=Link+expired')).rejects.toThrow('Link expired');
+    await expect(completeAuthCallback('emotionary://auth-callback#error=access_denied&error_description=Link+expired')).rejects.toThrow('This confirmation link is invalid or expired.');
     await expect(completeAuthCallback('https://other.example/auth-callback#access_token=a&refresh_token=b')).rejects.toThrow('not an Emotionary');
     await expect(completeAuthCallback('emotionary://auth-callback?code=pkce-code')).rejects.toThrow('invalid or expired');
     await expect(completeAuthCallback('emotionary://auth-callback#access_token=a&refresh_token=b&type=recovery')).rejects.toThrow('password-reset');

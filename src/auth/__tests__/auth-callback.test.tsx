@@ -5,11 +5,12 @@ import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 
 import AuthCallbackScreen from '@/app/auth-callback';
-import { completeAuthCallback } from '@/auth/client';
+import { completeAuthCallback, isOAuthReturnLink } from '@/auth/client';
+import { useUserStore } from '@/store/userStore';
 
 jest.mock('expo-linking', () => ({ useURL: jest.fn(), getInitialURL: jest.fn() }));
-jest.mock('expo-router', () => ({ router: { replace: jest.fn() } }));
-jest.mock('@/auth/client', () => ({ completeAuthCallback: jest.fn() }));
+jest.mock('expo-router', () => ({ router: { replace: jest.fn(), back: jest.fn(), canGoBack: jest.fn() } }));
+jest.mock('@/auth/client', () => ({ completeAuthCallback: jest.fn(), isOAuthReturnLink: jest.fn(() => false) }));
 jest.mock('@/purchases/account', () => ({ linkPurchasesToAccount: jest.fn(async () => undefined) }));
 jest.mock('@react-native-async-storage/async-storage', () => jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 jest.mock('@/components/brand', () => {
@@ -27,6 +28,8 @@ describe('confirmation-link result', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     jest.mocked(Linking.useURL).mockReturnValue('emotionary://auth-callback#access_token=example');
+    jest.mocked(isOAuthReturnLink).mockReturnValue(false);
+    useUserStore.setState({ onboarded: true });
   });
   afterEach(() => { if (renderer) act(() => renderer.unmount()); });
   const texts = () => renderer.root.findAllByType(Text).map((node) => node.props.children);
@@ -50,5 +53,25 @@ describe('confirmation-link result', () => {
     await act(async () => { renderer.update(<AuthCallbackScreen />); });
     expect(texts()).toContain('Let’s try again.');
     expect(texts()).not.toContain('You’re all set.');
+  });
+
+  it('steps aside for Google sign-in\'s own return link instead of showing an error', async () => {
+    jest.mocked(isOAuthReturnLink).mockReturnValue(true);
+    jest.mocked(router.canGoBack).mockReturnValue(true);
+    jest.mocked(Linking.useURL).mockReturnValue('emotionary://auth-callback#error=server_error');
+    await act(async () => { renderer = create(<AuthCallbackScreen />); });
+    expect(completeAuthCallback).not.toHaveBeenCalled();
+    expect(router.back).toHaveBeenCalled();
+    expect(texts()).not.toContain('Let’s try again.');
+  });
+
+  it('returns to onboarding, not the Account screen, before onboarding is done', async () => {
+    useUserStore.setState({ onboarded: false });
+    jest.mocked(router.canGoBack).mockReturnValue(true);
+    jest.mocked(completeAuthCallback).mockRejectedValue(new Error('Expired'));
+    await act(async () => { renderer = create(<AuthCallbackScreen />); });
+    act(() => renderer.root.findAllByType(Text).find((node) => node.props.children === 'Return to sign in')!.props.onPress());
+    expect(router.back).toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalledWith('/account');
   });
 });

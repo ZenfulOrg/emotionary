@@ -26,6 +26,14 @@ export const SUPABASE_PUBLISHABLE_KEY =
 export const GOOGLE_IOS_CLIENT_ID =
   '474338681804-q7omaadp5tjlpde416ch9ip7ad6ek52v.apps.googleusercontent.com';
 
+/**
+ * Web client in the same project. Android's native Google sheet asks for an ID
+ * token addressed to it (Supabase lists it first under Client IDs). Android
+ * clients for the Play signing and upload keys exist alongside it. Not a secret.
+ */
+export const GOOGLE_WEB_CLIENT_ID =
+  '474338681804-htrjd1t7n63ghe3unv66ltvef01oeusg.apps.googleusercontent.com';
+
 export const syncEnabled = SUPABASE_URL.length > 0 && SUPABASE_PUBLISHABLE_KEY.length > 0;
 
 /**

@@ -25,6 +25,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { SHARE_DEMO_SLUG } from '@/entitlements';
+import { getAuthAccount } from '@/auth/client';
 import { useAuthForm } from '@/auth/useAuthForm';
 import { AuthForm } from '@/components/AuthForm';
 import {
@@ -153,6 +154,24 @@ export default function OnboardingScreen() {
       goNext();
     },
   });
+
+  // Signed in on another screen (the Account screen, after a failed Google
+  // attempt sent the person there): move on instead of showing this page's
+  // sign-in form again with its old error.
+  useFocusEffect(
+    useCallback(() => {
+      if (page !== 'account' || accountComplete) return;
+      let active = true;
+      void getAuthAccount()
+        .then((account) => {
+          if (!active || !account) return;
+          setAccountComplete(true);
+          goNext();
+        })
+        .catch(() => {});
+      return () => { active = false; };
+    }, [page, accountComplete]),
+  );
 
   const finish = () => {
     successHaptic();

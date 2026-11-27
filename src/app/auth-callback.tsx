@@ -4,10 +4,16 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Body, Button, Eyebrow, Headline, OrbitBackdrop, Screen, Wordmark } from '@/components/brand';
-import { completeAuthCallback } from '@/auth/client';
+import { completeAuthCallback, isOAuthReturnLink } from '@/auth/client';
 import { useUserStore } from '@/store/userStore';
 import { linkPurchasesToAccount } from '@/purchases/account';
 import { brand, layout, space } from '@/theme/tokens';
+
+/** Back to where the person was, or home when nothing is underneath. */
+function leave() {
+  if (router.canGoBack()) router.back();
+  else router.replace('/');
+}
 
 export default function AuthCallbackScreen() {
   const liveUrl = Linking.useURL();
@@ -20,6 +26,12 @@ function AuthCallbackContent({ liveUrl }: { liveUrl: string | null }) {
 
   useEffect(() => {
     let cancelled = false;
+    // Google sign-in's own return link (Android delivers it here too): the
+    // sign-in form already handles it, so step out of the way.
+    if (isOAuthReturnLink()) {
+      leave();
+      return;
+    }
     void (async () => {
       const url = liveUrl ?? (await Linking.getInitialURL());
       if (!url) {
@@ -61,7 +73,13 @@ function AuthCallbackContent({ liveUrl }: { liveUrl: string | null }) {
         {result !== 'pending' && (
           <Button
             label={result === 'success' ? 'Continue to Emotionary' : 'Return to sign in'}
-            onPress={() => router.replace(result === 'success' ? '/' : '/account')}
+            onPress={() => {
+              if (result === 'success') router.replace('/');
+              // During onboarding, go back to its own sign-in page instead of
+              // stacking the Account screen on top of it.
+              else if (!useUserStore.getState().onboarded && router.canGoBack()) router.back();
+              else router.replace('/account');
+            }}
             glyph="forward"
           />
         )}

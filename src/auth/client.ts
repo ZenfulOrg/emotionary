@@ -3,7 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { fetch } from 'expo/fetch';
 import { Platform } from 'react-native';
 
-import { GOOGLE_IOS_CLIENT_ID, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, syncEnabled } from '@/config';
+import { GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, syncEnabled } from '@/config';
 import { useUserStore } from '@/store/userStore';
 import { track } from '@/analytics/track';
 
@@ -321,24 +321,36 @@ export async function signInWithApple(): Promise<{ email: string | null } | null
 }
 
 /**
- * Google sign-in. iOS uses Google's native sheet, which names the app
- * ("Emotionary") instead of the Supabase address, then trades Google's ID
- * token for a Supabase session (like Apple). Android still uses the browser
- * flow until its own Google client is set up.
+ * Google sign-in. Both platforms use Google's native sheet, which names the
+ * app ("Emotionary") instead of the Supabase address, then trade Google's ID
+ * token for a Supabase session (like Apple). On Android, if the native sheet
+ * can't run (no Play services, or a signing key Google doesn't know), the
+ * browser flow is the fallback.
  * Resolves null when the person cancels.
  */
 export async function signInWithGoogle(): Promise<{ email: string | null } | null> {
   assertSyncEnabled();
   if (Platform.OS === 'ios') return signInWithGoogleNative();
-  return signInWithGoogleBrowser();
+  try {
+    return await signInWithGoogleNative();
+  } catch (error) {
+    if (error instanceof NativeGoogleUnavailable) return signInWithGoogleBrowser();
+    throw error;
+  }
 }
+
+/** Android only: the native sheet could not start, so the browser flow takes over. */
+class NativeGoogleUnavailable extends Error {}
 
 async function signInWithGoogleNative(): Promise<{ email: string | null } | null> {
   // Lazy require: the native module only exists in native builds.
   const { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } =
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     require('@react-native-google-signin/google-signin') as typeof import('@react-native-google-signin/google-signin');
-  GoogleSignin.configure({ iosClientId: GOOGLE_IOS_CLIENT_ID });
+  // iOS stays as shipped; Android needs the web client to get an ID token.
+  GoogleSignin.configure(
+    Platform.OS === 'android' ? { webClientId: GOOGLE_WEB_CLIENT_ID } : { iosClientId: GOOGLE_IOS_CLIENT_ID },
+  );
 
   let idToken: string | null = null;
   let accessToken: string | null = null;
@@ -346,6 +358,7 @@ async function signInWithGoogleNative(): Promise<{ email: string | null } | null
   try {
     // Always show the account picker, even after a previous Google sign-in.
     await GoogleSignin.signOut().catch(() => {});
+    if (Platform.OS === 'android') await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: false });
     const response = await GoogleSignin.signIn();
     if (!isSuccessResponse(response)) return null;
     idToken = response.data.idToken;
@@ -355,6 +368,7 @@ async function signInWithGoogleNative(): Promise<{ email: string | null } | null
   } catch (error) {
     if (isErrorWithCode(error) && error.code === statusCodes.SIGN_IN_CANCELLED) return null;
     if (isErrorWithCode(error) && error.code === statusCodes.IN_PROGRESS) return null;
+    if (Platform.OS === 'android') throw new NativeGoogleUnavailable();
     throw new AuthError('Google sign-in is unavailable right now. Try again.');
   }
   if (!idToken) throw new AuthError('Google did not return a sign-in token. Try again.');
@@ -372,26 +386,46 @@ async function signInWithGoogleNative(): Promise<{ email: string | null } | null
   return { email: email || null };
 }
 
+export const GOOGLE_INCOMPLETE = 'Google sign-in did not finish. Try again, or use your email.';
+
+/**
+ * On Android the browser's return link also reaches the app as a deep link,
+ * which opened the confirmation-link screen on top of whatever the person was
+ * doing (onboarding, say). While Google sign-in runs, and briefly after, that
+ * link belongs to signInWithGoogle and the confirmation screen ignores it.
+ */
+let oauthActive = false;
+let oauthEndedAt = 0;
+const OAUTH_LINK_GRACE_MS = 15_000;
+export function isOAuthReturnLink(now = Date.now()): boolean {
+  return oauthActive || now - oauthEndedAt < OAUTH_LINK_GRACE_MS;
+}
+
 /** Google via the Supabase OAuth flow in an in-app browser session. */
 async function signInWithGoogleBrowser(): Promise<{ email: string | null } | null> {
 
   const authUrl =
     `${SUPABASE_URL}/auth/v1/authorize?provider=google` +
     `&redirect_to=${encodeURIComponent(OAUTH_REDIRECT)}`;
-  // Ephemeral sessions skip iOS's "wants to use <project>.supabase.co to sign in" alert.
-  const result = await WebBrowser.openAuthSessionAsync(authUrl, OAUTH_REDIRECT, {
-    preferEphemeralSession: true,
-  });
+  oauthActive = true;
+  let result: WebBrowser.WebBrowserAuthSessionResult;
+  try {
+    // Ephemeral sessions skip iOS's "wants to use <project>.supabase.co to sign in" alert.
+    result = await WebBrowser.openAuthSessionAsync(authUrl, OAUTH_REDIRECT, {
+      preferEphemeralSession: true,
+    });
+  } finally {
+    oauthActive = false;
+    oauthEndedAt = Date.now();
+  }
   if (result.type !== 'success') return null;
 
   const params = parseFragmentParams(result.url);
   const accessToken = params.access_token;
   const refreshToken = params.refresh_token;
-  if (!accessToken || !refreshToken) {
-    throw new AuthError(
-      params.error_description?.replace(/\+/g, ' ') ?? 'Google sign-in did not complete. Try again.',
-    );
-  }
+  // Supabase's own error text is technical (and arrives URL encoded), so
+  // people see a plain sentence instead.
+  if (!accessToken || !refreshToken) throw new AuthError(GOOGLE_INCOMPLETE);
 
   const email = emailFromJwt(accessToken);
   const signedIn = await saveSessionTokens(accessToken, refreshToken, email ?? '');
@@ -410,7 +444,8 @@ export async function completeAuthCallback(url: string): Promise<AuthAccount> {
   }
   const params = parseFragmentParams(url);
   if (params.error || params.error_description) {
-    throw new AuthError(params.error_description ?? 'This confirmation link is invalid or expired.');
+    // Supabase's error text is technical and URL encoded: show a plain sentence.
+    throw new AuthError('This confirmation link is invalid or expired.');
   }
   if (params.type === 'recovery') {
     throw new AuthError('This is a password-reset link, not an email confirmation link.');
